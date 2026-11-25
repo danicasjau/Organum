@@ -3802,12 +3802,113 @@
       }
     },
     "/api/v1/projects/{project_uuid}/tasks/{task_id}": {
-      "patch": {
+      "delete": {
         "tags": [
           "entities"
         ],
-        "summary": "Update Task Endpoint",
-        "operationId": "update_task_endpoint_api_v1_projects__project_uuid__tasks__task_id__patch",
+        "summary": "Delete Task Endpoint",
+        "operationId": "delete_task_endpoint_api_v1_projects__project_uuid__tasks__task_id__delete",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Get Task Detail Endpoint",
+        "operationId": "get_task_detail_endpoint_api_v1_projects__project_uuid__tasks__task_id__get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/TaskDetailOut"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ClientTaskDetailOut"
+                    }
+                  ],
+                  "title": "Response Get Task Detail Endpoint Api V1 Projects  Project Uuid  Tasks  Task Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Patch Task Endpoint",
+        "operationId": "patch_task_endpoint_api_v1_projects__project_uuid__tasks__task_id__patch",
         "parameters": [
           {
             "name": "task_id",
@@ -3834,7 +3935,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TaskUpdateRequest"
+                "$ref": "#/components/schemas/TaskPatchRequest"
               }
             }
           }
@@ -3845,7 +3946,2139 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TaskOut"
+                  "$ref": "#/components/schemas/TaskDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/tasks": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "List Tasks Endpoint",
+        "operationId": "list_tasks_endpoint_api_v1_projects__project_uuid__tasks_get",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "priority",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Priority"
+            }
+          },
+          {
+            "name": "department_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Department Id"
+            }
+          },
+          {
+            "name": "entity_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "entity_path_prefix",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Entity Path Prefix"
+            }
+          },
+          {
+            "name": "tag",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tag"
+            }
+          },
+          {
+            "name": "company_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Company Id"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "role_name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Role Name"
+            }
+          },
+          {
+            "name": "my_capacity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "artist",
+                    "lead",
+                    "supervisor"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "My Capacity"
+            }
+          },
+          {
+            "name": "mine_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Mine Only"
+            }
+          },
+          {
+            "name": "include_linked_entities",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Linked Entities"
+            }
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "code",
+                "status",
+                "priority",
+                "due",
+                "updated"
+              ],
+              "type": "string",
+              "default": "updated",
+              "title": "Sort"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/TaskListOut"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ClientTaskListOut"
+                    }
+                  ],
+                  "title": "Response List Tasks Endpoint Api V1 Projects  Project Uuid  Tasks Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Create Task Full Endpoint",
+        "operationId": "create_task_full_endpoint_api_v1_projects__project_uuid__tasks_post",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskCreateFullRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/tasks/bulk": {
+      "post": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Bulk Update Tasks Endpoint",
+        "operationId": "bulk_update_tasks_endpoint_api_v1_projects__project_uuid__tasks_bulk_post",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskBulkRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskBulkResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/tasks/graph": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Task Graph Endpoint",
+        "operationId": "task_graph_endpoint_api_v1_projects__project_uuid__tasks_graph_get",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          },
+          {
+            "name": "task_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "entity_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "department_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Department Id"
+            }
+          },
+          {
+            "name": "hops",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 3,
+              "minimum": 1,
+              "default": 2,
+              "title": "Hops"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 500,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskGraphOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/workload": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Workload Endpoint",
+        "operationId": "workload_endpoint_api_v1_projects__project_uuid__workload_get",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "name": "department_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Department Id"
+            }
+          },
+          {
+            "name": "company_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Company Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkloadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/review-queue": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Review Queue Endpoint",
+        "operationId": "review_queue_endpoint_api_v1_projects__project_uuid__review_queue_get",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ReviewQueueItemOut"
+                      }
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ClientReviewQueueItemOut"
+                      }
+                    }
+                  ],
+                  "title": "Response Review Queue Endpoint Api V1 Projects  Project Uuid  Review Queue Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/my/tasks": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "My Tasks Endpoint",
+        "operationId": "my_tasks_endpoint_api_v1_projects__project_uuid__my_tasks_get",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyTasksResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/saved-views": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "List Saved Views",
+        "operationId": "list_saved_views_api_v1_projects__project_uuid__saved_views_get",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          },
+          {
+            "name": "view_kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "View Kind"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SavedViewOut"
+                  },
+                  "title": "Response List Saved Views Api V1 Projects  Project Uuid  Saved Views Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Create Saved View",
+        "operationId": "create_saved_view_api_v1_projects__project_uuid__saved_views_post",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavedViewCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedViewOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/saved-views/{view_id}": {
+      "delete": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Delete Saved View",
+        "operationId": "delete_saved_view_api_v1_projects__project_uuid__saved_views__view_id__delete",
+        "parameters": [
+          {
+            "name": "view_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "View Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/tasks/{task_id}/transition": {
+      "post": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Transition Task Endpoint",
+        "operationId": "transition_task_endpoint_api_v1_projects__project_uuid__tasks__task_id__transition_post",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskTransitionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/TaskDetailOut"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ClientTaskDetailOut"
+                    }
+                  ],
+                  "title": "Response Transition Task Endpoint Api V1 Projects  Project Uuid  Tasks  Task Id  Transition Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/tasks/{task_id}/dependencies": {
+      "put": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Put Task Dependencies Endpoint",
+        "operationId": "put_task_dependencies_endpoint_api_v1_projects__project_uuid__tasks__task_id__dependencies_put",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskDependenciesPutRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskDependencyOut"
+                  },
+                  "title": "Response Put Task Dependencies Endpoint Api V1 Projects  Project Uuid  Tasks  Task Id  Dependencies Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/tasks/{task_id}/links": {
+      "put": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Put Task Links Endpoint",
+        "operationId": "put_task_links_endpoint_api_v1_projects__project_uuid__tasks__task_id__links_put",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskLinksPutRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskLinkOut"
+                  },
+                  "title": "Response Put Task Links Endpoint Api V1 Projects  Project Uuid  Tasks  Task Id  Links Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/tasks/{task_id}/tags": {
+      "put": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Put Task Tags Endpoint",
+        "operationId": "put_task_tags_endpoint_api_v1_projects__project_uuid__tasks__task_id__tags_put",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskTagsPutRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Response Put Task Tags Endpoint Api V1 Projects  Project Uuid  Tasks  Task Id  Tags Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/tasks/{task_id}/comments": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "List Task Comments Endpoint",
+        "operationId": "list_task_comments_endpoint_api_v1_projects__project_uuid__tasks__task_id__comments_get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TaskCommentOut"
+                      }
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ClientTaskCommentOut"
+                      }
+                    }
+                  ],
+                  "title": "Response List Task Comments Endpoint Api V1 Projects  Project Uuid  Tasks  Task Id  Comments Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Create Task Comment Endpoint",
+        "operationId": "create_task_comment_endpoint_api_v1_projects__project_uuid__tasks__task_id__comments_post",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskCommentCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/TaskCommentOut"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ClientTaskCommentOut"
+                    }
+                  ],
+                  "title": "Response Create Task Comment Endpoint Api V1 Projects  Project Uuid  Tasks  Task Id  Comments Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/tasks/{task_id}/events": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "List Task Events Endpoint",
+        "operationId": "list_task_events_endpoint_api_v1_projects__project_uuid__tasks__task_id__events_get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskEventOut"
+                  },
+                  "title": "Response List Task Events Endpoint Api V1 Projects  Project Uuid  Tasks  Task Id  Events Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/tasks/{task_id}/time-logs": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "List Time Logs Endpoint",
+        "operationId": "list_time_logs_endpoint_api_v1_projects__project_uuid__tasks__task_id__time_logs_get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TimeLogOut"
+                  },
+                  "title": "Response List Time Logs Endpoint Api V1 Projects  Project Uuid  Tasks  Task Id  Time Logs Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Create Time Log Endpoint",
+        "operationId": "create_time_log_endpoint_api_v1_projects__project_uuid__tasks__task_id__time_logs_post",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TimeLogCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeLogOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/tasks/{task_id}/time-logs/{log_id}": {
+      "delete": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Delete Time Log Endpoint",
+        "operationId": "delete_time_log_endpoint_api_v1_projects__project_uuid__tasks__task_id__time_logs__log_id__delete",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "log_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Log Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/entities/{entity_id}/links": {
+      "get": {
+        "tags": [
+          "entity_links"
+        ],
+        "summary": "Get Entity Links Endpoint",
+        "operationId": "get_entity_links_endpoint_api_v1_projects__project_uuid__entities__entity_id__links_get",
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntityLinksResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/entity-links": {
+      "post": {
+        "tags": [
+          "entity_links"
+        ],
+        "summary": "Create Entity Link Endpoint",
+        "operationId": "create_entity_link_endpoint_api_v1_projects__project_uuid__entity_links_post",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntityLinkCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntityLinkOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/entity-links/bulk": {
+      "post": {
+        "tags": [
+          "entity_links"
+        ],
+        "summary": "Bulk Create Entity Links Endpoint",
+        "operationId": "bulk_create_entity_links_endpoint_api_v1_projects__project_uuid__entity_links_bulk_post",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntityLinkBulkCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EntityLinkOut"
+                  },
+                  "title": "Response Bulk Create Entity Links Endpoint Api V1 Projects  Project Uuid  Entity Links Bulk Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/entity-links/{link_id}": {
+      "delete": {
+        "tags": [
+          "entity_links"
+        ],
+        "summary": "Delete Entity Link Endpoint",
+        "operationId": "delete_entity_link_endpoint_api_v1_projects__project_uuid__entity_links__link_id__delete",
+        "parameters": [
+          {
+            "name": "link_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Link Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/entity-links/graph": {
+      "get": {
+        "tags": [
+          "entity_links"
+        ],
+        "summary": "Entity Links Graph Endpoint",
+        "operationId": "entity_links_graph_endpoint_api_v1_projects__project_uuid__entity_links_graph_get",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          },
+          {
+            "name": "entity_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "hops",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 3,
+              "minimum": 1,
+              "default": 2,
+              "title": "Hops"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 500,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntityLinksGraphOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/entities/{entity_id}/suggest-dependencies": {
+      "post": {
+        "tags": [
+          "entity_links"
+        ],
+        "summary": "Suggest Dependencies Endpoint",
+        "operationId": "suggest_dependencies_endpoint_api_v1_projects__project_uuid__entities__entity_id__suggest_dependencies_post",
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/SuggestDependenciesRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SuggestedDependencyOut"
+                  },
+                  "title": "Response Suggest Dependencies Endpoint Api V1 Projects  Project Uuid  Entities  Entity Id  Suggest Dependencies Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/entities/{entity_id}/apply-dependencies": {
+      "post": {
+        "tags": [
+          "entity_links"
+        ],
+        "summary": "Apply Dependencies Endpoint",
+        "operationId": "apply_dependencies_endpoint_api_v1_projects__project_uuid__entities__entity_id__apply_dependencies_post",
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyDependenciesRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "integer"
+                  },
+                  "title": "Response Apply Dependencies Endpoint Api V1 Projects  Project Uuid  Entities  Entity Id  Apply Dependencies Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/dependency-templates": {
+      "get": {
+        "tags": [
+          "entity_links"
+        ],
+        "summary": "List Dependency Templates",
+        "operationId": "list_dependency_templates_api_v1_projects__project_uuid__dependency_templates_get",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DependencyTemplateOut"
+                  },
+                  "title": "Response List Dependency Templates Api V1 Projects  Project Uuid  Dependency Templates Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "entity_links"
+        ],
+        "summary": "Create Dependency Template",
+        "operationId": "create_dependency_template_api_v1_projects__project_uuid__dependency_templates_post",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DependencyTemplateCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DependencyTemplateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/dependency-templates/{template_id}": {
+      "patch": {
+        "tags": [
+          "entity_links"
+        ],
+        "summary": "Update Dependency Template",
+        "operationId": "update_dependency_template_api_v1_projects__project_uuid__dependency_templates__template_id__patch",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DependencyTemplateUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DependencyTemplateOut"
                 }
               }
             }
@@ -3864,19 +6097,19 @@
       },
       "delete": {
         "tags": [
-          "entities"
+          "entity_links"
         ],
-        "summary": "Delete Task Endpoint",
-        "operationId": "delete_task_endpoint_api_v1_projects__project_uuid__tasks__task_id__delete",
+        "summary": "Delete Dependency Template",
+        "operationId": "delete_dependency_template_api_v1_projects__project_uuid__dependency_templates__template_id__delete",
         "parameters": [
           {
-            "name": "task_id",
+            "name": "template_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
-              "title": "Task Id"
+              "title": "Template Id"
             }
           },
           {
@@ -6156,6 +8389,49 @@
         "type": "object",
         "title": "AnnotationUpdate"
       },
+      "ApplyDependenciesRequest": {
+        "properties": {
+          "pairs": {
+            "items": {
+              "$ref": "#/components/schemas/ApplyDependencyPairIn"
+            },
+            "type": "array",
+            "title": "Pairs"
+          }
+        },
+        "type": "object",
+        "title": "ApplyDependenciesRequest"
+      },
+      "ApplyDependencyPairIn": {
+        "properties": {
+          "downstream_task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Downstream Task Id"
+          },
+          "upstream_task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upstream Task Id"
+          },
+          "threshold": {
+            "type": "string",
+            "enum": [
+              "APP",
+              "PUBLISHED",
+              "ANY_STATUS"
+            ],
+            "title": "Threshold",
+            "default": "APP"
+          }
+        },
+        "type": "object",
+        "required": [
+          "downstream_task_id",
+          "upstream_task_id"
+        ],
+        "title": "ApplyDependencyPairIn"
+      },
       "ArtifactOut": {
         "properties": {
           "id": {
@@ -6969,6 +9245,395 @@
         ],
         "title": "ClientProductVersionOut"
       },
+      "ClientReviewQueueItemOut": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Id"
+          },
+          "task_code": {
+            "type": "string",
+            "title": "Task Code"
+          },
+          "task_name": {
+            "type": "string",
+            "title": "Task Name"
+          },
+          "entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Entity Id"
+          },
+          "entity_name": {
+            "type": "string",
+            "title": "Entity Name"
+          },
+          "department_name": {
+            "type": "string",
+            "title": "Department Name"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "submitted_version_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Submitted Version Id"
+          },
+          "submitted_version_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Submitted Version Label"
+          },
+          "thumbnail_file_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail File Id"
+          },
+          "submitted_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Submitted At"
+          },
+          "wait_hours": {
+            "type": "number",
+            "title": "Wait Hours"
+          },
+          "can_act_as": {
+            "type": "string",
+            "title": "Can Act As",
+            "default": "role:client"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "task_code",
+          "task_name",
+          "entity_id",
+          "entity_name",
+          "department_name",
+          "status",
+          "submitted_at",
+          "wait_hours"
+        ],
+        "title": "ClientReviewQueueItemOut"
+      },
+      "ClientTaskCommentOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Id"
+          },
+          "author_full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Full Name"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "visibility": {
+            "type": "string",
+            "const": "client",
+            "title": "Visibility",
+            "default": "client"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "version_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version Id"
+          },
+          "file_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Id"
+          },
+          "frame": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frame"
+          },
+          "review_decision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Decision"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "task_id",
+          "kind",
+          "body",
+          "created_at"
+        ],
+        "title": "ClientTaskCommentOut"
+      },
+      "ClientTaskDetailOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "task_code": {
+            "type": "string",
+            "title": "Task Code"
+          },
+          "task_name": {
+            "type": "string",
+            "title": "Task Name"
+          },
+          "entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Entity Id"
+          },
+          "entity_name": {
+            "type": "string",
+            "title": "Entity Name"
+          },
+          "department_name": {
+            "type": "string",
+            "title": "Department Name"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "ideal_finish_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ideal Finish Date"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "product": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClientProductOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "allowed_transitions": {
+            "items": {
+              "$ref": "#/components/schemas/TransitionOptionOut"
+            },
+            "type": "array",
+            "title": "Allowed Transitions"
+          },
+          "comments": {
+            "items": {
+              "$ref": "#/components/schemas/ClientTaskCommentOut"
+            },
+            "type": "array",
+            "title": "Comments"
+          },
+          "reviews": {
+            "items": {
+              "$ref": "#/components/schemas/ClientTaskReviewOut"
+            },
+            "type": "array",
+            "title": "Reviews"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "task_code",
+          "task_name",
+          "entity_id",
+          "entity_name",
+          "department_name",
+          "status"
+        ],
+        "title": "ClientTaskDetailOut"
+      },
+      "ClientTaskListItemOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "task_code": {
+            "type": "string",
+            "title": "Task Code"
+          },
+          "task_name": {
+            "type": "string",
+            "title": "Task Name"
+          },
+          "entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Entity Id"
+          },
+          "entity_name": {
+            "type": "string",
+            "title": "Entity Name"
+          },
+          "department_name": {
+            "type": "string",
+            "title": "Department Name"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "ideal_finish_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ideal Finish Date"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "product": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClientProductOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "task_code",
+          "task_name",
+          "entity_id",
+          "entity_name",
+          "department_name",
+          "status"
+        ],
+        "title": "ClientTaskListItemOut"
+      },
+      "ClientTaskListOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ClientTaskListItemOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "title": "ClientTaskListOut"
+      },
       "ClientTaskOut": {
         "properties": {
           "id": {
@@ -7008,6 +9673,63 @@
           "name"
         ],
         "title": "ClientTaskOut"
+      },
+      "ClientTaskReviewOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "round_no": {
+            "type": "integer",
+            "title": "Round No"
+          },
+          "version_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version Id"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "lead",
+              "sup",
+              "client"
+            ],
+            "title": "Stage"
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "retake"
+            ],
+            "title": "Decision"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "round_no",
+          "stage",
+          "decision",
+          "created_at"
+        ],
+        "title": "ClientTaskReviewOut"
       },
       "ColorspaceInfo": {
         "properties": {
@@ -7278,6 +10000,55 @@
           "name": {
             "type": "string",
             "title": "Name"
+          },
+          "needs_lead_review": {
+            "type": "boolean",
+            "title": "Needs Lead Review",
+            "default": true
+          },
+          "needs_sup_review": {
+            "type": "boolean",
+            "title": "Needs Sup Review",
+            "default": false
+          },
+          "needs_client_review": {
+            "type": "boolean",
+            "title": "Needs Client Review",
+            "default": false
+          },
+          "default_priority": {
+            "type": "string",
+            "enum": [
+              "normal",
+              "high",
+              "stopper"
+            ],
+            "title": "Default Priority",
+            "default": "normal"
+          },
+          "default_bid_hours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Bid Hours"
+          },
+          "default_complexity": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 5.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Complexity"
           }
         },
         "type": "object",
@@ -7309,6 +10080,53 @@
           "sort_order": {
             "type": "integer",
             "title": "Sort Order"
+          },
+          "needs_lead_review": {
+            "type": "boolean",
+            "title": "Needs Lead Review",
+            "default": true
+          },
+          "needs_sup_review": {
+            "type": "boolean",
+            "title": "Needs Sup Review",
+            "default": false
+          },
+          "needs_client_review": {
+            "type": "boolean",
+            "title": "Needs Client Review",
+            "default": false
+          },
+          "default_priority": {
+            "type": "string",
+            "enum": [
+              "normal",
+              "high",
+              "stopper"
+            ],
+            "title": "Default Priority",
+            "default": "normal"
+          },
+          "default_bid_hours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Bid Hours"
+          },
+          "default_complexity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Complexity"
           }
         },
         "type": "object",
@@ -7344,6 +10162,79 @@
               }
             ],
             "title": "Sort Order"
+          },
+          "needs_lead_review": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Needs Lead Review"
+          },
+          "needs_sup_review": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Needs Sup Review"
+          },
+          "needs_client_review": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Needs Client Review"
+          },
+          "default_priority": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "normal",
+                  "high",
+                  "stopper"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Priority"
+          },
+          "default_bid_hours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Bid Hours"
+          },
+          "default_complexity": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 5.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Complexity"
           }
         },
         "type": "object",
@@ -7495,6 +10386,215 @@
         },
         "type": "object",
         "title": "DepartmentUpdate"
+      },
+      "DependencyTemplateCreateRequest": {
+        "properties": {
+          "upstream_department_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upstream Department Id"
+          },
+          "upstream_task_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upstream Task Name"
+          },
+          "downstream_department_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Downstream Department Id"
+          },
+          "downstream_task_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Downstream Task Name"
+          },
+          "threshold": {
+            "type": "string",
+            "enum": [
+              "APP",
+              "PUBLISHED",
+              "ANY_STATUS"
+            ],
+            "title": "Threshold",
+            "default": "APP"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "upstream_department_id",
+          "downstream_department_id"
+        ],
+        "title": "DependencyTemplateCreateRequest"
+      },
+      "DependencyTemplateOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "upstream_department_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upstream Department Id"
+          },
+          "upstream_department_name": {
+            "type": "string",
+            "title": "Upstream Department Name",
+            "default": ""
+          },
+          "upstream_task_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upstream Task Name"
+          },
+          "downstream_department_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Downstream Department Id"
+          },
+          "downstream_department_name": {
+            "type": "string",
+            "title": "Downstream Department Name",
+            "default": ""
+          },
+          "downstream_task_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Downstream Task Name"
+          },
+          "threshold": {
+            "type": "string",
+            "enum": [
+              "APP",
+              "PUBLISHED",
+              "ANY_STATUS"
+            ],
+            "title": "Threshold"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "upstream_department_id",
+          "downstream_department_id",
+          "threshold",
+          "enabled"
+        ],
+        "title": "DependencyTemplateOut"
+      },
+      "DependencyTemplateUpdateRequest": {
+        "properties": {
+          "upstream_department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upstream Department Id"
+          },
+          "upstream_task_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upstream Task Name"
+          },
+          "downstream_department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Downstream Department Id"
+          },
+          "downstream_task_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Downstream Task Name"
+          },
+          "threshold": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "APP",
+                  "PUBLISHED",
+                  "ANY_STATUS"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Threshold"
+          },
+          "enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled"
+          }
+        },
+        "type": "object",
+        "title": "DependencyTemplateUpdateRequest"
       },
       "EntityCreateRequest": {
         "properties": {
@@ -7649,6 +10749,334 @@
           "sort_order"
         ],
         "title": "EntityDepartmentOut"
+      },
+      "EntityGraphEdgeOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "source_entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Source Entity Id"
+          },
+          "target_entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Target Entity Id"
+          },
+          "link_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "source_entity_id",
+          "target_entity_id"
+        ],
+        "title": "EntityGraphEdgeOut"
+      },
+      "EntityGraphNodeOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "entity_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Type"
+          },
+          "is_archived": {
+            "type": "boolean",
+            "title": "Is Archived",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "EntityGraphNodeOut"
+      },
+      "EntityLinkBulkCreateRequest": {
+        "properties": {
+          "source_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Source Ids"
+          },
+          "target_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Target Ids"
+          },
+          "link_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Type"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "title": "EntityLinkBulkCreateRequest"
+      },
+      "EntityLinkCreateRequest": {
+        "properties": {
+          "source_entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Source Entity Id"
+          },
+          "target_entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Target Entity Id"
+          },
+          "link_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Type"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source_entity_id",
+          "target_entity_id"
+        ],
+        "title": "EntityLinkCreateRequest"
+      },
+      "EntityLinkOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "source_entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Source Entity Id"
+          },
+          "source_name": {
+            "type": "string",
+            "title": "Source Name"
+          },
+          "source_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Type"
+          },
+          "source_archived": {
+            "type": "boolean",
+            "title": "Source Archived",
+            "default": false
+          },
+          "target_entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Target Entity Id"
+          },
+          "target_name": {
+            "type": "string",
+            "title": "Target Name"
+          },
+          "target_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Type"
+          },
+          "target_archived": {
+            "type": "boolean",
+            "title": "Target Archived",
+            "default": false
+          },
+          "link_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Type"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "source_entity_id",
+          "source_name",
+          "target_entity_id",
+          "target_name",
+          "created_at"
+        ],
+        "title": "EntityLinkOut"
+      },
+      "EntityLinksGraphOut": {
+        "properties": {
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/EntityGraphNodeOut"
+            },
+            "type": "array",
+            "title": "Nodes"
+          },
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/EntityGraphEdgeOut"
+            },
+            "type": "array",
+            "title": "Edges"
+          },
+          "truncated": {
+            "type": "boolean",
+            "title": "Truncated",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "EntityLinksGraphOut"
+      },
+      "EntityLinksResponse": {
+        "properties": {
+          "entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Entity Id"
+          },
+          "uses": {
+            "items": {
+              "$ref": "#/components/schemas/EntityLinkOut"
+            },
+            "type": "array",
+            "title": "Uses"
+          },
+          "used_in": {
+            "items": {
+              "$ref": "#/components/schemas/EntityLinkOut"
+            },
+            "type": "array",
+            "title": "Used In"
+          },
+          "uses_indirect": {
+            "items": {
+              "$ref": "#/components/schemas/IndirectEntityLinkOut"
+            },
+            "type": "array",
+            "title": "Uses Indirect"
+          },
+          "used_in_indirect": {
+            "items": {
+              "$ref": "#/components/schemas/IndirectEntityLinkOut"
+            },
+            "type": "array",
+            "title": "Used In Indirect"
+          },
+          "link_types": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Link Types"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entity_id"
+        ],
+        "title": "EntityLinksResponse"
       },
       "EntityOut": {
         "properties": {
@@ -8218,6 +11646,53 @@
         ],
         "title": "HealthResponse"
       },
+      "IndirectEntityLinkOut": {
+        "properties": {
+          "entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Entity Id"
+          },
+          "entity_name": {
+            "type": "string",
+            "title": "Entity Name"
+          },
+          "entity_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Type"
+          },
+          "is_archived": {
+            "type": "boolean",
+            "title": "Is Archived",
+            "default": false
+          },
+          "depth": {
+            "type": "integer",
+            "title": "Depth"
+          },
+          "via_entity_names": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Via Entity Names"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entity_id",
+          "entity_name",
+          "depth"
+        ],
+        "title": "IndirectEntityLinkOut"
+      },
       "InspectionDocument": {
         "properties": {
           "kind": {
@@ -8561,6 +12036,26 @@
           "values"
         ],
         "title": "LutResponse"
+      },
+      "MyTasksResponse": {
+        "properties": {
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/TaskListItemOut"
+            },
+            "type": "array",
+            "title": "Tasks"
+          },
+          "to_review": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewQueueItemOut"
+            },
+            "type": "array",
+            "title": "To Review"
+          }
+        },
+        "type": "object",
+        "title": "MyTasksResponse"
       },
       "ProductMasterPutRequest": {
         "properties": {
@@ -9051,6 +12546,118 @@
         ],
         "title": "RevealRequest"
       },
+      "ReviewQueueItemOut": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Id"
+          },
+          "task_code": {
+            "type": "string",
+            "title": "Task Code"
+          },
+          "task_name": {
+            "type": "string",
+            "title": "Task Name"
+          },
+          "entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Entity Id"
+          },
+          "entity_name": {
+            "type": "string",
+            "title": "Entity Name"
+          },
+          "department_name": {
+            "type": "string",
+            "title": "Department Name"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "submitted_version_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Submitted Version Id"
+          },
+          "submitted_version_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Submitted Version Label"
+          },
+          "thumbnail_file_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail File Id"
+          },
+          "submitter_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Submitter Name"
+          },
+          "submitted_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Submitted At"
+          },
+          "wait_hours": {
+            "type": "number",
+            "title": "Wait Hours"
+          },
+          "can_act_as": {
+            "type": "string",
+            "title": "Can Act As"
+          },
+          "on_behalf": {
+            "type": "boolean",
+            "title": "On Behalf",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "task_code",
+          "task_name",
+          "entity_id",
+          "entity_name",
+          "department_name",
+          "status",
+          "submitted_at",
+          "wait_hours",
+          "can_act_as"
+        ],
+        "title": "ReviewQueueItemOut"
+      },
       "RoleCreateRequest": {
         "properties": {
           "name": {
@@ -9165,6 +12772,65 @@
         },
         "type": "object",
         "title": "RoleUpdateRequest"
+      },
+      "SavedViewCreateRequest": {
+        "properties": {
+          "view_kind": {
+            "type": "string",
+            "title": "View Kind"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "config_json": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Config Json"
+          }
+        },
+        "type": "object",
+        "required": [
+          "view_kind",
+          "name"
+        ],
+        "title": "SavedViewCreateRequest"
+      },
+      "SavedViewOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "view_kind": {
+            "type": "string",
+            "title": "View Kind"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "config_json": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Config Json"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "view_kind",
+          "name",
+          "config_json",
+          "updated_at"
+        ],
+        "title": "SavedViewOut"
       },
       "SceneDeleteRequest": {
         "properties": {
@@ -9334,6 +13000,111 @@
         ],
         "title": "SceneRenameRequest"
       },
+      "SuggestDependenciesRequest": {
+        "properties": {
+          "link_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Ids"
+          },
+          "depth": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 2.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Depth"
+          }
+        },
+        "type": "object",
+        "title": "SuggestDependenciesRequest"
+      },
+      "SuggestedDependencyOut": {
+        "properties": {
+          "upstream_task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upstream Task Id"
+          },
+          "upstream_task_code": {
+            "type": "string",
+            "title": "Upstream Task Code"
+          },
+          "upstream_entity_name": {
+            "type": "string",
+            "title": "Upstream Entity Name"
+          },
+          "upstream_department": {
+            "type": "string",
+            "title": "Upstream Department"
+          },
+          "downstream_task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Downstream Task Id"
+          },
+          "downstream_task_code": {
+            "type": "string",
+            "title": "Downstream Task Code"
+          },
+          "downstream_entity_name": {
+            "type": "string",
+            "title": "Downstream Entity Name"
+          },
+          "downstream_department": {
+            "type": "string",
+            "title": "Downstream Department"
+          },
+          "threshold": {
+            "type": "string",
+            "title": "Threshold"
+          },
+          "already_exists": {
+            "type": "boolean",
+            "title": "Already Exists"
+          },
+          "would_cycle": {
+            "type": "boolean",
+            "title": "Would Cycle"
+          },
+          "template_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Template Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upstream_task_id",
+          "upstream_task_code",
+          "upstream_entity_name",
+          "upstream_department",
+          "downstream_task_id",
+          "downstream_task_code",
+          "downstream_entity_name",
+          "downstream_department",
+          "threshold",
+          "already_exists",
+          "would_cycle",
+          "template_id"
+        ],
+        "title": "SuggestedDependencyOut"
+      },
       "TaskAssignmentItemIn": {
         "properties": {
           "user_id": {
@@ -9421,6 +13192,560 @@
         "type": "object",
         "title": "TaskAssignmentsPutRequest"
       },
+      "TaskBulkRequest": {
+        "properties": {
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "default": true
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/TaskBulkRowIn"
+            },
+            "type": "array",
+            "title": "Rows"
+          }
+        },
+        "type": "object",
+        "title": "TaskBulkRequest"
+      },
+      "TaskBulkResponse": {
+        "properties": {
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run"
+          },
+          "applied": {
+            "type": "boolean",
+            "title": "Applied"
+          },
+          "ok_count": {
+            "type": "integer",
+            "title": "Ok Count"
+          },
+          "error_count": {
+            "type": "integer",
+            "title": "Error Count"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/TaskBulkRowResult"
+            },
+            "type": "array",
+            "title": "Results"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dry_run",
+          "applied",
+          "ok_count",
+          "error_count"
+        ],
+        "title": "TaskBulkResponse"
+      },
+      "TaskBulkRowIn": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Id"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "normal",
+                  "high",
+                  "stopper"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority"
+          },
+          "assignee_user_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee User Ids"
+          },
+          "assignee_role": {
+            "type": "string",
+            "enum": [
+              "artist",
+              "lead",
+              "supervisor"
+            ],
+            "title": "Assignee Role",
+            "default": "artist"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id"
+        ],
+        "title": "TaskBulkRowIn"
+      },
+      "TaskBulkRowResult": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Id"
+          },
+          "task_code": {
+            "type": "string",
+            "title": "Task Code",
+            "default": ""
+          },
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          },
+          "changes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Changes"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "ok"
+        ],
+        "title": "TaskBulkRowResult"
+      },
+      "TaskCommentCreateRequest": {
+        "properties": {
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Body"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "note",
+              "review",
+              "media"
+            ],
+            "title": "Kind",
+            "default": "note"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "internal",
+              "client"
+            ],
+            "title": "Visibility",
+            "default": "internal"
+          },
+          "version_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version Id"
+          },
+          "file_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Id"
+          },
+          "annotation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Annotation Id"
+          },
+          "frame": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frame"
+          }
+        },
+        "type": "object",
+        "required": [
+          "body"
+        ],
+        "title": "TaskCommentCreateRequest"
+      },
+      "TaskCommentOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Id"
+          },
+          "author_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Id"
+          },
+          "author_username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Username"
+          },
+          "author_full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Full Name"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "internal",
+              "client"
+            ],
+            "title": "Visibility"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "version_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version Id"
+          },
+          "file_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Id"
+          },
+          "annotation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Annotation Id"
+          },
+          "frame": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frame"
+          },
+          "review_decision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Decision"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "edited_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edited At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "task_id",
+          "kind",
+          "visibility",
+          "body",
+          "created_at"
+        ],
+        "title": "TaskCommentOut"
+      },
+      "TaskCreateFullRequest": {
+        "properties": {
+          "entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Entity Id"
+          },
+          "department_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Department Id"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "normal",
+                  "high",
+                  "stopper"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority"
+          },
+          "needs_lead_review": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Needs Lead Review"
+          },
+          "needs_sup_review": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Needs Sup Review"
+          },
+          "needs_client_review": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Needs Client Review"
+          },
+          "bid_hours": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bid Hours"
+          },
+          "complexity_rating": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 5.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Complexity Rating"
+          },
+          "ideal_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ideal Start Date"
+          },
+          "ideal_finish_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ideal Finish Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entity_id",
+          "department_id",
+          "name"
+        ],
+        "title": "TaskCreateFullRequest"
+      },
       "TaskCreateRequest": {
         "properties": {
           "name": {
@@ -9434,12 +13759,1113 @@
         ],
         "title": "TaskCreateRequest"
       },
+      "TaskDependenciesPutRequest": {
+        "properties": {
+          "dependencies": {
+            "items": {
+              "$ref": "#/components/schemas/TaskDependencyIn"
+            },
+            "type": "array",
+            "title": "Dependencies"
+          }
+        },
+        "type": "object",
+        "title": "TaskDependenciesPutRequest"
+      },
+      "TaskDependencyIn": {
+        "properties": {
+          "upstream_task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upstream Task Id"
+          },
+          "threshold": {
+            "type": "string",
+            "enum": [
+              "APP",
+              "PUBLISHED",
+              "ANY_STATUS"
+            ],
+            "title": "Threshold",
+            "default": "APP"
+          },
+          "from_entity_link": {
+            "type": "boolean",
+            "title": "From Entity Link",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "upstream_task_id"
+        ],
+        "title": "TaskDependencyIn"
+      },
+      "TaskDependencyOut": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Id"
+          },
+          "upstream_task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upstream Task Id"
+          },
+          "upstream_task_code": {
+            "type": "string",
+            "title": "Upstream Task Code",
+            "default": ""
+          },
+          "upstream_task_name": {
+            "type": "string",
+            "title": "Upstream Task Name",
+            "default": ""
+          },
+          "upstream_entity_name": {
+            "type": "string",
+            "title": "Upstream Entity Name",
+            "default": ""
+          },
+          "upstream_department": {
+            "type": "string",
+            "title": "Upstream Department",
+            "default": ""
+          },
+          "upstream_status": {
+            "type": "string",
+            "title": "Upstream Status",
+            "default": "WTG"
+          },
+          "threshold": {
+            "type": "string",
+            "title": "Threshold",
+            "default": "APP"
+          },
+          "from_entity_link": {
+            "type": "boolean",
+            "title": "From Entity Link",
+            "default": false
+          },
+          "satisfied": {
+            "type": "boolean",
+            "title": "Satisfied",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "upstream_task_id"
+        ],
+        "title": "TaskDependencyOut"
+      },
+      "TaskDetailOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "task_code": {
+            "type": "string",
+            "title": "Task Code"
+          },
+          "task_name": {
+            "type": "string",
+            "title": "Task Name"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "folder_name": {
+            "type": "string",
+            "title": "Folder Name"
+          },
+          "entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Entity Id"
+          },
+          "entity_name": {
+            "type": "string",
+            "title": "Entity Name"
+          },
+          "entity_rel_path": {
+            "type": "string",
+            "title": "Entity Rel Path"
+          },
+          "parent_entity_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Entity Type"
+          },
+          "department_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Department Id"
+          },
+          "department_name": {
+            "type": "string",
+            "title": "Department Name"
+          },
+          "department_short_code": {
+            "type": "string",
+            "title": "Department Short Code",
+            "default": ""
+          },
+          "department_color": {
+            "type": "string",
+            "title": "Department Color",
+            "default": "--series-1"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "status_before_hold": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Before Hold"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "normal",
+              "high",
+              "stopper"
+            ],
+            "title": "Priority",
+            "default": "normal"
+          },
+          "needs_lead_review": {
+            "type": "boolean",
+            "title": "Needs Lead Review",
+            "default": true
+          },
+          "needs_sup_review": {
+            "type": "boolean",
+            "title": "Needs Sup Review",
+            "default": false
+          },
+          "needs_client_review": {
+            "type": "boolean",
+            "title": "Needs Client Review",
+            "default": false
+          },
+          "complexity_rating": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Complexity Rating"
+          },
+          "ideal_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ideal Start Date"
+          },
+          "actual_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Start Date"
+          },
+          "ideal_finish_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ideal Finish Date"
+          },
+          "actual_finish_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Finish Date"
+          },
+          "bid_hours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bid Hours"
+          },
+          "bid_days": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bid Days"
+          },
+          "logged_hours": {
+            "type": "number",
+            "title": "Logged Hours",
+            "default": 0.0
+          },
+          "retake_count": {
+            "type": "integer",
+            "title": "Retake Count",
+            "default": 0
+          },
+          "latest_version_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Version Id"
+          },
+          "approved_version_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved Version Id"
+          },
+          "version_count": {
+            "type": "integer",
+            "title": "Version Count",
+            "default": 0
+          },
+          "upstream_count": {
+            "type": "integer",
+            "title": "Upstream Count",
+            "default": 0
+          },
+          "blocked_upstream": {
+            "type": "boolean",
+            "title": "Blocked Upstream",
+            "default": false
+          },
+          "assignments": {
+            "items": {
+              "$ref": "#/components/schemas/TaskAssignmentOut"
+            },
+            "type": "array",
+            "title": "Assignments"
+          },
+          "my_capacities": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "My Capacities"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "shared_company_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Shared Company Ids"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "acted_as": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acted As"
+          },
+          "allowed_transitions": {
+            "items": {
+              "$ref": "#/components/schemas/TransitionOptionOut"
+            },
+            "type": "array",
+            "title": "Allowed Transitions"
+          },
+          "dependencies": {
+            "items": {
+              "$ref": "#/components/schemas/TaskDependencyOut"
+            },
+            "type": "array",
+            "title": "Dependencies"
+          },
+          "downstream": {
+            "items": {
+              "$ref": "#/components/schemas/TaskDependencyOut"
+            },
+            "type": "array",
+            "title": "Downstream"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/TaskLinkOut"
+            },
+            "type": "array",
+            "title": "Links"
+          },
+          "product": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProductOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reviews": {
+            "items": {
+              "$ref": "#/components/schemas/TaskReviewOut"
+            },
+            "type": "array",
+            "title": "Reviews"
+          },
+          "comments": {
+            "items": {
+              "$ref": "#/components/schemas/TaskCommentOut"
+            },
+            "type": "array",
+            "title": "Comments"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/TaskEventOut"
+            },
+            "type": "array",
+            "title": "Events"
+          },
+          "time_logs": {
+            "items": {
+              "$ref": "#/components/schemas/TimeLogOut"
+            },
+            "type": "array",
+            "title": "Time Logs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "task_code",
+          "task_name",
+          "name",
+          "folder_name",
+          "entity_id",
+          "entity_name",
+          "entity_rel_path",
+          "department_id",
+          "department_name",
+          "status",
+          "updated_at"
+        ],
+        "title": "TaskDetailOut"
+      },
+      "TaskEventOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Id"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "At"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
+          },
+          "acted_as": {
+            "type": "string",
+            "title": "Acted As"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "user",
+              "rule",
+              "system"
+            ],
+            "title": "Source"
+          },
+          "field": {
+            "type": "string",
+            "title": "Field"
+          },
+          "old_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Old Value"
+          },
+          "new_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "task_id",
+          "at",
+          "acted_as",
+          "source",
+          "field"
+        ],
+        "title": "TaskEventOut"
+      },
+      "TaskGraphEdgeOut": {
+        "properties": {
+          "source_task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Source Task Id"
+          },
+          "target_task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Target Task Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "dependency",
+              "link"
+            ],
+            "title": "Kind"
+          },
+          "threshold": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Threshold"
+          },
+          "from_entity_link": {
+            "type": "boolean",
+            "title": "From Entity Link",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "source_task_id",
+          "target_task_id",
+          "kind"
+        ],
+        "title": "TaskGraphEdgeOut"
+      },
+      "TaskGraphNodeOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "task_code": {
+            "type": "string",
+            "title": "Task Code"
+          },
+          "task_name": {
+            "type": "string",
+            "title": "Task Name"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "entity_name": {
+            "type": "string",
+            "title": "Entity Name"
+          },
+          "department_name": {
+            "type": "string",
+            "title": "Department Name"
+          },
+          "department_color": {
+            "type": "string",
+            "title": "Department Color"
+          },
+          "assignees": {
+            "items": {
+              "$ref": "#/components/schemas/TaskAssignmentOut"
+            },
+            "type": "array",
+            "title": "Assignees"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "task_code",
+          "task_name",
+          "status",
+          "entity_name",
+          "department_name",
+          "department_color"
+        ],
+        "title": "TaskGraphNodeOut"
+      },
+      "TaskGraphOut": {
+        "properties": {
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/TaskGraphNodeOut"
+            },
+            "type": "array",
+            "title": "Nodes"
+          },
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/TaskGraphEdgeOut"
+            },
+            "type": "array",
+            "title": "Edges"
+          },
+          "truncated": {
+            "type": "boolean",
+            "title": "Truncated",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "TaskGraphOut"
+      },
+      "TaskLinkIn": {
+        "properties": {
+          "linked_task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Linked Task Id"
+          },
+          "link_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "linked_task_id"
+        ],
+        "title": "TaskLinkIn"
+      },
+      "TaskLinkOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Id"
+          },
+          "linked_task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Linked Task Id"
+          },
+          "linked_task_code": {
+            "type": "string",
+            "title": "Linked Task Code",
+            "default": ""
+          },
+          "linked_task_status": {
+            "type": "string",
+            "title": "Linked Task Status",
+            "default": ""
+          },
+          "link_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "task_id",
+          "linked_task_id"
+        ],
+        "title": "TaskLinkOut"
+      },
+      "TaskLinksPutRequest": {
+        "properties": {
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/TaskLinkIn"
+            },
+            "type": "array",
+            "title": "Links"
+          }
+        },
+        "type": "object",
+        "title": "TaskLinksPutRequest"
+      },
+      "TaskListItemOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "task_code": {
+            "type": "string",
+            "title": "Task Code"
+          },
+          "task_name": {
+            "type": "string",
+            "title": "Task Name"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "folder_name": {
+            "type": "string",
+            "title": "Folder Name"
+          },
+          "entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Entity Id"
+          },
+          "entity_name": {
+            "type": "string",
+            "title": "Entity Name"
+          },
+          "entity_rel_path": {
+            "type": "string",
+            "title": "Entity Rel Path"
+          },
+          "parent_entity_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Entity Type"
+          },
+          "department_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Department Id"
+          },
+          "department_name": {
+            "type": "string",
+            "title": "Department Name"
+          },
+          "department_short_code": {
+            "type": "string",
+            "title": "Department Short Code",
+            "default": ""
+          },
+          "department_color": {
+            "type": "string",
+            "title": "Department Color",
+            "default": "--series-1"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "status_before_hold": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Before Hold"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "normal",
+              "high",
+              "stopper"
+            ],
+            "title": "Priority",
+            "default": "normal"
+          },
+          "needs_lead_review": {
+            "type": "boolean",
+            "title": "Needs Lead Review",
+            "default": true
+          },
+          "needs_sup_review": {
+            "type": "boolean",
+            "title": "Needs Sup Review",
+            "default": false
+          },
+          "needs_client_review": {
+            "type": "boolean",
+            "title": "Needs Client Review",
+            "default": false
+          },
+          "complexity_rating": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Complexity Rating"
+          },
+          "ideal_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ideal Start Date"
+          },
+          "actual_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Start Date"
+          },
+          "ideal_finish_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ideal Finish Date"
+          },
+          "actual_finish_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Finish Date"
+          },
+          "bid_hours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bid Hours"
+          },
+          "bid_days": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bid Days"
+          },
+          "logged_hours": {
+            "type": "number",
+            "title": "Logged Hours",
+            "default": 0.0
+          },
+          "retake_count": {
+            "type": "integer",
+            "title": "Retake Count",
+            "default": 0
+          },
+          "latest_version_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Version Id"
+          },
+          "approved_version_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved Version Id"
+          },
+          "version_count": {
+            "type": "integer",
+            "title": "Version Count",
+            "default": 0
+          },
+          "upstream_count": {
+            "type": "integer",
+            "title": "Upstream Count",
+            "default": 0
+          },
+          "blocked_upstream": {
+            "type": "boolean",
+            "title": "Blocked Upstream",
+            "default": false
+          },
+          "assignments": {
+            "items": {
+              "$ref": "#/components/schemas/TaskAssignmentOut"
+            },
+            "type": "array",
+            "title": "Assignments"
+          },
+          "my_capacities": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "My Capacities"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "shared_company_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Shared Company Ids"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "task_code",
+          "task_name",
+          "name",
+          "folder_name",
+          "entity_id",
+          "entity_name",
+          "entity_rel_path",
+          "department_id",
+          "department_name",
+          "status",
+          "updated_at"
+        ],
+        "title": "TaskListItemOut"
+      },
+      "TaskListOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TaskListItemOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "title": "TaskListOut"
+      },
       "TaskOut": {
         "properties": {
           "id": {
             "type": "string",
             "format": "uuid",
             "title": "Id"
+          },
+          "task_code": {
+            "type": "string",
+            "title": "Task Code",
+            "default": ""
+          },
+          "task_name": {
+            "type": "string",
+            "title": "Task Name",
+            "default": ""
           },
           "name": {
             "type": "string",
@@ -9463,6 +14889,44 @@
               }
             ],
             "title": "Status"
+          },
+          "priority": {
+            "type": "string",
+            "title": "Priority",
+            "default": "normal"
+          },
+          "ideal_finish_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ideal Finish Date"
+          },
+          "bid_hours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bid Hours"
+          },
+          "logged_hours": {
+            "type": "number",
+            "title": "Logged Hours",
+            "default": 0.0
+          },
+          "blocked_upstream": {
+            "type": "boolean",
+            "title": "Blocked Upstream",
+            "default": false
           },
           "acted_as": {
             "anyOf": [
@@ -9517,21 +14981,7 @@
         ],
         "title": "TaskOut"
       },
-      "TaskSharesPutRequest": {
-        "properties": {
-          "company_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Company Ids"
-          }
-        },
-        "type": "object",
-        "title": "TaskSharesPutRequest"
-      },
-      "TaskUpdateRequest": {
+      "TaskPatchRequest": {
         "properties": {
           "name": {
             "anyOf": [
@@ -9554,10 +15004,524 @@
               }
             ],
             "title": "Sort Order"
+          },
+          "task_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Code"
+          },
+          "task_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "normal",
+                  "high",
+                  "stopper"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority"
+          },
+          "needs_lead_review": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Needs Lead Review"
+          },
+          "needs_sup_review": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Needs Sup Review"
+          },
+          "needs_client_review": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Needs Client Review"
+          },
+          "complexity_rating": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 5.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Complexity Rating"
+          },
+          "bid_hours": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bid Hours"
+          },
+          "ideal_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ideal Start Date"
+          },
+          "ideal_finish_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ideal Finish Date"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "expected_updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Updated At"
           }
         },
         "type": "object",
-        "title": "TaskUpdateRequest"
+        "title": "TaskPatchRequest"
+      },
+      "TaskReviewOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Id"
+          },
+          "round_no": {
+            "type": "integer",
+            "title": "Round No"
+          },
+          "version_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version Id"
+          },
+          "version_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version Label"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "lead",
+              "sup",
+              "client"
+            ],
+            "title": "Stage"
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "retake"
+            ],
+            "title": "Decision"
+          },
+          "reviewer_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewer Id"
+          },
+          "reviewer_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewer Name"
+          },
+          "acted_as": {
+            "type": "string",
+            "title": "Acted As"
+          },
+          "on_behalf_of": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "On Behalf Of"
+          },
+          "comment_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "task_id",
+          "round_no",
+          "stage",
+          "decision",
+          "acted_as",
+          "created_at"
+        ],
+        "title": "TaskReviewOut"
+      },
+      "TaskSharesPutRequest": {
+        "properties": {
+          "company_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Company Ids"
+          },
+          "version_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version Ids"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          }
+        },
+        "type": "object",
+        "title": "TaskSharesPutRequest"
+      },
+      "TaskTagsPutRequest": {
+        "properties": {
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          }
+        },
+        "type": "object",
+        "title": "TaskTagsPutRequest"
+      },
+      "TaskTransitionRequest": {
+        "properties": {
+          "to": {
+            "type": "string",
+            "title": "To"
+          },
+          "version_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version Id"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          }
+        },
+        "type": "object",
+        "required": [
+          "to"
+        ],
+        "title": "TaskTransitionRequest"
+      },
+      "TimeLogCreateRequest": {
+        "properties": {
+          "work_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Work Date"
+          },
+          "hours": {
+            "type": "number",
+            "maximum": 24.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Hours"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "hours"
+        ],
+        "title": "TimeLogCreateRequest"
+      },
+      "TimeLogOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Id"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "work_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Work Date"
+          },
+          "hours": {
+            "type": "number",
+            "title": "Hours"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "task_id",
+          "work_date",
+          "hours",
+          "note",
+          "created_at"
+        ],
+        "title": "TimeLogOut"
+      },
+      "TransitionOptionOut": {
+        "properties": {
+          "to": {
+            "type": "string",
+            "title": "To"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "acted_as": {
+            "type": "string",
+            "title": "Acted As"
+          },
+          "on_behalf": {
+            "type": "boolean",
+            "title": "On Behalf",
+            "default": false
+          },
+          "requires_comment": {
+            "type": "boolean",
+            "title": "Requires Comment",
+            "default": false
+          },
+          "requires_version": {
+            "type": "boolean",
+            "title": "Requires Version",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "to",
+          "action",
+          "acted_as"
+        ],
+        "title": "TransitionOptionOut"
       },
       "UiPrefOut": {
         "properties": {
@@ -9981,6 +15945,107 @@
         },
         "type": "object",
         "title": "VersionSharesPutRequest"
+      },
+      "WorkloadCellSchema": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "hours": {
+            "type": "number",
+            "title": "Hours"
+          },
+          "capacity_hours": {
+            "type": "number",
+            "title": "Capacity Hours"
+          },
+          "utilization_pct": {
+            "type": "number",
+            "title": "Utilization Pct"
+          },
+          "contributing_task_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Contributing Task Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "hours",
+          "capacity_hours",
+          "utilization_pct"
+        ],
+        "title": "WorkloadCellSchema"
+      },
+      "WorkloadResponse": {
+        "properties": {
+          "days": {
+            "items": {
+              "type": "string",
+              "format": "date"
+            },
+            "type": "array",
+            "title": "Days"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/WorkloadRowSchema"
+            },
+            "type": "array",
+            "title": "Rows"
+          },
+          "unscheduled_tasks": {
+            "items": {
+              "$ref": "#/components/schemas/TaskListItemOut"
+            },
+            "type": "array",
+            "title": "Unscheduled Tasks"
+          }
+        },
+        "type": "object",
+        "title": "WorkloadResponse"
+      },
+      "WorkloadRowSchema": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "daily_capacity_hours": {
+            "type": "number",
+            "title": "Daily Capacity Hours"
+          },
+          "cells": {
+            "items": {
+              "$ref": "#/components/schemas/WorkloadCellSchema"
+            },
+            "type": "array",
+            "title": "Cells"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "username",
+          "full_name",
+          "daily_capacity_hours"
+        ],
+        "title": "WorkloadRowSchema"
       }
     }
   }

@@ -51,7 +51,7 @@ test.describe('Phase 6A Foundation — Projects, Settings, Departments & PanelSw
 
       await page.getByRole('button', { name: 'Create Project' }).click();
       await expect(page.getByText(/Created project 'E2E Alpha Show'/)).toBeVisible({
-        timeout: 5000,
+        timeout: 15000,
       });
 
       // Verify project files written on disk

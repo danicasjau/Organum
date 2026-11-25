@@ -1024,15 +1024,447 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Get Task Detail Endpoint */
+        get: operations["get_task_detail_endpoint_api_v1_projects__project_uuid__tasks__task_id__get"];
         put?: never;
         post?: never;
         /** Delete Task Endpoint */
         delete: operations["delete_task_endpoint_api_v1_projects__project_uuid__tasks__task_id__delete"];
         options?: never;
         head?: never;
-        /** Update Task Endpoint */
-        patch: operations["update_task_endpoint_api_v1_projects__project_uuid__tasks__task_id__patch"];
+        /** Patch Task Endpoint */
+        patch: operations["patch_task_endpoint_api_v1_projects__project_uuid__tasks__task_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Tasks Endpoint */
+        get: operations["list_tasks_endpoint_api_v1_projects__project_uuid__tasks_get"];
+        put?: never;
+        /** Create Task Full Endpoint */
+        post: operations["create_task_full_endpoint_api_v1_projects__project_uuid__tasks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/tasks/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bulk Update Tasks Endpoint */
+        post: operations["bulk_update_tasks_endpoint_api_v1_projects__project_uuid__tasks_bulk_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/tasks/graph": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Task Graph Endpoint */
+        get: operations["task_graph_endpoint_api_v1_projects__project_uuid__tasks_graph_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/workload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Workload Endpoint */
+        get: operations["workload_endpoint_api_v1_projects__project_uuid__workload_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/review-queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Review Queue Endpoint */
+        get: operations["review_queue_endpoint_api_v1_projects__project_uuid__review_queue_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/my/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My Tasks Endpoint */
+        get: operations["my_tasks_endpoint_api_v1_projects__project_uuid__my_tasks_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/saved-views": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Saved Views */
+        get: operations["list_saved_views_api_v1_projects__project_uuid__saved_views_get"];
+        put?: never;
+        /** Create Saved View */
+        post: operations["create_saved_view_api_v1_projects__project_uuid__saved_views_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/saved-views/{view_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Saved View */
+        delete: operations["delete_saved_view_api_v1_projects__project_uuid__saved_views__view_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/tasks/{task_id}/transition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Transition Task Endpoint */
+        post: operations["transition_task_endpoint_api_v1_projects__project_uuid__tasks__task_id__transition_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/tasks/{task_id}/dependencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Put Task Dependencies Endpoint */
+        put: operations["put_task_dependencies_endpoint_api_v1_projects__project_uuid__tasks__task_id__dependencies_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/tasks/{task_id}/links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Put Task Links Endpoint */
+        put: operations["put_task_links_endpoint_api_v1_projects__project_uuid__tasks__task_id__links_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/tasks/{task_id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Put Task Tags Endpoint */
+        put: operations["put_task_tags_endpoint_api_v1_projects__project_uuid__tasks__task_id__tags_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/tasks/{task_id}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Task Comments Endpoint */
+        get: operations["list_task_comments_endpoint_api_v1_projects__project_uuid__tasks__task_id__comments_get"];
+        put?: never;
+        /** Create Task Comment Endpoint */
+        post: operations["create_task_comment_endpoint_api_v1_projects__project_uuid__tasks__task_id__comments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/tasks/{task_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Task Events Endpoint */
+        get: operations["list_task_events_endpoint_api_v1_projects__project_uuid__tasks__task_id__events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/tasks/{task_id}/time-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Time Logs Endpoint */
+        get: operations["list_time_logs_endpoint_api_v1_projects__project_uuid__tasks__task_id__time_logs_get"];
+        put?: never;
+        /** Create Time Log Endpoint */
+        post: operations["create_time_log_endpoint_api_v1_projects__project_uuid__tasks__task_id__time_logs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/tasks/{task_id}/time-logs/{log_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Time Log Endpoint */
+        delete: operations["delete_time_log_endpoint_api_v1_projects__project_uuid__tasks__task_id__time_logs__log_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/entities/{entity_id}/links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Entity Links Endpoint */
+        get: operations["get_entity_links_endpoint_api_v1_projects__project_uuid__entities__entity_id__links_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/entity-links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Entity Link Endpoint */
+        post: operations["create_entity_link_endpoint_api_v1_projects__project_uuid__entity_links_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/entity-links/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bulk Create Entity Links Endpoint */
+        post: operations["bulk_create_entity_links_endpoint_api_v1_projects__project_uuid__entity_links_bulk_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/entity-links/{link_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Entity Link Endpoint */
+        delete: operations["delete_entity_link_endpoint_api_v1_projects__project_uuid__entity_links__link_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/entity-links/graph": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Entity Links Graph Endpoint */
+        get: operations["entity_links_graph_endpoint_api_v1_projects__project_uuid__entity_links_graph_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/entities/{entity_id}/suggest-dependencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Suggest Dependencies Endpoint */
+        post: operations["suggest_dependencies_endpoint_api_v1_projects__project_uuid__entities__entity_id__suggest_dependencies_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/entities/{entity_id}/apply-dependencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply Dependencies Endpoint */
+        post: operations["apply_dependencies_endpoint_api_v1_projects__project_uuid__entities__entity_id__apply_dependencies_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/dependency-templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Dependency Templates */
+        get: operations["list_dependency_templates_api_v1_projects__project_uuid__dependency_templates_get"];
+        put?: never;
+        /** Create Dependency Template */
+        post: operations["create_dependency_template_api_v1_projects__project_uuid__dependency_templates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/dependency-templates/{template_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Dependency Template */
+        delete: operations["delete_dependency_template_api_v1_projects__project_uuid__dependency_templates__template_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Dependency Template */
+        patch: operations["update_dependency_template_api_v1_projects__project_uuid__dependency_templates__template_id__patch"];
         trace?: never;
     };
     "/api/v1/projects/{project_uuid}/tasks/{task_id}/product": {
@@ -1673,6 +2105,30 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
+        /** ApplyDependenciesRequest */
+        ApplyDependenciesRequest: {
+            /** Pairs */
+            pairs?: components["schemas"]["ApplyDependencyPairIn"][];
+        };
+        /** ApplyDependencyPairIn */
+        ApplyDependencyPairIn: {
+            /**
+             * Downstream Task Id
+             * Format: uuid
+             */
+            downstream_task_id: string;
+            /**
+             * Upstream Task Id
+             * Format: uuid
+             */
+            upstream_task_id: string;
+            /**
+             * Threshold
+             * @default APP
+             * @enum {string}
+             */
+            threshold: "APP" | "PUBLISHED" | "ANY_STATUS";
+        };
         /** ArtifactOut */
         ArtifactOut: {
             /**
@@ -1990,6 +2446,165 @@ export interface components {
             /** Files */
             files?: components["schemas"]["ClientFileSummaryOut"][];
         };
+        /** ClientReviewQueueItemOut */
+        ClientReviewQueueItemOut: {
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /** Task Code */
+            task_code: string;
+            /** Task Name */
+            task_name: string;
+            /**
+             * Entity Id
+             * Format: uuid
+             */
+            entity_id: string;
+            /** Entity Name */
+            entity_name: string;
+            /** Department Name */
+            department_name: string;
+            /** Status */
+            status: string;
+            /** Submitted Version Id */
+            submitted_version_id?: string | null;
+            /** Submitted Version Label */
+            submitted_version_label?: string | null;
+            /** Thumbnail File Id */
+            thumbnail_file_id?: string | null;
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
+            /** Wait Hours */
+            wait_hours: number;
+            /**
+             * Can Act As
+             * @default role:client
+             */
+            can_act_as: string;
+        };
+        /** ClientTaskCommentOut */
+        ClientTaskCommentOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /** Author Full Name */
+            author_full_name?: string | null;
+            /** Kind */
+            kind: string;
+            /**
+             * Visibility
+             * @default client
+             * @constant
+             */
+            visibility: "client";
+            /** Body */
+            body: string;
+            /** Version Id */
+            version_id?: string | null;
+            /** File Id */
+            file_id?: string | null;
+            /** Frame */
+            frame?: number | null;
+            /** Review Decision */
+            review_decision?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** ClientTaskDetailOut */
+        ClientTaskDetailOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Task Code */
+            task_code: string;
+            /** Task Name */
+            task_name: string;
+            /**
+             * Entity Id
+             * Format: uuid
+             */
+            entity_id: string;
+            /** Entity Name */
+            entity_name: string;
+            /** Department Name */
+            department_name: string;
+            /** Status */
+            status: string;
+            /** Ideal Finish Date */
+            ideal_finish_date?: string | null;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            product?: components["schemas"]["ClientProductOut"] | null;
+            /** Allowed Transitions */
+            allowed_transitions?: components["schemas"]["TransitionOptionOut"][];
+            /** Comments */
+            comments?: components["schemas"]["ClientTaskCommentOut"][];
+            /** Reviews */
+            reviews?: components["schemas"]["ClientTaskReviewOut"][];
+        };
+        /** ClientTaskListItemOut */
+        ClientTaskListItemOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Task Code */
+            task_code: string;
+            /** Task Name */
+            task_name: string;
+            /**
+             * Entity Id
+             * Format: uuid
+             */
+            entity_id: string;
+            /** Entity Name */
+            entity_name: string;
+            /** Department Name */
+            department_name: string;
+            /** Status */
+            status: string;
+            /** Ideal Finish Date */
+            ideal_finish_date?: string | null;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            product?: components["schemas"]["ClientProductOut"] | null;
+        };
+        /** ClientTaskListOut */
+        ClientTaskListOut: {
+            /** Items */
+            items?: components["schemas"]["ClientTaskListItemOut"][];
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /** Next Cursor */
+            next_cursor?: string | null;
+        };
         /** ClientTaskOut */
         ClientTaskOut: {
             /**
@@ -2002,6 +2617,33 @@ export interface components {
             /** Status */
             status?: string | null;
             product?: components["schemas"]["ClientProductOut"] | null;
+        };
+        /** ClientTaskReviewOut */
+        ClientTaskReviewOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Round No */
+            round_no: number;
+            /** Version Id */
+            version_id?: string | null;
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "lead" | "sup" | "client";
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "pending" | "approved" | "retake";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /** ColorspaceInfo */
         ColorspaceInfo: {
@@ -2108,6 +2750,31 @@ export interface components {
         DefaultTaskCreate: {
             /** Name */
             name: string;
+            /**
+             * Needs Lead Review
+             * @default true
+             */
+            needs_lead_review: boolean;
+            /**
+             * Needs Sup Review
+             * @default false
+             */
+            needs_sup_review: boolean;
+            /**
+             * Needs Client Review
+             * @default false
+             */
+            needs_client_review: boolean;
+            /**
+             * Default Priority
+             * @default normal
+             * @enum {string}
+             */
+            default_priority: "normal" | "high" | "stopper";
+            /** Default Bid Hours */
+            default_bid_hours?: number | null;
+            /** Default Complexity */
+            default_complexity?: number | null;
         };
         /** DefaultTaskOut */
         DefaultTaskOut: {
@@ -2127,6 +2794,31 @@ export interface components {
             folder_name: string;
             /** Sort Order */
             sort_order: number;
+            /**
+             * Needs Lead Review
+             * @default true
+             */
+            needs_lead_review: boolean;
+            /**
+             * Needs Sup Review
+             * @default false
+             */
+            needs_sup_review: boolean;
+            /**
+             * Needs Client Review
+             * @default false
+             */
+            needs_client_review: boolean;
+            /**
+             * Default Priority
+             * @default normal
+             * @enum {string}
+             */
+            default_priority: "normal" | "high" | "stopper";
+            /** Default Bid Hours */
+            default_bid_hours?: number | null;
+            /** Default Complexity */
+            default_complexity?: number | null;
         };
         /** DefaultTaskUpdate */
         DefaultTaskUpdate: {
@@ -2134,6 +2826,18 @@ export interface components {
             name?: string | null;
             /** Sort Order */
             sort_order?: number | null;
+            /** Needs Lead Review */
+            needs_lead_review?: boolean | null;
+            /** Needs Sup Review */
+            needs_sup_review?: boolean | null;
+            /** Needs Client Review */
+            needs_client_review?: boolean | null;
+            /** Default Priority */
+            default_priority?: ("normal" | "high" | "stopper") | null;
+            /** Default Bid Hours */
+            default_bid_hours?: number | null;
+            /** Default Complexity */
+            default_complexity?: number | null;
         };
         /** DepartmentCreate */
         DepartmentCreate: {
@@ -2184,6 +2888,88 @@ export interface components {
             is_active?: boolean | null;
             /** Sort Order */
             sort_order?: number | null;
+        };
+        /** DependencyTemplateCreateRequest */
+        DependencyTemplateCreateRequest: {
+            /**
+             * Upstream Department Id
+             * Format: uuid
+             */
+            upstream_department_id: string;
+            /** Upstream Task Name */
+            upstream_task_name?: string | null;
+            /**
+             * Downstream Department Id
+             * Format: uuid
+             */
+            downstream_department_id: string;
+            /** Downstream Task Name */
+            downstream_task_name?: string | null;
+            /**
+             * Threshold
+             * @default APP
+             * @enum {string}
+             */
+            threshold: "APP" | "PUBLISHED" | "ANY_STATUS";
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+        };
+        /** DependencyTemplateOut */
+        DependencyTemplateOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Upstream Department Id
+             * Format: uuid
+             */
+            upstream_department_id: string;
+            /**
+             * Upstream Department Name
+             * @default
+             */
+            upstream_department_name: string;
+            /** Upstream Task Name */
+            upstream_task_name?: string | null;
+            /**
+             * Downstream Department Id
+             * Format: uuid
+             */
+            downstream_department_id: string;
+            /**
+             * Downstream Department Name
+             * @default
+             */
+            downstream_department_name: string;
+            /** Downstream Task Name */
+            downstream_task_name?: string | null;
+            /**
+             * Threshold
+             * @enum {string}
+             */
+            threshold: "APP" | "PUBLISHED" | "ANY_STATUS";
+            /** Enabled */
+            enabled: boolean;
+        };
+        /** DependencyTemplateUpdateRequest */
+        DependencyTemplateUpdateRequest: {
+            /** Upstream Department Id */
+            upstream_department_id?: string | null;
+            /** Upstream Task Name */
+            upstream_task_name?: string | null;
+            /** Downstream Department Id */
+            downstream_department_id?: string | null;
+            /** Downstream Task Name */
+            downstream_task_name?: string | null;
+            /** Threshold */
+            threshold?: ("APP" | "PUBLISHED" | "ANY_STATUS") | null;
+            /** Enabled */
+            enabled?: boolean | null;
         };
         /** EntityCreateRequest */
         EntityCreateRequest: {
@@ -2252,6 +3038,146 @@ export interface components {
             sort_order: number;
             /** Tasks */
             tasks?: components["schemas"]["TaskOut"][];
+        };
+        /** EntityGraphEdgeOut */
+        EntityGraphEdgeOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Source Entity Id
+             * Format: uuid
+             */
+            source_entity_id: string;
+            /**
+             * Target Entity Id
+             * Format: uuid
+             */
+            target_entity_id: string;
+            /** Link Type */
+            link_type?: string | null;
+        };
+        /** EntityGraphNodeOut */
+        EntityGraphNodeOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Entity Type */
+            entity_type?: string | null;
+            /**
+             * Is Archived
+             * @default false
+             */
+            is_archived: boolean;
+        };
+        /** EntityLinkBulkCreateRequest */
+        EntityLinkBulkCreateRequest: {
+            /** Source Ids */
+            source_ids?: string[];
+            /** Target Ids */
+            target_ids?: string[];
+            /** Link Type */
+            link_type?: string | null;
+            /** Note */
+            note?: string | null;
+        };
+        /** EntityLinkCreateRequest */
+        EntityLinkCreateRequest: {
+            /**
+             * Source Entity Id
+             * Format: uuid
+             */
+            source_entity_id: string;
+            /**
+             * Target Entity Id
+             * Format: uuid
+             */
+            target_entity_id: string;
+            /** Link Type */
+            link_type?: string | null;
+            /** Note */
+            note?: string | null;
+        };
+        /** EntityLinkOut */
+        EntityLinkOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Source Entity Id
+             * Format: uuid
+             */
+            source_entity_id: string;
+            /** Source Name */
+            source_name: string;
+            /** Source Type */
+            source_type?: string | null;
+            /**
+             * Source Archived
+             * @default false
+             */
+            source_archived: boolean;
+            /**
+             * Target Entity Id
+             * Format: uuid
+             */
+            target_entity_id: string;
+            /** Target Name */
+            target_name: string;
+            /** Target Type */
+            target_type?: string | null;
+            /**
+             * Target Archived
+             * @default false
+             */
+            target_archived: boolean;
+            /** Link Type */
+            link_type?: string | null;
+            /** Note */
+            note?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** EntityLinksGraphOut */
+        EntityLinksGraphOut: {
+            /** Nodes */
+            nodes?: components["schemas"]["EntityGraphNodeOut"][];
+            /** Edges */
+            edges?: components["schemas"]["EntityGraphEdgeOut"][];
+            /**
+             * Truncated
+             * @default false
+             */
+            truncated: boolean;
+        };
+        /** EntityLinksResponse */
+        EntityLinksResponse: {
+            /**
+             * Entity Id
+             * Format: uuid
+             */
+            entity_id: string;
+            /** Uses */
+            uses?: components["schemas"]["EntityLinkOut"][];
+            /** Used In */
+            used_in?: components["schemas"]["EntityLinkOut"][];
+            /** Uses Indirect */
+            uses_indirect?: components["schemas"]["IndirectEntityLinkOut"][];
+            /** Used In Indirect */
+            used_in_indirect?: components["schemas"]["IndirectEntityLinkOut"][];
+            /** Link Types */
+            link_types?: string[];
         };
         /** EntityOut */
         EntityOut: {
@@ -2450,6 +3376,27 @@ export interface components {
             /** Environment */
             environment: string;
         };
+        /** IndirectEntityLinkOut */
+        IndirectEntityLinkOut: {
+            /**
+             * Entity Id
+             * Format: uuid
+             */
+            entity_id: string;
+            /** Entity Name */
+            entity_name: string;
+            /** Entity Type */
+            entity_type?: string | null;
+            /**
+             * Is Archived
+             * @default false
+             */
+            is_archived: boolean;
+            /** Depth */
+            depth: number;
+            /** Via Entity Names */
+            via_entity_names?: string[];
+        };
         /**
          * InspectionDocument
          * @description Normalized inspection shape consumed by the frontend right panel (§5.7).
@@ -2601,6 +3548,13 @@ export interface components {
             cache_key: string;
             /** Values */
             values: number[];
+        };
+        /** MyTasksResponse */
+        MyTasksResponse: {
+            /** Tasks */
+            tasks?: components["schemas"]["TaskListItemOut"][];
+            /** To Review */
+            to_review?: components["schemas"]["ReviewQueueItemOut"][];
         };
         /** ProductMasterPutRequest */
         ProductMasterPutRequest: {
@@ -2770,6 +3724,51 @@ export interface components {
             /** Rel Path */
             rel_path: string;
         };
+        /** ReviewQueueItemOut */
+        ReviewQueueItemOut: {
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /** Task Code */
+            task_code: string;
+            /** Task Name */
+            task_name: string;
+            /**
+             * Entity Id
+             * Format: uuid
+             */
+            entity_id: string;
+            /** Entity Name */
+            entity_name: string;
+            /** Department Name */
+            department_name: string;
+            /** Status */
+            status: string;
+            /** Submitted Version Id */
+            submitted_version_id?: string | null;
+            /** Submitted Version Label */
+            submitted_version_label?: string | null;
+            /** Thumbnail File Id */
+            thumbnail_file_id?: string | null;
+            /** Submitter Name */
+            submitter_name?: string | null;
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
+            /** Wait Hours */
+            wait_hours: number;
+            /** Can Act As */
+            can_act_as: string;
+            /**
+             * On Behalf
+             * @default false
+             */
+            on_behalf: boolean;
+        };
         /** RoleCreateRequest */
         RoleCreateRequest: {
             /** Name */
@@ -2815,6 +3814,38 @@ export interface components {
             label?: string | null;
             /** Rank */
             rank?: number | null;
+        };
+        /** SavedViewCreateRequest */
+        SavedViewCreateRequest: {
+            /** View Kind */
+            view_kind: string;
+            /** Name */
+            name: string;
+            /** Config Json */
+            config_json?: {
+                [key: string]: unknown;
+            };
+        };
+        /** SavedViewOut */
+        SavedViewOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** View Kind */
+            view_kind: string;
+            /** Name */
+            name: string;
+            /** Config Json */
+            config_json: {
+                [key: string]: unknown;
+            };
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** SceneDeleteRequest */
         SceneDeleteRequest: {
@@ -2880,6 +3911,49 @@ export interface components {
             /** New Name */
             new_name: string;
         };
+        /** SuggestDependenciesRequest */
+        SuggestDependenciesRequest: {
+            /** Link Ids */
+            link_ids?: string[] | null;
+            /** Depth */
+            depth?: number | null;
+        };
+        /** SuggestedDependencyOut */
+        SuggestedDependencyOut: {
+            /**
+             * Upstream Task Id
+             * Format: uuid
+             */
+            upstream_task_id: string;
+            /** Upstream Task Code */
+            upstream_task_code: string;
+            /** Upstream Entity Name */
+            upstream_entity_name: string;
+            /** Upstream Department */
+            upstream_department: string;
+            /**
+             * Downstream Task Id
+             * Format: uuid
+             */
+            downstream_task_id: string;
+            /** Downstream Task Code */
+            downstream_task_code: string;
+            /** Downstream Entity Name */
+            downstream_entity_name: string;
+            /** Downstream Department */
+            downstream_department: string;
+            /** Threshold */
+            threshold: string;
+            /** Already Exists */
+            already_exists: boolean;
+            /** Would Cycle */
+            would_cycle: boolean;
+            /**
+             * Template Id
+             * Format: uuid
+             */
+            template_id: string;
+        };
         /** TaskAssignmentItemIn */
         TaskAssignmentItemIn: {
             /**
@@ -2922,10 +3996,691 @@ export interface components {
             /** Assignments */
             assignments?: components["schemas"]["TaskAssignmentItemIn"][];
         };
+        /** TaskBulkRequest */
+        TaskBulkRequest: {
+            /**
+             * Dry Run
+             * @default true
+             */
+            dry_run: boolean;
+            /** Rows */
+            rows?: components["schemas"]["TaskBulkRowIn"][];
+        };
+        /** TaskBulkResponse */
+        TaskBulkResponse: {
+            /** Dry Run */
+            dry_run: boolean;
+            /** Applied */
+            applied: boolean;
+            /** Ok Count */
+            ok_count: number;
+            /** Error Count */
+            error_count: number;
+            /** Results */
+            results?: components["schemas"]["TaskBulkRowResult"][];
+        };
+        /** TaskBulkRowIn */
+        TaskBulkRowIn: {
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /** Status */
+            status?: string | null;
+            /** Comment */
+            comment?: string | null;
+            /** Priority */
+            priority?: ("normal" | "high" | "stopper") | null;
+            /** Assignee User Ids */
+            assignee_user_ids?: string[] | null;
+            /**
+             * Assignee Role
+             * @default artist
+             * @enum {string}
+             */
+            assignee_role: "artist" | "lead" | "supervisor";
+        };
+        /** TaskBulkRowResult */
+        TaskBulkRowResult: {
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /**
+             * Task Code
+             * @default
+             */
+            task_code: string;
+            /** Ok */
+            ok: boolean;
+            /** Changes */
+            changes?: string[];
+            /** Error */
+            error?: string | null;
+        };
+        /** TaskCommentCreateRequest */
+        TaskCommentCreateRequest: {
+            /** Body */
+            body: string;
+            /** Parent Id */
+            parent_id?: string | null;
+            /**
+             * Kind
+             * @default note
+             * @enum {string}
+             */
+            kind: "note" | "review" | "media";
+            /**
+             * Visibility
+             * @default internal
+             * @enum {string}
+             */
+            visibility: "internal" | "client";
+            /** Version Id */
+            version_id?: string | null;
+            /** File Id */
+            file_id?: string | null;
+            /** Annotation Id */
+            annotation_id?: string | null;
+            /** Frame */
+            frame?: number | null;
+        };
+        /** TaskCommentOut */
+        TaskCommentOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /** Author Id */
+            author_id?: string | null;
+            /** Author Username */
+            author_username?: string | null;
+            /** Author Full Name */
+            author_full_name?: string | null;
+            /** Parent Id */
+            parent_id?: string | null;
+            /** Kind */
+            kind: string;
+            /**
+             * Visibility
+             * @enum {string}
+             */
+            visibility: "internal" | "client";
+            /** Body */
+            body: string;
+            /** Version Id */
+            version_id?: string | null;
+            /** File Id */
+            file_id?: string | null;
+            /** Annotation Id */
+            annotation_id?: string | null;
+            /** Frame */
+            frame?: number | null;
+            /** Review Decision */
+            review_decision?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Edited At */
+            edited_at?: string | null;
+        };
+        /** TaskCreateFullRequest */
+        TaskCreateFullRequest: {
+            /**
+             * Entity Id
+             * Format: uuid
+             */
+            entity_id: string;
+            /**
+             * Department Id
+             * Format: uuid
+             */
+            department_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Priority */
+            priority?: ("normal" | "high" | "stopper") | null;
+            /** Needs Lead Review */
+            needs_lead_review?: boolean | null;
+            /** Needs Sup Review */
+            needs_sup_review?: boolean | null;
+            /** Needs Client Review */
+            needs_client_review?: boolean | null;
+            /** Bid Hours */
+            bid_hours?: number | null;
+            /** Complexity Rating */
+            complexity_rating?: number | null;
+            /** Ideal Start Date */
+            ideal_start_date?: string | null;
+            /** Ideal Finish Date */
+            ideal_finish_date?: string | null;
+        };
         /** TaskCreateRequest */
         TaskCreateRequest: {
             /** Name */
             name: string;
+        };
+        /** TaskDependenciesPutRequest */
+        TaskDependenciesPutRequest: {
+            /** Dependencies */
+            dependencies?: components["schemas"]["TaskDependencyIn"][];
+        };
+        /** TaskDependencyIn */
+        TaskDependencyIn: {
+            /**
+             * Upstream Task Id
+             * Format: uuid
+             */
+            upstream_task_id: string;
+            /**
+             * Threshold
+             * @default APP
+             * @enum {string}
+             */
+            threshold: "APP" | "PUBLISHED" | "ANY_STATUS";
+            /**
+             * From Entity Link
+             * @default false
+             */
+            from_entity_link: boolean;
+        };
+        /** TaskDependencyOut */
+        TaskDependencyOut: {
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /**
+             * Upstream Task Id
+             * Format: uuid
+             */
+            upstream_task_id: string;
+            /**
+             * Upstream Task Code
+             * @default
+             */
+            upstream_task_code: string;
+            /**
+             * Upstream Task Name
+             * @default
+             */
+            upstream_task_name: string;
+            /**
+             * Upstream Entity Name
+             * @default
+             */
+            upstream_entity_name: string;
+            /**
+             * Upstream Department
+             * @default
+             */
+            upstream_department: string;
+            /**
+             * Upstream Status
+             * @default WTG
+             */
+            upstream_status: string;
+            /**
+             * Threshold
+             * @default APP
+             */
+            threshold: string;
+            /**
+             * From Entity Link
+             * @default false
+             */
+            from_entity_link: boolean;
+            /**
+             * Satisfied
+             * @default false
+             */
+            satisfied: boolean;
+        };
+        /** TaskDetailOut */
+        TaskDetailOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Task Code */
+            task_code: string;
+            /** Task Name */
+            task_name: string;
+            /** Name */
+            name: string;
+            /** Folder Name */
+            folder_name: string;
+            /**
+             * Entity Id
+             * Format: uuid
+             */
+            entity_id: string;
+            /** Entity Name */
+            entity_name: string;
+            /** Entity Rel Path */
+            entity_rel_path: string;
+            /** Parent Entity Type */
+            parent_entity_type?: string | null;
+            /**
+             * Department Id
+             * Format: uuid
+             */
+            department_id: string;
+            /** Department Name */
+            department_name: string;
+            /**
+             * Department Short Code
+             * @default
+             */
+            department_short_code: string;
+            /**
+             * Department Color
+             * @default --series-1
+             */
+            department_color: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Status */
+            status: string;
+            /** Status Before Hold */
+            status_before_hold?: string | null;
+            /**
+             * Priority
+             * @default normal
+             * @enum {string}
+             */
+            priority: "normal" | "high" | "stopper";
+            /**
+             * Needs Lead Review
+             * @default true
+             */
+            needs_lead_review: boolean;
+            /**
+             * Needs Sup Review
+             * @default false
+             */
+            needs_sup_review: boolean;
+            /**
+             * Needs Client Review
+             * @default false
+             */
+            needs_client_review: boolean;
+            /** Complexity Rating */
+            complexity_rating?: number | null;
+            /** Ideal Start Date */
+            ideal_start_date?: string | null;
+            /** Actual Start Date */
+            actual_start_date?: string | null;
+            /** Ideal Finish Date */
+            ideal_finish_date?: string | null;
+            /** Actual Finish Date */
+            actual_finish_date?: string | null;
+            /** Bid Hours */
+            bid_hours?: number | null;
+            /** Bid Days */
+            bid_days?: number | null;
+            /**
+             * Logged Hours
+             * @default 0
+             */
+            logged_hours: number;
+            /**
+             * Retake Count
+             * @default 0
+             */
+            retake_count: number;
+            /** Latest Version Id */
+            latest_version_id?: string | null;
+            /** Approved Version Id */
+            approved_version_id?: string | null;
+            /**
+             * Version Count
+             * @default 0
+             */
+            version_count: number;
+            /**
+             * Upstream Count
+             * @default 0
+             */
+            upstream_count: number;
+            /**
+             * Blocked Upstream
+             * @default false
+             */
+            blocked_upstream: boolean;
+            /** Assignments */
+            assignments?: components["schemas"]["TaskAssignmentOut"][];
+            /** My Capacities */
+            my_capacities?: string[];
+            /** Tags */
+            tags?: string[];
+            /** Shared Company Ids */
+            shared_company_ids?: string[];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Acted As */
+            acted_as?: string | null;
+            /** Allowed Transitions */
+            allowed_transitions?: components["schemas"]["TransitionOptionOut"][];
+            /** Dependencies */
+            dependencies?: components["schemas"]["TaskDependencyOut"][];
+            /** Downstream */
+            downstream?: components["schemas"]["TaskDependencyOut"][];
+            /** Links */
+            links?: components["schemas"]["TaskLinkOut"][];
+            product?: components["schemas"]["ProductOut"] | null;
+            /** Reviews */
+            reviews?: components["schemas"]["TaskReviewOut"][];
+            /** Comments */
+            comments?: components["schemas"]["TaskCommentOut"][];
+            /** Events */
+            events?: components["schemas"]["TaskEventOut"][];
+            /** Time Logs */
+            time_logs?: components["schemas"]["TimeLogOut"][];
+        };
+        /** TaskEventOut */
+        TaskEventOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** User Id */
+            user_id?: string | null;
+            /** Username */
+            username?: string | null;
+            /** Acted As */
+            acted_as: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "user" | "rule" | "system";
+            /** Field */
+            field: string;
+            /** Old Value */
+            old_value?: string | null;
+            /** New Value */
+            new_value?: string | null;
+        };
+        /** TaskGraphEdgeOut */
+        TaskGraphEdgeOut: {
+            /**
+             * Source Task Id
+             * Format: uuid
+             */
+            source_task_id: string;
+            /**
+             * Target Task Id
+             * Format: uuid
+             */
+            target_task_id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "dependency" | "link";
+            /** Threshold */
+            threshold?: string | null;
+            /**
+             * From Entity Link
+             * @default false
+             */
+            from_entity_link: boolean;
+        };
+        /** TaskGraphNodeOut */
+        TaskGraphNodeOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Task Code */
+            task_code: string;
+            /** Task Name */
+            task_name: string;
+            /** Status */
+            status: string;
+            /** Entity Name */
+            entity_name: string;
+            /** Department Name */
+            department_name: string;
+            /** Department Color */
+            department_color: string;
+            /** Assignees */
+            assignees?: components["schemas"]["TaskAssignmentOut"][];
+        };
+        /** TaskGraphOut */
+        TaskGraphOut: {
+            /** Nodes */
+            nodes?: components["schemas"]["TaskGraphNodeOut"][];
+            /** Edges */
+            edges?: components["schemas"]["TaskGraphEdgeOut"][];
+            /**
+             * Truncated
+             * @default false
+             */
+            truncated: boolean;
+        };
+        /** TaskLinkIn */
+        TaskLinkIn: {
+            /**
+             * Linked Task Id
+             * Format: uuid
+             */
+            linked_task_id: string;
+            /** Link Type */
+            link_type?: string | null;
+        };
+        /** TaskLinkOut */
+        TaskLinkOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /**
+             * Linked Task Id
+             * Format: uuid
+             */
+            linked_task_id: string;
+            /**
+             * Linked Task Code
+             * @default
+             */
+            linked_task_code: string;
+            /**
+             * Linked Task Status
+             * @default
+             */
+            linked_task_status: string;
+            /** Link Type */
+            link_type?: string | null;
+        };
+        /** TaskLinksPutRequest */
+        TaskLinksPutRequest: {
+            /** Links */
+            links?: components["schemas"]["TaskLinkIn"][];
+        };
+        /** TaskListItemOut */
+        TaskListItemOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Task Code */
+            task_code: string;
+            /** Task Name */
+            task_name: string;
+            /** Name */
+            name: string;
+            /** Folder Name */
+            folder_name: string;
+            /**
+             * Entity Id
+             * Format: uuid
+             */
+            entity_id: string;
+            /** Entity Name */
+            entity_name: string;
+            /** Entity Rel Path */
+            entity_rel_path: string;
+            /** Parent Entity Type */
+            parent_entity_type?: string | null;
+            /**
+             * Department Id
+             * Format: uuid
+             */
+            department_id: string;
+            /** Department Name */
+            department_name: string;
+            /**
+             * Department Short Code
+             * @default
+             */
+            department_short_code: string;
+            /**
+             * Department Color
+             * @default --series-1
+             */
+            department_color: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Status */
+            status: string;
+            /** Status Before Hold */
+            status_before_hold?: string | null;
+            /**
+             * Priority
+             * @default normal
+             * @enum {string}
+             */
+            priority: "normal" | "high" | "stopper";
+            /**
+             * Needs Lead Review
+             * @default true
+             */
+            needs_lead_review: boolean;
+            /**
+             * Needs Sup Review
+             * @default false
+             */
+            needs_sup_review: boolean;
+            /**
+             * Needs Client Review
+             * @default false
+             */
+            needs_client_review: boolean;
+            /** Complexity Rating */
+            complexity_rating?: number | null;
+            /** Ideal Start Date */
+            ideal_start_date?: string | null;
+            /** Actual Start Date */
+            actual_start_date?: string | null;
+            /** Ideal Finish Date */
+            ideal_finish_date?: string | null;
+            /** Actual Finish Date */
+            actual_finish_date?: string | null;
+            /** Bid Hours */
+            bid_hours?: number | null;
+            /** Bid Days */
+            bid_days?: number | null;
+            /**
+             * Logged Hours
+             * @default 0
+             */
+            logged_hours: number;
+            /**
+             * Retake Count
+             * @default 0
+             */
+            retake_count: number;
+            /** Latest Version Id */
+            latest_version_id?: string | null;
+            /** Approved Version Id */
+            approved_version_id?: string | null;
+            /**
+             * Version Count
+             * @default 0
+             */
+            version_count: number;
+            /**
+             * Upstream Count
+             * @default 0
+             */
+            upstream_count: number;
+            /**
+             * Blocked Upstream
+             * @default false
+             */
+            blocked_upstream: boolean;
+            /** Assignments */
+            assignments?: components["schemas"]["TaskAssignmentOut"][];
+            /** My Capacities */
+            my_capacities?: string[];
+            /** Tags */
+            tags?: string[];
+            /** Shared Company Ids */
+            shared_company_ids?: string[];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** TaskListOut */
+        TaskListOut: {
+            /** Items */
+            items?: components["schemas"]["TaskListItemOut"][];
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /** Next Cursor */
+            next_cursor?: string | null;
         };
         /** TaskOut */
         TaskOut: {
@@ -2934,6 +4689,16 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /**
+             * Task Code
+             * @default
+             */
+            task_code: string;
+            /**
+             * Task Name
+             * @default
+             */
+            task_name: string;
             /** Name */
             name: string;
             /** Folder Name */
@@ -2942,6 +4707,25 @@ export interface components {
             sort_order: number;
             /** Status */
             status?: string | null;
+            /**
+             * Priority
+             * @default normal
+             */
+            priority: string;
+            /** Ideal Finish Date */
+            ideal_finish_date?: string | null;
+            /** Bid Hours */
+            bid_hours?: number | null;
+            /**
+             * Logged Hours
+             * @default 0
+             */
+            logged_hours: number;
+            /**
+             * Blocked Upstream
+             * @default false
+             */
+            blocked_upstream: boolean;
             /** Acted As */
             acted_as?: string | null;
             /** Assignments */
@@ -2952,17 +4736,174 @@ export interface components {
             shared_company_ids?: string[];
             product?: components["schemas"]["ProductOut"] | null;
         };
-        /** TaskSharesPutRequest */
-        TaskSharesPutRequest: {
-            /** Company Ids */
-            company_ids?: string[];
-        };
-        /** TaskUpdateRequest */
-        TaskUpdateRequest: {
+        /** TaskPatchRequest */
+        TaskPatchRequest: {
             /** Name */
             name?: string | null;
             /** Sort Order */
             sort_order?: number | null;
+            /** Task Code */
+            task_code?: string | null;
+            /** Task Name */
+            task_name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Priority */
+            priority?: ("normal" | "high" | "stopper") | null;
+            /** Needs Lead Review */
+            needs_lead_review?: boolean | null;
+            /** Needs Sup Review */
+            needs_sup_review?: boolean | null;
+            /** Needs Client Review */
+            needs_client_review?: boolean | null;
+            /** Complexity Rating */
+            complexity_rating?: number | null;
+            /** Bid Hours */
+            bid_hours?: number | null;
+            /** Ideal Start Date */
+            ideal_start_date?: string | null;
+            /** Ideal Finish Date */
+            ideal_finish_date?: string | null;
+            /** Status */
+            status?: string | null;
+            /** Expected Updated At */
+            expected_updated_at?: string | null;
+        };
+        /** TaskReviewOut */
+        TaskReviewOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /** Round No */
+            round_no: number;
+            /** Version Id */
+            version_id?: string | null;
+            /** Version Label */
+            version_label?: string | null;
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "lead" | "sup" | "client";
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "pending" | "approved" | "retake";
+            /** Reviewer Id */
+            reviewer_id?: string | null;
+            /** Reviewer Name */
+            reviewer_name?: string | null;
+            /** Acted As */
+            acted_as: string;
+            /** On Behalf Of */
+            on_behalf_of?: string | null;
+            /** Comment Id */
+            comment_id?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** TaskSharesPutRequest */
+        TaskSharesPutRequest: {
+            /** Company Ids */
+            company_ids?: string[];
+            /** Version Ids */
+            version_ids?: string[] | null;
+            /** Comment */
+            comment?: string | null;
+        };
+        /** TaskTagsPutRequest */
+        TaskTagsPutRequest: {
+            /** Tags */
+            tags?: string[];
+        };
+        /** TaskTransitionRequest */
+        TaskTransitionRequest: {
+            /** To */
+            to: string;
+            /** Version Id */
+            version_id?: string | null;
+            /** Comment */
+            comment?: string | null;
+        };
+        /** TimeLogCreateRequest */
+        TimeLogCreateRequest: {
+            /** Work Date */
+            work_date?: string | null;
+            /** Hours */
+            hours: number;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+        };
+        /** TimeLogOut */
+        TimeLogOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /** User Id */
+            user_id?: string | null;
+            /** Username */
+            username?: string | null;
+            /** Full Name */
+            full_name?: string | null;
+            /**
+             * Work Date
+             * Format: date
+             */
+            work_date: string;
+            /** Hours */
+            hours: number;
+            /** Note */
+            note: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** TransitionOptionOut */
+        TransitionOptionOut: {
+            /** To */
+            to: string;
+            /** Action */
+            action: string;
+            /** Acted As */
+            acted_as: string;
+            /**
+             * On Behalf
+             * @default false
+             */
+            on_behalf: boolean;
+            /**
+             * Requires Comment
+             * @default false
+             */
+            requires_comment: boolean;
+            /**
+             * Requires Version
+             * @default false
+             */
+            requires_version: boolean;
         };
         /** UiPrefOut */
         UiPrefOut: {
@@ -3125,6 +5066,47 @@ export interface components {
         VersionSharesPutRequest: {
             /** Company Ids */
             company_ids?: string[];
+        };
+        /** WorkloadCellSchema */
+        WorkloadCellSchema: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Hours */
+            hours: number;
+            /** Capacity Hours */
+            capacity_hours: number;
+            /** Utilization Pct */
+            utilization_pct: number;
+            /** Contributing Task Ids */
+            contributing_task_ids?: string[];
+        };
+        /** WorkloadResponse */
+        WorkloadResponse: {
+            /** Days */
+            days?: string[];
+            /** Rows */
+            rows?: components["schemas"]["WorkloadRowSchema"][];
+            /** Unscheduled Tasks */
+            unscheduled_tasks?: components["schemas"]["TaskListItemOut"][];
+        };
+        /** WorkloadRowSchema */
+        WorkloadRowSchema: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Username */
+            username: string;
+            /** Full Name */
+            full_name: string;
+            /** Daily Capacity Hours */
+            daily_capacity_hours: number;
+            /** Cells */
+            cells?: components["schemas"]["WorkloadCellSchema"][];
         };
     };
     responses: never;
@@ -5546,6 +7528,38 @@ export interface operations {
             };
         };
     };
+    get_task_detail_endpoint_api_v1_projects__project_uuid__tasks__task_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskDetailOut"] | components["schemas"]["ClientTaskDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     delete_task_endpoint_api_v1_projects__project_uuid__tasks__task_id__delete: {
         parameters: {
             query?: never;
@@ -5576,7 +7590,7 @@ export interface operations {
             };
         };
     };
-    update_task_endpoint_api_v1_projects__project_uuid__tasks__task_id__patch: {
+    patch_task_endpoint_api_v1_projects__project_uuid__tasks__task_id__patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -5588,7 +7602,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TaskUpdateRequest"];
+                "application/json": components["schemas"]["TaskPatchRequest"];
             };
         };
         responses: {
@@ -5598,7 +7612,1076 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskOut"];
+                    "application/json": components["schemas"]["TaskDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_tasks_endpoint_api_v1_projects__project_uuid__tasks_get: {
+        parameters: {
+            query?: {
+                status?: string | null;
+                priority?: string | null;
+                department_id?: string | null;
+                entity_id?: string | null;
+                entity_path_prefix?: string | null;
+                tag?: string | null;
+                company_id?: string | null;
+                user_id?: string | null;
+                role_name?: string | null;
+                my_capacity?: ("artist" | "lead" | "supervisor") | null;
+                mine_only?: boolean;
+                include_linked_entities?: boolean;
+                date_from?: string | null;
+                date_to?: string | null;
+                q?: string | null;
+                sort?: "code" | "status" | "priority" | "due" | "updated";
+                cursor?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskListOut"] | components["schemas"]["ClientTaskListOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_task_full_endpoint_api_v1_projects__project_uuid__tasks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskCreateFullRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bulk_update_tasks_endpoint_api_v1_projects__project_uuid__tasks_bulk_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskBulkRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskBulkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    task_graph_endpoint_api_v1_projects__project_uuid__tasks_graph_get: {
+        parameters: {
+            query?: {
+                task_id?: string | null;
+                entity_id?: string | null;
+                department_id?: string | null;
+                hops?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskGraphOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    workload_endpoint_api_v1_projects__project_uuid__workload_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+                department_id?: string | null;
+                company_id?: string | null;
+            };
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkloadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_queue_endpoint_api_v1_projects__project_uuid__review_queue_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewQueueItemOut"][] | components["schemas"]["ClientReviewQueueItemOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_tasks_endpoint_api_v1_projects__project_uuid__my_tasks_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyTasksResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_saved_views_api_v1_projects__project_uuid__saved_views_get: {
+        parameters: {
+            query?: {
+                view_kind?: string | null;
+            };
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedViewOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_saved_view_api_v1_projects__project_uuid__saved_views_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavedViewCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedViewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_saved_view_api_v1_projects__project_uuid__saved_views__view_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                view_id: string;
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    transition_task_endpoint_api_v1_projects__project_uuid__tasks__task_id__transition_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskTransitionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskDetailOut"] | components["schemas"]["ClientTaskDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_task_dependencies_endpoint_api_v1_projects__project_uuid__tasks__task_id__dependencies_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskDependenciesPutRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskDependencyOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_task_links_endpoint_api_v1_projects__project_uuid__tasks__task_id__links_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskLinksPutRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskLinkOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_task_tags_endpoint_api_v1_projects__project_uuid__tasks__task_id__tags_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskTagsPutRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_task_comments_endpoint_api_v1_projects__project_uuid__tasks__task_id__comments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskCommentOut"][] | components["schemas"]["ClientTaskCommentOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_task_comment_endpoint_api_v1_projects__project_uuid__tasks__task_id__comments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskCommentCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskCommentOut"] | components["schemas"]["ClientTaskCommentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_task_events_endpoint_api_v1_projects__project_uuid__tasks__task_id__events_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskEventOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_time_logs_endpoint_api_v1_projects__project_uuid__tasks__task_id__time_logs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeLogOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_time_log_endpoint_api_v1_projects__project_uuid__tasks__task_id__time_logs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TimeLogCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeLogOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_time_log_endpoint_api_v1_projects__project_uuid__tasks__task_id__time_logs__log_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                log_id: string;
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_entity_links_endpoint_api_v1_projects__project_uuid__entities__entity_id__links_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entity_id: string;
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntityLinksResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_entity_link_endpoint_api_v1_projects__project_uuid__entity_links_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EntityLinkCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntityLinkOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bulk_create_entity_links_endpoint_api_v1_projects__project_uuid__entity_links_bulk_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EntityLinkBulkCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntityLinkOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_entity_link_endpoint_api_v1_projects__project_uuid__entity_links__link_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                link_id: string;
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    entity_links_graph_endpoint_api_v1_projects__project_uuid__entity_links_graph_get: {
+        parameters: {
+            query?: {
+                entity_id?: string | null;
+                hops?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntityLinksGraphOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    suggest_dependencies_endpoint_api_v1_projects__project_uuid__entities__entity_id__suggest_dependencies_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entity_id: string;
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["SuggestDependenciesRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuggestedDependencyOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_dependencies_endpoint_api_v1_projects__project_uuid__entities__entity_id__apply_dependencies_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entity_id: string;
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplyDependenciesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: number;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_dependency_templates_api_v1_projects__project_uuid__dependency_templates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DependencyTemplateOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_dependency_template_api_v1_projects__project_uuid__dependency_templates_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DependencyTemplateCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DependencyTemplateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_dependency_template_api_v1_projects__project_uuid__dependency_templates__template_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_dependency_template_api_v1_projects__project_uuid__dependency_templates__template_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DependencyTemplateUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DependencyTemplateOut"];
                 };
             };
             /** @description Validation Error */
