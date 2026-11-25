@@ -1,0 +1,116 @@
+@layer components {
+  .org-prodcol {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-width: 0;
+    background: var(--surface-panel);
+  }
+
+  .org-prodcol[data-drop-active='true'] {
+    outline: var(--border-w) solid var(--accent);
+    outline-offset: calc(-1 * var(--border-w));
+  }
+
+  .org-prodcol__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-1);
+    height: var(--toolbar-h);
+    padding: 0 var(--space-2);
+    border-bottom: 1px solid var(--border-dark);
+    background: var(--surface-window);
+  }
+
+  .org-prodcol__list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: var(--space-1);
+    background: var(--surface-field);
+  }
+
+  .org-prodcol__verblock {
+    border: 1px solid var(--border-dark);
+    margin-bottom: var(--space-1);
+    background: var(--surface-panel);
+  }
+
+  .org-prodcol__verblock[data-master='true'] {
+    border-left: var(--dirty-bar-w) solid var(--accent);
+  }
+
+  .org-prodcol__verrow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    height: var(--ctl-h-lg);
+    padding: 0 var(--space-1);
+    background: var(--surface-window);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .org-prodcol__verrow:hover {
+    background: var(--surface-hover);
+  }
+
+  .org-prodcol__verlabel {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: var(--font-size);
+    color: var(--text);
+  }
+
+  .org-prodcol__comment {
+    flex: 1;
+    min-width: 0;
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .org-prodcol__files {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .org-prodcol__filerow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    width: 100%;
+    height: var(--row-h);
+    padding: 0 var(--space-2) 0 var(--space-5);
+    border: 0;
+    border-top: 1px solid var(--border-dark);
+    border-left: var(--dirty-bar-w) solid transparent;
+    background: transparent;
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: var(--font-size);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .org-prodcol__filerow:hover {
+    background: var(--surface-hover);
+  }
+
+  .org-prodcol__filerow[data-selected='true'] {
+    background: var(--accent-soft);
+    border-left-color: var(--accent);
+  }
+
+  .org-prodcol__filename {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+

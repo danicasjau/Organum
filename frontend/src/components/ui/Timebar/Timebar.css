@@ -1,0 +1,173 @@
+@layer components {
+  .org-audiostrip {
+    position: relative;
+    height: var(--audiostrip-h);
+    min-height: var(--audiostrip-h);
+    border-top: 1px solid var(--border-dark);
+    background: var(--surface-field);
+    cursor: ew-resize;
+    flex-shrink: 0;
+  }
+
+  .org-audiostrip__canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .org-audiostrip__playhead {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--playhead-pct, 0%);
+    width: 1px;
+    background: var(--accent);
+    pointer-events: none;
+  }
+
+  .org-timebar {
+    position: relative;
+    height: var(--timebar-h);
+    min-height: var(--timebar-h);
+    border-top: 1px solid var(--border-dark);
+    border-bottom: 1px solid var(--border-dark);
+    background: var(--surface-field);
+    box-shadow: var(--bevel-inset-pressed);
+    overflow: hidden;
+    cursor: ew-resize;
+    user-select: none;
+    flex-shrink: 0;
+  }
+
+  .org-timebar__ruler {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .org-timebar__tick-major {
+    stroke: var(--border-control);
+    stroke-width: 1;
+  }
+
+  .org-timebar__tick-minor {
+    stroke: var(--text-muted);
+    stroke-opacity: 0.45;
+    stroke-width: 1;
+  }
+
+  .org-timebar__label {
+    fill: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    text-anchor: middle;
+  }
+
+  .org-timebar__inout {
+    position: absolute;
+    top: 0;
+    bottom: var(--space-1);
+    left: var(--band-left, 0%);
+    width: var(--band-width, 100%);
+    background: var(--accent-soft);
+    border-left: 1px solid var(--accent);
+    border-right: 1px solid var(--accent);
+    opacity: 0.45;
+    pointer-events: none;
+  }
+
+  .org-timebar__cache {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: var(--space-1);
+    width: var(--cache-pct, 0%);
+    background: var(--success);
+    pointer-events: none;
+  }
+
+  .org-timebar__marker {
+    position: absolute;
+    bottom: var(--space-1);
+    left: var(--marker-left, 0%);
+    width: var(--marker-width, var(--space-2));
+    min-width: var(--space-2);
+    height: var(--space-2);
+    padding: 0;
+    border: 1px solid var(--border-dark);
+    border-radius: var(--radius-0);
+    background: var(--amber-500);
+    cursor: pointer;
+    z-index: 2;
+  }
+
+  .org-timebar__marker:hover {
+    background: var(--amber-400);
+  }
+
+  .org-timebar__playhead {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--playhead-pct, 0%);
+    width: 1px;
+    background: var(--accent);
+    pointer-events: none;
+    z-index: 3;
+  }
+
+  .org-timebar__playhead::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: calc(-1 * var(--space-2));
+    border-left: var(--space-2) solid transparent;
+    border-right: var(--space-2) solid transparent;
+    border-top: var(--space-2) solid var(--accent);
+  }
+
+  .org-transport {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    height: var(--transport-h);
+    min-height: var(--transport-h);
+    padding: 0 var(--space-2);
+    background: var(--surface-panel);
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-shrink: 0;
+  }
+
+  .org-transport__group {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    flex-shrink: 0;
+  }
+
+  .org-transport .org-btn {
+    min-width: var(--ctl-h);
+    padding: 0 var(--space-1);
+  }
+
+  .org-transport__frame {
+    width: var(--frame-field-w);
+  }
+
+  .org-transport__speed {
+    width: var(--speed-select-w);
+  }
+
+  .org-transport__tc {
+    min-width: var(--timecode-w);
+    font-family: var(--font-mono);
+    font-size: var(--font-size);
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+    text-align: center;
+  }
+}
+

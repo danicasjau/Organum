@@ -1,0 +1,105 @@
+@layer components {
+  .org-swatch {
+    display: inline-block;
+    width: var(--swatch-size);
+    height: var(--swatch-size);
+    min-width: var(--swatch-size);
+    padding: 0;
+    border: 1px solid var(--border-dark);
+    border-radius: var(--radius-1);
+    background: var(--swatch-color, var(--accent));
+    cursor: pointer;
+  }
+
+  .org-swatch[data-shape='circle'] {
+    border-radius: 50%;
+  }
+
+  .org-swatch[data-selected='true'] {
+    outline: var(--focus-w) solid var(--focus-ring);
+    outline-offset: var(--focus-w);
+  }
+
+  .org-colorpicker__trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    height: var(--ctl-h);
+    min-height: var(--min-hit);
+    padding: 0 var(--space-2);
+    border: 1px solid var(--border-control);
+    border-radius: var(--radius-1);
+    background: var(--surface-field);
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .org-colorpicker__trigger:hover:not(:disabled),
+  .org-colorpicker__trigger[data-force-state='hover']:not(:disabled) {
+    border-color: var(--accent);
+  }
+
+  .org-colorpicker__trigger[data-force-state='pressed']:not(:disabled) {
+    background: var(--surface-pressed);
+  }
+
+  .org-colorpicker__trigger[data-force-state='focus']:not(:disabled) {
+    outline: var(--focus-w) solid var(--focus-ring);
+    outline-offset: var(--focus-w);
+  }
+
+  .org-colorpicker__trigger[data-error='true'] {
+    border-color: var(--red-500);
+  }
+
+  .org-colorpicker__trigger[data-dirty='true'] {
+    border-left: var(--dirty-bar-w) solid var(--accent);
+  }
+
+  .org-colorpicker__trigger:disabled {
+    background: var(--surface-panel);
+    color: var(--text-disabled);
+    cursor: not-allowed;
+  }
+
+  .org-colorpicker__chip {
+    display: inline-block;
+    width: var(--icon-sm);
+    height: var(--icon-sm);
+    border: 1px solid var(--border-dark);
+    border-radius: 50%;
+    background: var(--swatch-color, var(--accent));
+  }
+
+  .org-colorpicker__hex {
+    font-family: var(--font-mono);
+    font-size: var(--font-size);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .org-colorpicker__popup {
+    z-index: var(--z-popover);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    width: var(--popover-min-w);
+    padding: var(--space-2);
+    border: 1px solid var(--border-dark);
+    border-radius: var(--radius-0);
+    background: var(--surface-window);
+    box-shadow: var(--shadow-popup);
+  }
+
+  .org-colorpicker__palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+  }
+
+  .org-colorpicker__channels {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+}
+

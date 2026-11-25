@@ -1,0 +1,23 @@
+@layer components {
+  .org-icon {
+    display: inline-block;
+    flex-shrink: 0;
+    vertical-align: middle;
+  }
+
+  .org-icon--sm {
+    width: var(--icon-sm);
+    height: var(--icon-sm);
+  }
+
+  .org-icon--md {
+    width: var(--icon-md);
+    height: var(--icon-md);
+  }
+
+  .org-icon--lg {
+    width: var(--icon-lg);
+    height: var(--icon-lg);
+  }
+}
+

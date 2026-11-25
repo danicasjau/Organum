@@ -1,0 +1,99 @@
+@layer components {
+  .org-audioview {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .org-audioview__bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    height: var(--toolbar-h);
+    padding: 0 var(--space-3);
+    border-bottom: 1px solid var(--border-dark);
+    background: var(--surface-window);
+    flex-shrink: 0;
+  }
+
+  .org-audioview__body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    background: var(--vp-bg-default);
+  }
+
+  .org-audioview__body[data-bg='black'] {
+    background: var(--vp-bg-black);
+  }
+
+  .org-audioview__body[data-bg='white'] {
+    background: var(--vp-bg-white);
+  }
+
+  .org-audioview__body[data-bg='gray'] {
+    background: var(--vp-bg-gray);
+  }
+
+  .org-audioview__body[data-bg='gradient'] {
+    background: var(--vp-bg-gradient);
+  }
+
+  .org-audioview__stage {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+
+  .org-audioview__canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .org-audioview__meters {
+    display: flex;
+    align-items: stretch;
+    gap: var(--space-1);
+    width: var(--meter-panel-w);
+    padding: var(--space-2);
+    border-left: 1px solid var(--border-dark);
+    background: var(--surface-panel);
+  }
+
+  .org-audioview__meter-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1);
+    flex: 1;
+  }
+
+  .org-audioview__meter-well {
+    position: relative;
+    flex: 1;
+    width: var(--meter-w);
+    border: 1px solid var(--border-dark);
+    background: var(--surface-field);
+    overflow: hidden;
+  }
+
+  .org-audioview__meter-fill {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: var(--meter-pct, 0%);
+    background: var(--success);
+  }
+
+  .org-audioview__media {
+    display: none;
+  }
+}
+

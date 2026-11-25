@@ -1,0 +1,85 @@
+@layer components {
+  .org-radio-group {
+    display: inline-flex;
+    gap: var(--space-3);
+  }
+
+  .org-radio-group[data-orientation='vertical'] {
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .org-radio {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: var(--min-hit);
+    min-height: var(--min-hit);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .org-radio[data-disabled='true'] {
+    cursor: not-allowed;
+    color: var(--text-disabled);
+  }
+
+  .org-radio__input {
+    position: absolute;
+    opacity: 0;
+    width: var(--min-hit);
+    height: var(--min-hit);
+    margin: 0;
+  }
+
+  .org-radio__circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--radio-size);
+    height: var(--radio-size);
+    border: 1px solid var(--border-control);
+    border-radius: 50%;
+    background: var(--surface-field);
+  }
+
+  .org-radio__dot {
+    width: var(--space-2);
+    height: var(--space-2);
+    border-radius: 50%;
+    background: transparent;
+  }
+
+  .org-radio__input:checked + .org-radio__circle {
+    border-color: var(--accent);
+  }
+
+  .org-radio__input:checked + .org-radio__circle .org-radio__dot {
+    background: var(--accent);
+  }
+
+  .org-radio:hover:not([data-disabled='true']) .org-radio__circle,
+  .org-radio[data-force-state='hover']:not([data-disabled='true']) .org-radio__circle {
+    border-color: var(--accent);
+  }
+
+  .org-radio[data-force-state='pressed']:not([data-disabled='true']) .org-radio__circle {
+    background: var(--surface-pressed);
+  }
+
+  .org-radio__input:focus-visible + .org-radio__circle,
+  .org-radio[data-force-state='focus']:not([data-disabled='true']) .org-radio__circle {
+    outline: var(--focus-w) solid var(--focus-ring);
+    outline-offset: var(--focus-w);
+  }
+
+  .org-radio[data-error='true'] .org-radio__circle {
+    border-color: var(--red-500);
+  }
+
+  .org-radio[data-dirty='true'] .org-radio__label {
+    color: var(--accent-text);
+  }
+}
+

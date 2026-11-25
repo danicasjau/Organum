@@ -1,0 +1,23 @@
+@layer components {
+  .org-anno2d__svg,
+  .org-anno2d__laser {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .org-anno2d__svg {
+    pointer-events: none;
+  }
+
+  .org-anno2d__svg[data-interactive='true'] {
+    pointer-events: auto;
+    cursor: crosshair;
+  }
+
+  .org-anno2d__laser {
+    pointer-events: none;
+  }
+}
+

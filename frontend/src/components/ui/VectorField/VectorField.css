@@ -1,0 +1,36 @@
+@layer components {
+  .org-vecfield {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    width: 100%;
+  }
+
+  .org-vecfield__item {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .org-colorfield {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    width: 100%;
+  }
+
+  .org-colorfield__nums {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    gap: var(--space-1);
+  }
+
+  .org-colorfield__nums .org-numfield__label {
+    padding: 0 var(--space-1);
+  }
+
+  .org-colorfield__nums .org-numfield__body {
+    padding: 0 var(--space-1);
+  }
+}
+

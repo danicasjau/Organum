@@ -1,0 +1,91 @@
+@layer components {
+  .org-banner {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border-dark);
+    border-left: var(--dirty-bar-w) solid var(--info);
+    background: var(--info-soft);
+    color: var(--text);
+  }
+
+  .org-banner[data-severity='success'] {
+    border-left-color: var(--success);
+    background: var(--success-soft);
+  }
+
+  .org-banner[data-severity='warning'] {
+    border-left-color: var(--warning);
+    background: var(--warning-soft);
+  }
+
+  .org-banner[data-severity='danger'] {
+    border-left-color: var(--danger);
+    background: var(--danger-soft);
+  }
+
+  .org-banner__icon {
+    display: inline-flex;
+    color: var(--info-text);
+  }
+
+  .org-banner[data-severity='success'] .org-banner__icon {
+    color: var(--success-text);
+  }
+
+  .org-banner[data-severity='warning'] .org-banner__icon {
+    color: var(--warning-text);
+  }
+
+  .org-banner[data-severity='danger'] .org-banner__icon {
+    color: var(--danger-text);
+  }
+
+  .org-banner__body {
+    display: flex;
+    flex: 1;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
+  .org-banner__title {
+    font-weight: 600;
+  }
+
+  .org-toast-stack {
+    position: fixed;
+    right: var(--space-4);
+    bottom: var(--space-6);
+    z-index: var(--z-toast);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .org-toast {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-width: var(--popover-min-w);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border-dark);
+    border-left: var(--dirty-bar-w) solid var(--accent);
+    background: var(--surface-window);
+    box-shadow: var(--shadow-popup);
+  }
+
+  .org-toast[data-severity='success'] {
+    border-left-color: var(--success);
+  }
+
+  .org-toast[data-severity='warning'] {
+    border-left-color: var(--warning);
+  }
+
+  .org-toast[data-severity='danger'] {
+    border-left-color: var(--danger);
+  }
+}
+

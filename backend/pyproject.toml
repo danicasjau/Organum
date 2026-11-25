@@ -1,0 +1,96 @@
+[project]
+name = "organum-backend"
+version = "0.1.0"
+description = "ORGANUM product-review backend (FastAPI + SQLAlchemy 2 async)"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.165.0",
+    "uvicorn[standard]>=0.54.0",
+    "pydantic>=2.14.0",
+    "pydantic-settings>=2.16.0",
+    "sqlalchemy[asyncio]>=2.1.0",
+    "aiosqlite>=0.22.0",
+    "asyncpg>=0.32.0",
+    "alembic>=1.20.0",
+    "python-multipart>=0.0.34",
+    "watchfiles>=1.3.0",
+    "sse-starlette>=3.7.0",
+    "pyjwt>=2.15.0",
+    "pyyaml>=6.0.4",
+    "pillow>=13.0.0",
+    "numpy>=2.5.0",
+    "openexr>=3.5.0",
+    "tifffile>=2026.1.0",
+    "imagecodecs>=2026.1.0",
+    "psd-tools>=1.27.0",
+    "trimesh>=5.2.0",
+    "pygltflib>=1.16.0",
+    "usd-core>=26.11",
+    "av>=19.0.0",
+    "soundfile>=0.14.0",
+    "opentimelineio>=0.18.0",
+    "openimageio>=3.2.0",
+    "opencolorio>=2.6.0",
+    "pypdf>=7.1.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+    "pytest-asyncio>=1.5.0",
+    "httpx>=0.28.1",
+    "ruff>=0.17.0",
+    "mypy>=2.4.0",
+    "testcontainers>=4.15.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "B", "UP", "ASYNC", "SIM", "RUF"]
+ignore = ["B008"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+warn_return_any = true
+warn_unused_configs = true
+disallow_any_generics = true
+
+[[tool.mypy.overrides]]
+module = [
+    "yaml.*",
+    "PIL.*",
+    "testcontainers.*",
+    "OpenEXR.*",
+    "tifffile.*",
+    "psd_tools.*",
+    "imagecodecs.*",
+    "trimesh.*",
+    "pygltflib.*",
+    "pxr.*",
+    "av.*",
+    "soundfile.*",
+    "opentimelineio.*",
+    "OpenImageIO.*",
+    "PyOpenColorIO.*",
+    "pypdf.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+markers = [
+    "postgres: tests requiring Docker and PostgreSQL via testcontainers",
+]

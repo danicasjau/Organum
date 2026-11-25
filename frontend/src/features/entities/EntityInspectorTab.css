@@ -1,0 +1,63 @@
+@layer components {
+  .org-enttab {
+    padding: var(--space-1);
+  }
+
+  .org-enttab__header {
+    display: flex;
+    gap: var(--space-2);
+    align-items: flex-start;
+  }
+
+  .org-enttab__thumb {
+    width: var(--entity-thumb-lg);
+    height: var(--entity-thumb-lg);
+    flex-shrink: 0;
+    border: 1px solid var(--border-dark);
+    background: var(--surface-field);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    color: var(--text-muted);
+  }
+
+  .org-enttab__thumb-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .org-enttab__meta {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .org-enttab__tag-x {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+    margin-left: var(--space-1);
+    font-size: var(--font-size);
+  }
+
+  .org-enttab__kvrow {
+    width: 100%;
+  }
+
+  .org-enttab__kvrow > *:first-child {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .org-enttab__addrow {
+    display: grid;
+    grid-template-columns: 1fr var(--frame-field-w) 1fr auto;
+    gap: var(--space-1);
+    align-items: center;
+  }
+}
+

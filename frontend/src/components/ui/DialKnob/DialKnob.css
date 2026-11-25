@@ -1,0 +1,66 @@
+@layer components {
+  .org-dial-wrap,
+  .org-knob-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .org-dial {
+    width: var(--dial-size);
+    height: var(--dial-size);
+    flex-shrink: 0;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .org-knob {
+    cursor: ns-resize;
+  }
+
+  .org-dial__face {
+    fill: var(--surface-field);
+    stroke: var(--border-control);
+    stroke-width: 1;
+  }
+
+  .org-dial__needle {
+    stroke: var(--accent);
+    stroke-width: 2;
+    stroke-linecap: square;
+  }
+
+  .org-dial__center {
+    fill: var(--text);
+  }
+
+  .org-dial__field {
+    width: var(--min-btn-w);
+    flex: 1;
+  }
+
+  .org-knob__val {
+    min-width: var(--dial-size);
+    font-family: var(--font-mono);
+    font-size: var(--font-size);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .org-stepper {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--border-dark);
+    border-radius: var(--radius-1);
+    background: var(--surface-field);
+  }
+
+  .org-stepper__val {
+    min-width: var(--dial-size);
+    padding: 0 var(--space-2);
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: var(--font-size);
+    font-variant-numeric: tabular-nums;
+  }
+}
+

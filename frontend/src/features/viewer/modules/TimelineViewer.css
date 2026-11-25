@@ -1,0 +1,91 @@
+@layer components {
+  .org-timelineview {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .org-timelineview__bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    height: var(--toolbar-h);
+    padding: 0 var(--space-3);
+    border-bottom: 1px solid var(--border-dark);
+    background: var(--surface-window);
+    flex-shrink: 0;
+  }
+
+  .org-timelineview__tracks {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: var(--space-2);
+    background: var(--surface-field);
+  }
+
+  .org-timelineview__row {
+    display: flex;
+    align-items: center;
+    height: var(--track-row-h);
+    border: 1px solid var(--border-dark);
+    margin-bottom: var(--space-1);
+    background: var(--surface-panel);
+  }
+
+  .org-timelineview__tlabel {
+    width: var(--track-label-w);
+    padding: 0 var(--space-2);
+    border-right: 1px solid var(--border-dark);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .org-timelineview__lane {
+    position: relative;
+    flex: 1;
+    height: 100%;
+    background: var(--surface-field);
+  }
+
+  .org-timelineview__clip {
+    position: absolute;
+    top: var(--space-1);
+    bottom: var(--space-1);
+    left: var(--clip-left, 0%);
+    width: var(--clip-width, 10%);
+    display: flex;
+    align-items: center;
+    padding: 0 var(--space-2);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-1);
+    background: var(--accent-soft);
+    color: var(--text);
+    font-size: var(--font-size-sm);
+    font-family: var(--font-mono);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .org-timelineview__clip:hover {
+    background: var(--surface-hover);
+  }
+
+  .org-timelineview__playhead {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--playhead-pct, 0%);
+    width: 1px;
+    background: var(--accent);
+    pointer-events: none;
+  }
+}
+

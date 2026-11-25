@@ -1,0 +1,93 @@
+@layer components {
+  .org-label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    color: var(--text);
+    font-size: var(--font-size);
+    user-select: none;
+  }
+
+  .org-label[data-muted='true'] {
+    color: var(--text-muted);
+  }
+
+  .org-label[data-dirty='true'] {
+    color: var(--accent-text);
+  }
+
+  .org-label[data-disabled='true'] {
+    color: var(--text-disabled);
+  }
+
+  .org-text {
+    color: var(--text);
+    font-size: var(--font-size);
+  }
+
+  .org-text[data-size='sm'] {
+    font-size: var(--font-size-sm);
+  }
+
+  .org-text[data-size='lg'] {
+    font-size: var(--font-size-lg);
+  }
+
+  .org-text[data-variant='muted'] {
+    color: var(--text-muted);
+  }
+
+  .org-text[data-variant='accent'] {
+    color: var(--accent-text);
+  }
+
+  .org-text[data-variant='danger'] {
+    color: var(--danger-text);
+  }
+
+  .org-text[data-variant='success'] {
+    color: var(--success-text);
+  }
+
+  .org-text[data-variant='mono'] {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .org-text[data-truncate='true'] {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .org-kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--icon-lg);
+    padding: 0 var(--space-1);
+    height: var(--icon-lg);
+    border: 1px solid var(--border-dark);
+    border-radius: var(--radius-1);
+    background: var(--surface-field);
+    box-shadow: var(--bevel-inset);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+  }
+
+  .org-separator[data-orientation='horizontal'] {
+    width: 100%;
+    height: var(--space-1);
+    border-top: 1px solid var(--border-dark);
+    border-bottom: 1px solid var(--bevel-light);
+  }
+
+  .org-separator[data-orientation='vertical'] {
+    width: var(--space-1);
+    align-self: stretch;
+    border-left: 1px solid var(--border-dark);
+    border-right: 1px solid var(--bevel-light);
+  }
+}
+

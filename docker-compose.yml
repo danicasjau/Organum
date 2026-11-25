@@ -1,0 +1,38 @@
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      ORGANUM_DATABASE_URL: ${DATABASE_URL:-sqlite+aiosqlite:///app/data/organum.db}
+      ORGANUM_STORAGE_ROOT: /app/data/products
+      ORGANUM_CACHE_ROOT: /app/data/cache
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    depends_on:
+      - api
+    ports:
+      - "5173:80"
+
+  postgres:
+    image: postgres:16-alpine
+    profiles: ["postgres"]
+    environment:
+      POSTGRES_USER: organum
+      POSTGRES_PASSWORD: organum_dev_password
+      POSTGRES_DB: organum
+    ports:
+      - "5432:5432"
+    volumes:
+      - organum_pgdata:/var/lib/postgresql/data
+
+volumes:
+  organum_pgdata:
+

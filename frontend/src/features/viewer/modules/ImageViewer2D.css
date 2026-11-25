@@ -1,0 +1,61 @@
+@layer components {
+  .org-viewer2d {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    background: var(--vp-bg-default);
+    cursor: crosshair;
+  }
+
+  .org-viewer2d[data-bg='default'] {
+    background: var(--vp-bg-default);
+  }
+
+  .org-viewer2d[data-bg='black'] {
+    background: var(--vp-bg-black);
+  }
+
+  .org-viewer2d[data-bg='white'] {
+    background: var(--vp-bg-white);
+  }
+
+  .org-viewer2d[data-bg='gray'] {
+    background: var(--vp-bg-gray);
+  }
+
+  .org-viewer2d[data-bg='gradient'] {
+    background: var(--vp-bg-gradient);
+  }
+
+  .org-viewer2d[data-tool='pan'] {
+    cursor: grab;
+  }
+
+  .org-viewer2d[data-tool='pan']:active {
+    cursor: grabbing;
+  }
+
+  .org-viewer2d__canvas,
+  .org-viewer2d__hud {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    pointer-events: none;
+  }
+
+  .org-viewer2d__overlay {
+    position: absolute;
+    top: var(--space-3);
+    left: var(--space-3);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--border-dark);
+    background: var(--surface-window);
+  }
+}

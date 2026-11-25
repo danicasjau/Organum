@@ -1,0 +1,221 @@
+@layer components {
+  .org-numfield {
+    display: inline-flex;
+    align-items: stretch;
+    width: 100%;
+    height: var(--ctl-h);
+    min-height: var(--min-hit);
+    border: 1px solid var(--border-control);
+    border-radius: var(--radius-1);
+    background: var(--surface-field);
+    box-shadow: var(--bevel-inset-pressed);
+    color: var(--text);
+    overflow: hidden;
+  }
+
+  .org-numfield[data-axis='x'] {
+    border-left: var(--dirty-bar-w) solid var(--axis-x);
+  }
+  .org-numfield[data-axis='y'] {
+    border-left: var(--dirty-bar-w) solid var(--axis-y);
+  }
+  .org-numfield[data-axis='z'] {
+    border-left: var(--dirty-bar-w) solid var(--axis-z);
+  }
+  .org-numfield[data-axis='w'] {
+    border-left: var(--dirty-bar-w) solid var(--axis-w);
+  }
+
+  .org-numfield[data-dirty='true'] {
+    border-left: var(--dirty-bar-w) solid var(--accent);
+  }
+
+  .org-numfield:hover:not([data-disabled='true']),
+  .org-numfield[data-force-state='hover']:not([data-disabled='true']) {
+    border-color: var(--accent);
+  }
+
+  .org-numfield[data-force-state='pressed']:not([data-disabled='true']) {
+    background: var(--surface-pressed);
+  }
+
+  .org-numfield:focus-within:not([data-disabled='true']),
+  .org-numfield[data-force-state='focus']:not([data-disabled='true']) {
+    outline: var(--focus-w) solid var(--focus-ring);
+    outline-offset: var(--focus-w);
+    border-color: var(--accent);
+  }
+
+  .org-numfield[data-error='true'] {
+    border-color: var(--red-500);
+  }
+
+  .org-numfield[data-disabled='true'] {
+    background: var(--surface-panel);
+    color: var(--text-disabled);
+    border-color: var(--border-dark);
+    cursor: not-allowed;
+  }
+
+  .org-numfield__label {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 var(--space-2);
+    border-right: 1px solid var(--border-dark);
+    background: var(--surface-raised);
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+    cursor: ew-resize;
+    user-select: none;
+  }
+
+  .org-numfield[data-dirty='true'] .org-numfield__label {
+    color: var(--accent-text);
+  }
+
+  .org-numfield__body {
+    position: relative;
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 0 var(--space-2);
+    overflow: hidden;
+    cursor: ew-resize;
+  }
+
+  .org-numfield__fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: var(--numfield-pct, 0%);
+    background: var(--accent-soft);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .org-numfield[data-disabled='true'] .org-numfield__fill {
+    display: none;
+  }
+
+  .org-numfield[data-editing='true'] .org-numfield__body {
+    cursor: text;
+  }
+
+  .org-numfield[data-disabled='true'] .org-numfield__body,
+  .org-numfield[data-disabled='true'] .org-numfield__label {
+    cursor: not-allowed;
+  }
+
+  .org-numfield__input {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font-family: var(--font-mono);
+    font-size: var(--font-size);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    outline: none;
+    cursor: inherit;
+  }
+
+  .org-numfield__unit {
+    position: relative;
+    z-index: 1;
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+    user-select: none;
+  }
+
+  .org-numfield__err {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    color: var(--danger-text);
+  }
+
+  .org-numfield__reset {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--icon-md);
+    height: var(--icon-md);
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--accent-text);
+    cursor: pointer;
+    opacity: 0.75;
+  }
+
+  .org-numfield:hover .org-numfield__reset,
+  .org-numfield__reset:focus-visible {
+    opacity: 1;
+  }
+
+  .org-numfield__steppers {
+    display: flex;
+    flex-direction: column;
+    width: var(--stepper-w);
+    border-left: 1px solid var(--border-dark);
+  }
+
+  .org-numfield__step-btn {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    background: var(--bevel-raised-bg);
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+
+  .org-numfield__step-btn:first-child {
+    border-bottom: 1px solid var(--border-dark);
+  }
+
+  .org-numfield__step-btn:hover:not(:disabled) {
+    background: var(--surface-hover);
+    color: var(--text);
+  }
+
+  .org-numfield__menu {
+    z-index: var(--z-dropdown);
+    min-width: var(--popover-min-w);
+    padding: var(--space-1);
+    border: 1px solid var(--border-dark);
+    background: var(--surface-window);
+    box-shadow: var(--shadow-popup);
+  }
+
+  .org-numfield__menu-item {
+    display: flex;
+    align-items: center;
+    height: var(--menubar-h);
+    padding: 0 var(--space-3);
+    font-size: var(--font-size);
+    color: var(--text);
+    cursor: pointer;
+    outline: none;
+  }
+
+  .org-numfield__menu-item[data-highlighted] {
+    background: var(--accent-soft);
+  }
+
+  .org-numfield__menu-item[data-disabled] {
+    color: var(--text-disabled);
+    cursor: not-allowed;
+  }
+}
+

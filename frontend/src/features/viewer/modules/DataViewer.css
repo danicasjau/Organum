@@ -1,0 +1,106 @@
+@layer components {
+  .org-dataviewer {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    background: var(--surface-panel);
+    color: var(--text);
+  }
+
+  .org-dataviewer__bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--pdf-bar-h);
+    padding: var(--space-1) var(--space-2);
+    background: var(--surface-window);
+    border-bottom: 1px solid var(--border-dark);
+  }
+
+  .org-dataviewer__search {
+    width: var(--popover-min-w);
+  }
+
+  .org-dataviewer__spacer {
+    flex: 1;
+  }
+
+  .org-dataviewer__body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-2);
+  }
+
+  .org-dataviewer__raw {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    margin: 0;
+    padding: var(--space-3);
+    border: 1px solid var(--border-dark);
+    background: var(--surface-field);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: var(--font-size);
+    line-height: 1.45;
+    white-space: pre-wrap;
+    user-select: text;
+  }
+
+  .org-dataviewer__jtree {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    border: 1px solid var(--border-dark);
+    background: var(--surface-field);
+    padding: var(--space-2);
+    font-family: var(--font-mono);
+    font-size: var(--font-size);
+  }
+
+  .org-dataviewer__jnode {
+    padding-left: var(--tree-indent);
+  }
+
+  .org-dataviewer__jrow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: var(--row-h);
+    padding: 0 var(--space-1);
+  }
+
+  .org-dataviewer__jrow[data-match='true'] {
+    background: var(--accent-soft);
+  }
+
+  .org-dataviewer__jtoggle {
+    border: 0;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    cursor: pointer;
+    padding: 0 var(--space-1);
+  }
+
+  .org-dataviewer__jkey {
+    color: var(--accent-text);
+    font-weight: 700;
+  }
+
+  .org-dataviewer__jnum {
+    color: var(--info-text);
+  }
+
+  .org-dataviewer__jbool {
+    color: var(--warning-text);
+  }
+
+  .org-dataviewer__jstr {
+    color: var(--success-text);
+  }
+}
+

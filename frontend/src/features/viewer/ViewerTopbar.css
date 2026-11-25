@@ -1,0 +1,118 @@
+@layer components {
+  .org-vtopbar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    border-bottom: 1px solid var(--border-dark);
+    background: var(--surface-panel);
+    flex-shrink: 0;
+  }
+
+  .org-vtopbar__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-1);
+    height: var(--viewer-row-h);
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+
+  .org-vtopbar__row-items {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    flex: 1 1 auto;
+    min-width: 0;
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+
+  .org-vtopbar__item {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .org-vtopbar__group {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    flex-shrink: 0;
+  }
+
+  .org-vtopbar__select {
+    width: var(--viewer-select-w);
+  }
+
+  .org-vtopbar__num {
+    width: var(--viewer-field-w);
+  }
+
+  .org-vtopbar__zoom {
+    width: var(--viewer-zoom-w);
+  }
+
+  .org-vtopbar__shade {
+    width: var(--viewer-shade-w);
+  }
+
+  .org-vtopbar__color {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    flex-shrink: 0;
+  }
+
+  .org-vtopbar__color--ev {
+    width: var(--vt-ev-w);
+  }
+
+  .org-vtopbar__color--g {
+    width: var(--vt-g-w);
+  }
+
+  .org-vtopbar__color--sat {
+    width: var(--vt-sat-w);
+  }
+
+  .org-vtopbar__color--hue {
+    width: var(--vt-hue-w);
+  }
+
+  .org-vtopbar__color .org-slider {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .org-vtopbar__color .org-slider__field {
+    width: var(--viewer-zoom-w);
+  }
+
+  .org-vtopbar__clabel {
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--text-muted);
+    user-select: none;
+    flex-shrink: 0;
+  }
+
+  .org-vtopbar__view-pop {
+    min-width: var(--popover-min-w);
+  }
+
+  .org-vtopbar__overflow-pop {
+    min-width: var(--popover-min-w);
+  }
+
+  .org-vtopbar__overflow-item {
+    display: flex;
+    align-items: center;
+  }
+
+  .org-vtopbar .org-btn {
+    min-width: var(--ctl-h);
+    padding: 0 var(--space-2);
+  }
+}

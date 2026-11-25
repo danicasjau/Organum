@@ -1,0 +1,76 @@
+@layer components {
+  .org-checkbox {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: var(--min-hit);
+    min-height: var(--min-hit);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .org-checkbox[data-disabled='true'] {
+    cursor: not-allowed;
+    color: var(--text-disabled);
+  }
+
+  .org-checkbox__input {
+    position: absolute;
+    opacity: 0;
+    width: var(--min-hit);
+    height: var(--min-hit);
+    margin: 0;
+    cursor: inherit;
+  }
+
+  .org-checkbox__box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--checkbox-size);
+    height: var(--checkbox-size);
+    border: 1px solid var(--border-control);
+    border-radius: var(--radius-1);
+    background: var(--surface-field);
+    box-shadow: var(--bevel-inset-pressed);
+    color: var(--white);
+  }
+
+  .org-checkbox__input:checked + .org-checkbox__box,
+  .org-checkbox__input[aria-checked='mixed'] + .org-checkbox__box {
+    background: var(--btn-primary-bg);
+    border-color: var(--accent);
+    box-shadow: none;
+  }
+
+  .org-checkbox:hover:not([data-disabled='true']) .org-checkbox__box,
+  .org-checkbox[data-force-state='hover']:not([data-disabled='true']) .org-checkbox__box {
+    border-color: var(--accent);
+  }
+
+  .org-checkbox[data-force-state='pressed']:not([data-disabled='true']) .org-checkbox__box {
+    background: var(--surface-pressed);
+  }
+
+  .org-checkbox__input:focus-visible + .org-checkbox__box,
+  .org-checkbox[data-force-state='focus']:not([data-disabled='true']) .org-checkbox__box {
+    outline: var(--focus-w) solid var(--focus-ring);
+    outline-offset: var(--focus-w);
+  }
+
+  .org-checkbox[data-error='true'] .org-checkbox__box {
+    border-color: var(--red-500);
+  }
+
+  .org-checkbox[data-dirty='true'] .org-checkbox__label {
+    color: var(--accent-text);
+  }
+
+  .org-checkbox[data-disabled='true'] .org-checkbox__box {
+    background: var(--surface-panel);
+    border-color: var(--border-dark);
+    color: var(--text-disabled);
+  }
+}
+

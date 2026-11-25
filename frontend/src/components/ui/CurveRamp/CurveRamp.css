@@ -1,0 +1,48 @@
+@layer components {
+  .org-ramp {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    width: 100%;
+  }
+
+  .org-ramp__bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .org-ramp__svg {
+    width: 100%;
+    height: var(--ramp-h);
+    border: 1px solid var(--border-control);
+    border-radius: var(--radius-1);
+    background: var(--surface-field);
+    cursor: crosshair;
+  }
+
+  .org-ramp__grid {
+    stroke: var(--border-dark);
+    stroke-width: 1;
+  }
+
+  .org-ramp__diag {
+    stroke: var(--text-disabled);
+    stroke-width: 1;
+    stroke-dasharray: 2 2;
+  }
+
+  .org-ramp__line {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1.5;
+  }
+
+  .org-ramp__pt {
+    fill: var(--surface-raised);
+    stroke: var(--accent-text);
+    stroke-width: 1.5;
+    cursor: grab;
+  }
+}
+

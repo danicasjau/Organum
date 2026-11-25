@@ -1,0 +1,72 @@
+@layer components {
+  .org-jobqueue {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    border: 1px solid var(--border-dark);
+    background: var(--surface-field);
+    padding: var(--space-2);
+  }
+
+  .org-jobqueue__row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) 0;
+    border-bottom: 1px solid var(--border-dark);
+  }
+
+  .org-jobqueue__row:last-child {
+    border-bottom: 0;
+  }
+
+  .org-logconsole {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border-dark);
+    background: var(--surface-field);
+  }
+
+  .org-logconsole__bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    background: var(--surface-window);
+    border-bottom: 1px solid var(--border-dark);
+  }
+
+  .org-logconsole__list {
+    height: var(--log-h);
+    overflow-y: auto;
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    padding: var(--space-1) var(--space-2);
+  }
+
+  .org-logconsole__line {
+    display: flex;
+    gap: var(--space-2);
+    padding: var(--space-0) 0;
+    line-height: 1.4;
+  }
+
+  .org-logconsole__lvl {
+    min-width: var(--space-6);
+    font-weight: 700;
+  }
+
+  .org-logconsole__lvl[data-level='WARN'] {
+    color: var(--warning-text);
+  }
+
+  .org-logconsole__lvl[data-level='ERROR'] {
+    color: var(--danger-text);
+  }
+
+  .org-logconsole__lvl[data-level='INFO'] {
+    color: var(--info-text);
+  }
+}
+

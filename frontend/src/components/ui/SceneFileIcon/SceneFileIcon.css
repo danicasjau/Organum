@@ -1,0 +1,100 @@
+@layer components {
+  .org-scenefile-icon {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--scene-icon-size);
+    height: var(--scene-icon-size);
+    flex-shrink: 0;
+    border: 1px solid var(--border-dark);
+    border-radius: var(--radius-1);
+    box-shadow: var(--bevel-inset);
+    background: var(--fam-unknown);
+    color: var(--white);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    user-select: none;
+    overflow: hidden;
+  }
+
+  .org-scenefile-icon[data-size='sm'] {
+    width: var(--min-hit);
+    height: var(--min-hit);
+    font-size: var(--font-size-sm);
+  }
+
+  .org-scenefile-icon__tab {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: var(--space-3);
+    height: var(--space-3);
+    background: var(--border-dark);
+    opacity: 0.45;
+  }
+
+  .org-scenefile-icon__label {
+    position: relative;
+    z-index: 1;
+    max-width: 100%;
+    padding: 0 var(--space-1);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .org-scenefile-icon__img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+
+  .org-scenefile-icon[data-family='houdini'] {
+    background: var(--fam-houdini);
+  }
+
+  .org-scenefile-icon[data-family='maya'] {
+    background: var(--fam-maya);
+  }
+
+  .org-scenefile-icon[data-family='blender'] {
+    background: var(--fam-blender);
+  }
+
+  .org-scenefile-icon[data-family='max'] {
+    background: var(--fam-max);
+  }
+
+  .org-scenefile-icon[data-family='c4d'] {
+    background: var(--fam-c4d);
+  }
+
+  .org-scenefile-icon[data-family='substance'] {
+    background: var(--fam-substance);
+  }
+
+  .org-scenefile-icon[data-family='adobe'] {
+    background: var(--fam-adobe);
+  }
+
+  .org-scenefile-icon[data-family='nuke'] {
+    background: var(--fam-nuke);
+  }
+
+  .org-scenefile-icon[data-family='zbrush'] {
+    background: var(--fam-zbrush);
+  }
+
+  .org-scenefile-icon[data-family='doc'] {
+    background: var(--fam-doc);
+  }
+
+  .org-scenefile-icon[data-family='folder'] {
+    background: var(--fam-folder);
+  }
+}
+

@@ -1,0 +1,54 @@
+@layer components {
+  .org-viewer-layout {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .org-viewer-layout__entities-pane {
+    height: 100%;
+    min-width: 0;
+  }
+
+  .org-viewer-layout[data-maximized='true'] .org-viewer-layout__entities-pane {
+    position: absolute;
+    inset: 0;
+    z-index: var(--z-dropdown);
+    width: 100%;
+    height: 100%;
+    background: var(--surface-panel);
+  }
+
+  .org-viewer-center {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .org-viewer-stage {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .org-viewer-viewport {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    background: var(--surface-field);
+  }
+
+  .org-viewer-viewport-main {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+  }
+}
+

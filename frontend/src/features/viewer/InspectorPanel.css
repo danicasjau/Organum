@@ -1,0 +1,107 @@
+@layer components {
+  .org-inspector-panel {
+    height: 100%;
+    border-top: 0;
+    border-right: 0;
+    border-bottom: 0;
+  }
+
+  .org-inspector-panel .org-panel__body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    padding: 0;
+  }
+
+  .org-inspector-panel .org-tabs {
+    flex: 1;
+    min-height: 0;
+    border: 0;
+  }
+
+  .org-inspector-panel .org-tabs__panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    padding: var(--space-2);
+  }
+
+  .org-inspector__aovs {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border-dark);
+    background: var(--surface-field);
+  }
+
+  .org-inspector__aov-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-1);
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    min-height: var(--row-h);
+    padding: var(--space-1) var(--space-2);
+    border: 0;
+    border-bottom: 1px solid var(--border-dark);
+    border-left: var(--dirty-bar-w) solid transparent;
+    background: transparent;
+    color: var(--text);
+    font-size: var(--font-size);
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .org-inspector__aov-row:last-child {
+    border-bottom: 0;
+  }
+
+  .org-inspector__aov-row:hover {
+    background: var(--surface-hover);
+  }
+
+  .org-inspector__aov-row[data-selected='true'] {
+    background: var(--accent-soft);
+    border-left-color: var(--accent);
+  }
+
+  .org-inspector__ann-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .org-inspector__ann-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-2);
+    border: 1px solid var(--border-dark);
+    background: var(--surface-field);
+  }
+
+  .org-inspector__ann-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  .org-inspector__scene-tree {
+    height: var(--scene-tree-h);
+    min-height: var(--scene-tree-h);
+  }
+
+  .org-inspector__note-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-2);
+  }
+}
+

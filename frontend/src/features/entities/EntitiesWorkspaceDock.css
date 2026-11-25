@@ -1,0 +1,28 @@
+@layer components {
+  .org-edock {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-width: var(--col-min-w);
+    background: var(--surface-panel);
+    border-right: 1px solid var(--border-dark);
+  }
+
+  .org-edock__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    min-height: var(--header-h);
+    padding: var(--space-1) var(--space-2);
+    background: var(--surface-window);
+    border-bottom: 1px solid var(--border-dark);
+  }
+
+  .org-edock__cols {
+    flex: 1;
+    min-height: 0;
+  }
+}
+
