@@ -26,7 +26,6 @@ import { useProjectStore } from '../project/projectStore';
 import { CreateTaskDialog } from './CreateTaskDialog';
 import { DepartmentMatrixView } from './DepartmentMatrixView';
 import { GanttView } from './GanttView';
-import { GraphView } from './GraphView';
 import { KanbanView } from './KanbanView';
 import { ReviewQueueView } from './ReviewQueueView';
 import { isFullTaskItem } from './taskHelpers';
@@ -76,7 +75,6 @@ export function TasksPage({
   const canGantt = !isClient && hasPerm(auth?.permissions, 'views.gantt');
   const canWorkload = !isClient && hasPerm(auth?.permissions, 'views.workload');
   const canKanban = !isClient && hasPerm(auth?.permissions, 'views.kanban');
-  const canGraph = !isClient && hasPerm(auth?.permissions, 'views.graph');
   const canReviewQueue =
     isClient ||
     hasPerm(auth?.permissions, 'task.approve.lead') ||
@@ -91,10 +89,9 @@ export function TasksPage({
     if (canGantt) list.push({ id: 'gantt', label: 'Gantt' });
     if (canWorkload) list.push({ id: 'workload', label: 'Workload' });
     if (canKanban) list.push({ id: 'kanban', label: 'Kanban' });
-    if (canGraph) list.push({ id: 'graph', label: 'Graph' });
     if (canReviewQueue) list.push({ id: 'review', label: 'Review Queue' });
     return list;
-  }, [isClient, canGantt, canWorkload, canKanban, canGraph, canReviewQueue]);
+  }, [isClient, canGantt, canWorkload, canKanban, canReviewQueue]);
 
   useEffect(() => {
     if (!viewItems.some((v) => v.id === activeView)) {
@@ -265,13 +262,6 @@ export function TasksPage({
             ) : activeView === 'kanban' && canKanban ? (
               <KanbanView
                 tasks={fullItems}
-                selectedTaskId={selectedTaskId}
-                onSelectTask={(id) => setSelectedTaskId(id, true)}
-              />
-            ) : activeView === 'graph' && canGraph ? (
-              <GraphView
-                entities={entities}
-                departments={departments}
                 selectedTaskId={selectedTaskId}
                 onSelectTask={(id) => setSelectedTaskId(id, true)}
               />

@@ -8,10 +8,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.errors import NotFoundError
 from app.models.annotation import Annotation
 from app.models.project_db import FileEntry
+from app.models.user import User
 from app.schemas.api import AnnotationCreate, AnnotationOut, AnnotationUpdate
 
 
-def _to_out(ann: Annotation) -> AnnotationOut:
+async def _authors(db: AsyncSession, anns: list[Annotation]) -> dict[UUID, User]:
+    ids = {a.author_id for a in anns if a.author_id is not None}
+    if not ids:
+        return {}
+    res = await db.execute(select(User).where(User.id.in_(ids)))
+    return {u.id: u for u in res.scalars().all()}
+
+
+def _to_out(ann: Annotation, authors: dict[UUID, User] | None = None) -> AnnotationOut:
+    author = (authors or {}).get(ann.author_id) if ann.author_id else None
     return AnnotationOut(
         id=ann.id,
         file_id=ann.file_id,
@@ -25,6 +35,8 @@ def _to_out(ann: Annotation) -> AnnotationOut:
         plane_json=ann.plane_json,
         camera_json=ann.camera_json,
         author_id=ann.author_id,
+        author_username=author.username if author else None,
+        author_full_name=author.full_name if author else None,
         visibility=ann.visibility,
         created_at=ann.created_at,
         updated_at=ann.updated_at,
@@ -49,7 +61,9 @@ async def list_annotations(
         )
         .order_by(Annotation.frame_in, Annotation.created_at)
     )
-    return [_to_out(a) for a in res.scalars().all()]
+    anns = list(res.scalars().all())
+    authors = await _authors(db, anns)
+    return [_to_out(a, authors) for a in anns]
 
 
 async def create_annotation(
@@ -81,7 +95,7 @@ async def create_annotation(
     db.add(ann)
     await db.commit()
     await db.refresh(ann)
-    return _to_out(ann)
+    return _to_out(ann, await _authors(db, [ann]))
 
 
 async def update_annotation(
@@ -101,7 +115,7 @@ async def update_annotation(
         setattr(ann, field_name, value)
     await db.commit()
     await db.refresh(ann)
-    return _to_out(ann)
+    return _to_out(ann, await _authors(db, [ann]))
 
 
 async def delete_annotation(db: AsyncSession, file_id: UUID, annotation_id: UUID) -> None:

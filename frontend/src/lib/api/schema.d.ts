@@ -2201,6 +2201,10 @@ export interface components {
             } | null;
             /** Author Id */
             author_id: string | null;
+            /** Author Username */
+            author_username?: string | null;
+            /** Author Full Name */
+            author_full_name?: string | null;
             /**
              * Visibility
              * @default internal

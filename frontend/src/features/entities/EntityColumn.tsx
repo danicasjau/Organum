@@ -32,6 +32,7 @@ import {
   EditEntityDialog,
 } from './EntityDialogs';
 import { EntityLinkPickerDialog } from './EntityLinkDialogs';
+import { useInspectPopupStore } from '../viewer/inspectPopupStore';
 import './EntityColumn.css';
 
 type BrowseItem =
@@ -86,11 +87,14 @@ function EntityCard({
   createItems: ReadonlyArray<MenuEntry>;
 }) {
   const [imgErr, setImgErr] = useState(false);
+  const showEntity = useInspectPopupStore((s) => s.showEntity);
   const showThumb = Boolean(entity.resolved_thumbnail_file_id) && !imgErr;
 
   return (
     <ContextMenu
       items={[
+        { id: 'show', label: 'Show Entity…', onSelect: () => showEntity(entity) },
+        { id: 'sep-show', label: '', separator: true },
         { id: 'edit', label: 'Rename / Edit Tags & Type...', onSelect: onEdit },
         { id: 'dept', label: 'Add Department...', onSelect: onAddDept },
         ...(canLink

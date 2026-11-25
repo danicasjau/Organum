@@ -435,6 +435,8 @@ class AnnotationOut(BaseModel):
     plane_json: dict[str, Any] | None
     camera_json: dict[str, Any] | None
     author_id: UUID | None
+    author_username: str | None = None
+    author_full_name: str | None = None
     visibility: Literal["internal", "client"] = "internal"
     created_at: datetime
     updated_at: datetime

@@ -152,12 +152,12 @@ export function AppShell({
                     )}
                     {onOpenSettings && (
                       <DropdownMenu.Item className="org-menu__item" onSelect={onOpenSettings}>
-                        <span>Project Settings…</span>
+                        <span>Settings</span>
                       </DropdownMenu.Item>
                     )}
                     {canAdmin && onOpenAdmin && (
                       <DropdownMenu.Item className="org-menu__item" onSelect={onOpenAdmin}>
-                        <span>Admin Console</span>
+                        <span>Users &amp; Admin</span>
                       </DropdownMenu.Item>
                     )}
                     {onLogout && (

@@ -7,7 +7,15 @@ import {
   type LegacyColumnDef,
 } from '@tanstack/react-table/legacy';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { useMemo, useRef, useState, type MouseEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent,
+} from 'react';
 import {
   Avatar,
   Badge,
@@ -90,11 +98,56 @@ function ResizableColHeader({
   );
 }
 
-function GridCellSlot({ width, children }: { width: number; children: React.ReactNode }) {
+// Must match --tgrid-row-h in tokens.css (rows are absolutely positioned by the virtualizer).
+const GRID_ROW_PX = 30;
+
+interface CellCoord {
+  r: number;
+  c: number;
+}
+
+/** Plain-text value of a cell for clipboard export (TSV). */
+function cellText(v: unknown): string {
+  if (v === null || v === undefined) return '';
+  if (Array.isArray(v)) return v.map(cellText).filter(Boolean).join(', ');
+  if (typeof v === 'object') {
+    const o = v as Record<string, unknown>;
+    return String(o.full_name || o.username || o.name || o.label || '');
+  }
+  return String(v).replace(/[\t\r\n]+/g, ' ');
+}
+
+function GridCellSlot({
+  width,
+  inRange,
+  isFocus,
+  edges,
+  onMouseDown,
+  onMouseEnter,
+  children,
+}: {
+  width: number;
+  inRange: boolean;
+  isFocus: boolean;
+  /** Which sides of the selection rectangle this cell sits on: t r b l */
+  edges: string;
+  onMouseDown: (e: MouseEvent) => void;
+  onMouseEnter: () => void;
+  children: React.ReactNode;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   useCssVarRef(ref, '--tg-col-w', `${width}px`);
   return (
-    <div ref={ref} role="cell" className="org-tgrid__td">
+    <div
+      ref={ref}
+      role="cell"
+      className="org-tgrid__td"
+      data-in-range={inRange ? 'true' : undefined}
+      data-focus={isFocus ? 'true' : undefined}
+      data-edges={edges || undefined}
+      onMouseDown={onMouseDown}
+      onMouseEnter={onMouseEnter}
+    >
       {children}
     </div>
   );
@@ -516,11 +569,134 @@ export function TaskGridView({
   const vizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => 22,
+    estimateSize: () => GRID_ROW_PX,
     overscan: 15,
   });
 
   const getWidth = (colId: string, fallback = 115) => colWidths[colId] ?? fallback;
+
+  // ---- Spreadsheet-style range selection (click / drag / shift+click / arrows / Ctrl+C) ----
+  const [anchor, setAnchor] = useState<CellCoord | null>(null);
+  const [focus, setFocus] = useState<CellCoord | null>(null);
+  const draggingRef = useRef(false);
+  const leafCols = table.getVisibleLeafColumns();
+  const colCount = leafCols.length;
+  const range = useMemo(() => {
+    if (!anchor || !focus) return null;
+    return {
+      r0: Math.min(anchor.r, focus.r),
+      r1: Math.max(anchor.r, focus.r),
+      c0: Math.min(anchor.c, focus.c),
+      c1: Math.max(anchor.c, focus.c),
+    };
+  }, [anchor, focus]);
+
+  useEffect(() => {
+    const stop = () => {
+      draggingRef.current = false;
+    };
+    window.addEventListener('mouseup', stop);
+    return () => window.removeEventListener('mouseup', stop);
+  }, []);
+
+  // Selection indices are positional; reset when the data/columns change shape.
+  useEffect(() => {
+    setAnchor(null);
+    setFocus(null);
+  }, [rows.length, colCount]);
+
+  const onCellMouseDown = (e: MouseEvent, r: number, c: number) => {
+    if (e.button !== 0) return;
+    const el = e.target as HTMLElement;
+    if (el.closest('input, select, textarea, button, [role="combobox"], a')) return;
+    if (e.shiftKey && anchor) {
+      setFocus({ r, c });
+    } else {
+      setAnchor({ r, c });
+      setFocus({ r, c });
+    }
+    draggingRef.current = true;
+    // Keep keyboard focus on the grid so arrows / Ctrl+C work, and avoid text selection.
+    e.preventDefault();
+    scrollRef.current?.focus({ preventScroll: true });
+  };
+
+  const onCellMouseEnter = (r: number, c: number) => {
+    if (draggingRef.current) setFocus({ r, c });
+  };
+
+  const selectionTsv = useCallback((): string => {
+    if (!range) return '';
+    const lines: string[] = [];
+    for (let r = range.r0; r <= range.r1; r++) {
+      const row = rows[r];
+      if (!row) continue;
+      const vals: string[] = [];
+      for (let c = range.c0; c <= range.c1; c++) {
+        const col = leafCols[c];
+        vals.push(col ? cellText(row.getValue(col.id)) : '');
+      }
+      lines.push(vals.join('\t'));
+    }
+    return lines.join('\n');
+  }, [range, rows, leafCols]);
+
+  const copySelection = useCallback(async () => {
+    const text = selectionTsv();
+    if (!text || !range) return;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    }
+    const cells = (range.r1 - range.r0 + 1) * (range.c1 - range.c0 + 1);
+    toast.push('success', `Copied ${cells} cell${cells === 1 ? '' : 's'}`);
+  }, [selectionTsv, range, toast]);
+
+  const onGridKeyDown = (e: ReactKeyboardEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('input, select, textarea')) return;
+    const mod = e.ctrlKey || e.metaKey;
+    if (mod && e.key.toLowerCase() === 'c' && range) {
+      e.preventDefault();
+      void copySelection();
+      return;
+    }
+    if (mod && e.key.toLowerCase() === 'a' && rows.length > 0) {
+      e.preventDefault();
+      setAnchor({ r: 0, c: 0 });
+      setFocus({ r: rows.length - 1, c: colCount - 1 });
+      return;
+    }
+    if (e.key === 'Escape') {
+      setAnchor(null);
+      setFocus(null);
+      return;
+    }
+    const delta: Record<string, [number, number]> = {
+      ArrowUp: [-1, 0],
+      ArrowDown: [1, 0],
+      ArrowLeft: [0, -1],
+      ArrowRight: [0, 1],
+    };
+    const d = delta[e.key];
+    if (!d || !focus) return;
+    e.preventDefault();
+    const next = {
+      r: Math.max(0, Math.min(rows.length - 1, focus.r + d[0])),
+      c: Math.max(0, Math.min(colCount - 1, focus.c + d[1])),
+    };
+    setFocus(next);
+    if (!e.shiftKey) setAnchor(next);
+    vizer.scrollToIndex(next.r);
+    const rowTask = rows[next.r]?.original;
+    if (rowTask && !e.shiftKey) onSelectTask(rowTask.id);
+  };
 
   const exportCsv = () => {
     const headers = table.getAllLeafColumns().map((c) => String(c.columnDef.header ?? c.id));
@@ -547,6 +723,9 @@ export function TaskGridView({
       <div className="org-tgrid__toolbar">
         <Text size="sm" variant="accent">
           Showing {rows.length} of {total} tasks
+          {range
+            ? ` · ${(range.r1 - range.r0 + 1) * (range.c1 - range.c0 + 1)} cell(s) selected — Ctrl+C to copy`
+            : ''}
         </Text>
         <div className="org-tgrid__tools">
           {!isClient && (
@@ -594,7 +773,14 @@ export function TaskGridView({
         </div>
       </div>
 
-      <div ref={scrollRef} className="org-tgrid__scroll" role="table" aria-label="Tasks table">
+      <div
+        ref={scrollRef}
+        className="org-tgrid__scroll"
+        role="table"
+        aria-label="Tasks table"
+        tabIndex={0}
+        onKeyDown={onGridKeyDown}
+      >
         <div className="org-tgrid__thead" role="rowgroup">
           <div className="org-tgrid__tr-hdr" role="row">
             {table.getHeaderGroups()[0]?.headers.map((header) => {
@@ -627,11 +813,31 @@ export function TaskGridView({
                 selected={original.id === selectedTaskId}
                 onClick={() => onSelectTask(original.id)}
               >
-                {row.getVisibleCells().map((cell) => {
+                {row.getVisibleCells().map((cell, cIdx) => {
                   const colId = cell.column.id;
                   const defW = Number(cell.column.columnDef.size ?? 115);
+                  const rIdx = vRow.index;
+                  const inRange =
+                    !!range &&
+                    rIdx >= range.r0 &&
+                    rIdx <= range.r1 &&
+                    cIdx >= range.c0 &&
+                    cIdx <= range.c1;
+                  const edges = inRange
+                    ? `${rIdx === range.r0 ? 't' : ''}${cIdx === range.c1 ? 'r' : ''}${
+                        rIdx === range.r1 ? 'b' : ''
+                      }${cIdx === range.c0 ? 'l' : ''}`
+                    : '';
                   return (
-                    <GridCellSlot key={cell.id} width={getWidth(colId, defW)}>
+                    <GridCellSlot
+                      key={cell.id}
+                      width={getWidth(colId, defW)}
+                      inRange={inRange}
+                      isFocus={!!focus && focus.r === rIdx && focus.c === cIdx}
+                      edges={edges}
+                      onMouseDown={(e) => onCellMouseDown(e, rIdx, cIdx)}
+                      onMouseEnter={() => onCellMouseEnter(rIdx, cIdx)}
+                    >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </GridCellSlot>
                   );

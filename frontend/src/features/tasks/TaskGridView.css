@@ -98,9 +98,10 @@
     top: 0;
     left: 0;
     display: flex;
-    height: var(--row-h);
+    height: var(--tgrid-row-h);
     transform: translateY(var(--tg-offset, 0px));
-    border-bottom: 1px solid var(--border-dark);
+    border-bottom: 1px solid var(--grid-line);
+    box-sizing: border-box;
     background: var(--surface-field);
     cursor: pointer;
   }
@@ -119,10 +120,43 @@
     display: flex;
     align-items: center;
     padding: 0 var(--space-2);
-    border-right: 1px solid var(--border-dark);
+    border-right: 1px solid var(--grid-line);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    box-sizing: border-box;
+    user-select: none;
+    cursor: cell;
+  }
+
+  /* Range selection (Excel-like): tinted cells, accent outline around the block. */
+  .org-tgrid__td[data-in-range='true'] {
+    background: var(--accent-soft);
+  }
+
+  .org-tgrid__td[data-edges*='t'] {
+    border-top: 1px solid var(--accent);
+  }
+
+  .org-tgrid__td[data-edges*='b'] {
+    border-bottom: 1px solid var(--accent);
+  }
+
+  .org-tgrid__td[data-edges*='l'] {
+    border-left: 1px solid var(--accent);
+  }
+
+  .org-tgrid__td[data-edges*='r'] {
+    border-right: 1px solid var(--accent);
+  }
+
+  .org-tgrid__td[data-focus='true'] {
+    outline: var(--gantt-sel-w) solid var(--accent);
+    outline-offset: calc(var(--gantt-sel-w) * -1);
+  }
+
+  .org-tgrid__scroll:focus {
+    outline: 0;
   }
 
   .org-tgrid__code {

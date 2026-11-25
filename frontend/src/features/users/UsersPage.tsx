@@ -13,6 +13,7 @@ import {
   Dialog,
   Panel,
   SearchField,
+  SideNav,
   Select,
   Stack,
   Text,
@@ -27,21 +28,49 @@ import { deptColorHex } from '../departments/deptColors';
 import { TimeCapacitySection } from './TimeCapacitySection';
 import './UsersPage.css';
 
-type UsersSection = 'users' | 'companies' | 'departments' | 'time' | 'roles' | 'project' | 'audit';
+type UsersSection =
+  | 'users'
+  | 'companies'
+  | 'departments'
+  | 'time'
+  | 'roles'
+  | 'default_tasks'
+  | 'dep_templates'
+  | 'rules'
+  | 'project'
+  | 'database'
+  | 'audit';
+type AdminSectionId = Exclude<UsersSection, 'users' | 'companies' | 'departments' | 'time'>;
+
+/** Admin-console sections rendered through AdminConsoleContent, and the permission each needs. */
+type AdminGate = 'roles' | 'entities' | 'rules' | 'db';
+const ADMIN_SECTION_IDS: ReadonlyArray<UsersSection> = [
+  'roles',
+  'default_tasks',
+  'dep_templates',
+  'rules',
+  'project',
+  'database',
+  'audit',
+];
 
 const USERS_SECTIONS: ReadonlyArray<{
   id: UsersSection;
   label: string;
   group: 'People' | 'Time' | 'Settings';
-  admin?: boolean;
+  gate?: AdminGate;
 }> = [
   { id: 'users', label: 'Users', group: 'People' },
   { id: 'companies', label: 'Companies', group: 'People' },
   { id: 'departments', label: 'Departments', group: 'People' },
   { id: 'time', label: 'Time & Capacity', group: 'Time' },
-  { id: 'roles', label: 'Roles & Permissions', group: 'Settings', admin: true },
-  { id: 'project', label: 'Project Settings', group: 'Settings', admin: true },
-  { id: 'audit', label: 'Audit Log', group: 'Settings', admin: true },
+  { id: 'roles', label: 'Roles & Permissions', group: 'Settings', gate: 'roles' },
+  { id: 'default_tasks', label: 'Default Tasks', group: 'Settings', gate: 'entities' },
+  { id: 'dep_templates', label: 'Dependency Templates', group: 'Settings', gate: 'entities' },
+  { id: 'rules', label: 'Rules', group: 'Settings', gate: 'rules' },
+  { id: 'project', label: 'Project Settings', group: 'Settings', gate: 'roles' },
+  { id: 'database', label: 'Database', group: 'Settings', gate: 'db' },
+  { id: 'audit', label: 'Audit Log', group: 'Settings', gate: 'roles' },
 ];
 
 function VirtualUserRow({
@@ -123,7 +152,13 @@ export function UsersPage({
   const canAdmin = hasPerm(auth?.permissions, 'role.manage');
   const canViewUsers = hasPerm(auth?.permissions, 'user.view');
   const requested = (searchParams.get('section') ?? searchParams.get('tab') ?? '') as UsersSection;
-  const navSections = USERS_SECTIONS.filter((sec) => (sec.admin ? canAdmin : canViewUsers));
+  const gates: Record<AdminGate, boolean> = {
+    roles: canAdmin,
+    entities: hasPerm(auth?.permissions, 'entity.manage'),
+    rules: hasPerm(auth?.permissions, 'rules.manage'),
+    db: auth?.user.role_name === 'admin' && hasPerm(auth?.permissions, 'admin.db'),
+  };
+  const navSections = USERS_SECTIONS.filter((sec) => (sec.gate ? gates[sec.gate] : canViewUsers));
   const activeTab: UsersSection = navSections.some((sec) => sec.id === requested)
     ? requested
     : (navSections[0]?.id ?? 'users');
@@ -417,39 +452,29 @@ export function UsersPage({
       onToggleTheme={onToggleTheme}
       statusText={`Users & Admin — ${users.length} users`}
     >
-      <div className="org-users-shell">
-        <aside className="org-users-nav" aria-label="Users & administration sections">
-          {(['People', 'Time', 'Settings'] as const).map((group) => {
-            const items = navSections.filter((sec) => sec.group === group);
-            if (items.length === 0) return null;
-            return (
-              <div key={group} className="org-users-nav__group">
-                <div className="org-users-nav__title">{group}</div>
-                {items.map((sec) => (
-                  <button
-                    key={sec.id}
-                    type="button"
-                    className="org-users-nav__item"
-                    data-active={activeTab === sec.id ? 'true' : undefined}
-                    aria-current={activeTab === sec.id ? 'page' : undefined}
-                    onClick={() => setActiveTab(sec.id)}
-                  >
-                    <span>{sec.label}</span>
-                    {sec.id === 'users' && (
-                      <span className="org-users-nav__count">{users.length}</span>
-                    )}
-                    {sec.id === 'companies' && (
-                      <span className="org-users-nav__count">{companies.length}</span>
-                    )}
-                    {sec.id === 'departments' && (
-                      <span className="org-users-nav__count">{departments.length}</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            );
-          })}
-        </aside>
+      <div className="org-sidenav-shell">
+        <SideNav<UsersSection>
+          ariaLabel="Users & administration sections"
+          activeId={activeTab}
+          onSelect={setActiveTab}
+          groups={(['People', 'Time', 'Settings'] as const).map((group) => ({
+            title: group,
+            items: navSections
+              .filter((sec) => sec.group === group)
+              .map((sec) => ({
+                id: sec.id,
+                label: sec.label,
+                count:
+                  sec.id === 'users'
+                    ? users.length
+                    : sec.id === 'companies'
+                      ? companies.length
+                      : sec.id === 'departments'
+                        ? departments.length
+                        : undefined,
+              })),
+          }))}
+        />
         <div className="org-users-page" data-ui="users-page">
           {errorMsg && <Banner severity="danger">{errorMsg}</Banner>}
           {feedback && <Banner severity="success">{feedback}</Banner>}
@@ -892,8 +917,8 @@ export function UsersPage({
                 ),
               },
             ];
-            if (activeTab === 'roles' || activeTab === 'project' || activeTab === 'audit') {
-              return <AdminConsoleContent section={activeTab} />;
+            if (ADMIN_SECTION_IDS.includes(activeTab)) {
+              return <AdminConsoleContent section={activeTab as AdminSectionId} />;
             }
             return sections.find((sec) => sec.id === activeTab)?.content ?? null;
           })()}

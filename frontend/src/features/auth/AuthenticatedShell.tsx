@@ -1,13 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { ThemeMode } from '../../app/App';
+import { useStandardMenus } from '../../app/useStandardMenus';
 import { useWorkspacePanels } from '../../app/useWorkspacePanels';
 import { AppShell, StatusBar, StatusBarSegment } from '../../components/ui';
 import { apiClient } from '../../lib/api/client';
 import { hasPerm, useAuthStore } from '../auth/authStore';
-import { useProjectStore } from '../project/projectStore';
-import { SettingsDialog } from '../settings/SettingsDialog';
 
 export function AuthenticatedShell({
   theme,
@@ -23,21 +20,8 @@ export function AuthenticatedShell({
   const navigate = useNavigate();
   const auth = useAuthStore((s) => s.auth);
   const logout = useAuthStore((s) => s.logout);
-  const activeProjectUuid = useProjectStore((s) => s.activeProjectUuid);
-  const openSettings = useProjectStore((s) => s.openSettings);
-
-  const projectsQuery = useQuery({
-    queryKey: ['projects'],
-    queryFn: () => apiClient.listProjects(),
-    enabled: Boolean(auth),
-  });
-
-  const activeProject = useMemo(
-    () => (projectsQuery.data ?? []).find((p) => p.uuid === activeProjectUuid) ?? null,
-    [projectsQuery.data, activeProjectUuid],
-  );
-
   const panels = useWorkspacePanels();
+  const menus = useStandardMenus(theme, onToggleTheme);
 
   const canAdmin =
     hasPerm(auth?.permissions, 'role.manage') || hasPerm(auth?.permissions, 'rules.manage');
@@ -45,27 +29,9 @@ export function AuthenticatedShell({
   return (
     <>
       <AppShell
-        menus={[
-          {
-            id: 'workspace',
-            label: 'Workspace',
-            items: [
-              { id: 'ws-ent', label: 'Entities & Viewer', onSelect: () => navigate('/entities') },
-              ...(hasPerm(auth?.permissions, 'task.view')
-                ? [{ id: 'ws-tasks', label: 'Tasks Workspace', onSelect: () => navigate('/tasks') }]
-                : []),
-              ...(hasPerm(auth?.permissions, 'user.view') || canAdmin
-                ? [{ id: 'ws-users', label: 'Users & Admin', onSelect: () => navigate('/users') }]
-                : []),
-              { id: 'ws-me', label: 'My User', onSelect: () => navigate('/me') },
-            ],
-          },
-        ]}
+        menus={menus}
         panels={panels}
-        projectName={activeProject?.name ?? null}
-        onOpenSettings={
-          auth?.user.role_name === 'client' ? undefined : () => openSettings('project')
-        }
+        onOpenSettings={auth?.user.role_name === 'client' ? undefined : () => navigate('/settings')}
         theme={theme}
         onToggleTheme={onToggleTheme}
         userName={auth?.user.username ?? 'user'}
@@ -76,7 +42,16 @@ export function AuthenticatedShell({
         }
         canAdmin={canAdmin}
         onOpenMyUser={() => navigate('/me')}
-        onOpenAdmin={canAdmin ? () => navigate('/users?section=roles') : undefined}
+        onOpenAdmin={
+          canAdmin
+            ? () =>
+                navigate(
+                  hasPerm(auth?.permissions, 'role.manage')
+                    ? '/users?section=roles'
+                    : '/users?section=rules',
+                )
+            : undefined
+        }
         onLogout={() => {
           void logout().then(() => navigate('/login', { replace: true }));
         }}
@@ -92,7 +67,6 @@ export function AuthenticatedShell({
       >
         {children}
       </AppShell>
-      <SettingsDialog theme={theme} onToggleTheme={onToggleTheme} />
     </>
   );
 }

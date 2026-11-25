@@ -48,3 +48,4 @@ export * from './UnreadDot/UnreadDot';
 export * from './UserPicker/UserPicker';
 export * from './VectorField/VectorField';
 export * from './ViewSwitcher/ViewSwitcher';
+export * from './SideNav/SideNav';

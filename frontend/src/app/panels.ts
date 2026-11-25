@@ -46,5 +46,6 @@ registerPanel({
   label: 'USERS',
   route: '/users',
   matches: ['/users', '/admin'],
-  visibleFor: (perms) => granted(perms, 'user.view') || granted(perms, 'role.manage'),
+  visibleFor: (perms) =>
+    granted(perms, 'user.view') || granted(perms, 'role.manage') || granted(perms, 'rules.manage'),
 });

@@ -26,6 +26,7 @@ import { DepartmentTag } from '../departments/DepartmentTag';
 import { useProjectStore } from '../project/projectStore';
 import { TaskUnreadDot } from '../reviews/TaskUnreadDot';
 import { ConfirmTrashDialog, PromptNameDialog } from './EntityDialogs';
+import { useInspectPopupStore } from '../viewer/inspectPopupStore';
 import './DeptTaskColumn.css';
 
 export function DeptTaskColumn({
@@ -47,6 +48,7 @@ export function DeptTaskColumn({
   const toast = useToast();
   const activeProjectUuid = useProjectStore((s) => s.activeProjectUuid);
   const openSettings = useProjectStore((s) => s.openSettings);
+  const showTask = useInspectPopupStore((s) => s.showTask);
 
   const [collapsedDepts, setCollapsedDepts] = useState<Record<string, boolean>>({});
   const [newTaskForEd, setNewTaskForEd] = useState<EntityDepartmentOut | null>(null);
@@ -186,6 +188,12 @@ export function DeptTaskColumn({
                       <ContextMenu
                         key={task.id}
                         items={[
+                          {
+                            id: 'show',
+                            label: 'Show Task…',
+                            onSelect: () => showTask(task.id),
+                          },
+                          { id: 'sep-show', label: '', separator: true },
                           {
                             id: 'rename',
                             label: 'Rename Task...',

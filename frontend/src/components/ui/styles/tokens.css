@@ -37,6 +37,8 @@
     --surface-hover: #334155;
     --surface-pressed: #172033;
     --border-dark: #0b1120;
+    --grid-line: #334155;
+    --grid-line-strong: #475569;
     --bevel-light: #3b4a63;
     --border-control: #64748b;
 
@@ -236,6 +238,7 @@
     --gizmo-size: 40px;
     --logo-h: 14px;
     --grid-gutter-w: 36px;
+    --tgrid-row-h: 30px;
     --grid-default-col-w: 120px;
     --grid-min-h: 220px;
     --chart-h: 156px;
@@ -263,9 +266,9 @@
     --avatar-sm: 20px;
     --avatar-md: 30px;
     --avatar-lg: 40px;
-    --gantt-row-h: 28px;
-    --gantt-header-h: 36px;
-    --gantt-bar-h: 12px;
+    --gantt-row-h: 34px;
+    --gantt-header-h: 44px;
+    --gantt-bar-h: 22px;
     --kanban-col-w: 260px;
     --heat-cell-w: 28px;
     --heat-cell-h: 20px;
@@ -277,9 +280,11 @@
     --priority-h: 20px;
     --dock-min-w: 360px;
     --dock-max-w: 760px;
-    --matrix-entity-col-w: 220px;
-    --matrix-cell-w: 128px;
-    --matrix-subcol-w: 96px;
+    --matrix-entity-col-w: 240px;
+    --matrix-cell-w: 210px;
+    --matrix-card-h: 44px;
+    --matrix-group-h: 34px;
+    --matrix-subcol-w: 170px;
     --kanban-card-min-h: 78px;
     --thumb-sm: 36px;
     --thumb-md: 48px;
@@ -294,9 +299,12 @@
     --dept-swatch: 10px;
     --users-nav-w: 220px;
     --progress-thin-h: 6px;
-    --gantt-tree-w: 280px;
+    --gantt-tree-w: 480px;
+    --gantt-tree-dept-w: 120px;
+    --gantt-link-dot: 10px;
+    --gantt-sel-w: 2px;
     --gantt-actual-h: 4px;
-    --gantt-group-bar-h: 6px;
+    --gantt-group-bar-h: 8px;
     --gantt-day-w: 28px;
     --heat-user-w: 200px;
     --graph-port-size: 8px;
@@ -366,6 +374,8 @@
     --surface-hover: #ffffff;
     --surface-pressed: #cbd5e1;
     --border-dark: #94a3b8;
+    --grid-line: #cbd5e1;
+    --grid-line-strong: #94a3b8;
     --bevel-light: #ffffff;
     --border-control: #64748b;
 

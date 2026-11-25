@@ -8829,6 +8829,28 @@
             ],
             "title": "Author Id"
           },
+          "author_username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Username"
+          },
+          "author_full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Full Name"
+          },
           "visibility": {
             "type": "string",
             "enum": [

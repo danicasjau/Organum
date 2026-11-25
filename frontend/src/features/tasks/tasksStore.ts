@@ -1,13 +1,14 @@
 import { create } from 'zustand';
 import type { TaskBulkRowIn, TaskListQuery } from '../../lib/api/client';
 
-export type TasksWorkspaceView =
-  'gantt' | 'matrix' | 'grid' | 'workload' | 'kanban' | 'graph' | 'review';
+export type TasksWorkspaceView = 'gantt' | 'matrix' | 'grid' | 'workload' | 'kanban' | 'review';
 export type MatrixGroupBy = 'path' | 'type';
 export type KanbanSwimlane = 'none' | 'department' | 'assignee';
 export type GanttGroupBy =
   'entity_path' | 'department' | 'user' | 'company' | 'status' | 'priority' | 'none';
-export type GanttZoom = 'day' | 'week' | 'month';
+/** Gantt zoom = pixels per day (continuous). */
+export const GANTT_DAY_PX_MIN = 3;
+export const GANTT_DAY_PX_MAX = 96;
 export type WorkloadZoom = 'days' | 'weeks';
 export type WorkloadGroupBy = 'none' | 'department' | 'company';
 export type GraphMode = 'task' | 'entity';
@@ -49,7 +50,7 @@ export interface TasksStoreState {
   kanbanSwimlane: KanbanSwimlane;
   matrixUndoStack: TaskBulkRowIn[][];
   ganttGroupBy: GanttGroupBy;
-  ganttZoom: GanttZoom;
+  ganttDayPx: number;
   ganttShowLinks: boolean;
   ganttPushDependents: boolean;
   ganttCollapsedGroups: string[];
@@ -80,7 +81,7 @@ export interface TasksStoreState {
   pushMatrixUndo: (rows: TaskBulkRowIn[]) => void;
   popMatrixUndo: () => TaskBulkRowIn[] | undefined;
   setGanttGroupBy: (groupBy: GanttGroupBy) => void;
-  setGanttZoom: (zoom: GanttZoom) => void;
+  setGanttDayPx: (px: number) => void;
   setGanttShowLinks: (show: boolean) => void;
   setGanttPushDependents: (push: boolean) => void;
   toggleGanttGroupCollapsed: (key: string) => void;
@@ -115,7 +116,7 @@ export const useTasksStore = create<TasksStoreState>((set, get) => ({
   kanbanSwimlane: 'none',
   matrixUndoStack: [],
   ganttGroupBy: 'entity_path',
-  ganttZoom: 'day',
+  ganttDayPx: 28,
   ganttShowLinks: true,
   ganttPushDependents: false,
   ganttCollapsedGroups: [],
@@ -196,7 +197,8 @@ export const useTasksStore = create<TasksStoreState>((set, get) => ({
     return top;
   },
   setGanttGroupBy: (ganttGroupBy) => set({ ganttGroupBy }),
-  setGanttZoom: (ganttZoom) => set({ ganttZoom }),
+  setGanttDayPx: (px) =>
+    set({ ganttDayPx: Math.min(GANTT_DAY_PX_MAX, Math.max(GANTT_DAY_PX_MIN, px)) }),
   setGanttShowLinks: (ganttShowLinks) => set({ ganttShowLinks }),
   setGanttPushDependents: (ganttPushDependents) => set({ ganttPushDependents }),
   toggleGanttGroupCollapsed: (key) =>

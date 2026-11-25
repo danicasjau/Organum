@@ -1,7 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { ThemeMode } from '../../app/App';
+import { useStandardMenus } from '../../app/useStandardMenus';
 import { useWorkspacePanels } from '../../app/useWorkspacePanels';
 import {
   AppShell,
@@ -20,7 +21,7 @@ import {
   Table,
   Text,
   useGroupRef,
-  type MenuBarMenu,
+  type MenuEntry,
   type TableColumn,
 } from '../../components/ui';
 import {
@@ -34,7 +35,7 @@ import { hasPerm, useAuthStore } from '../auth/authStore';
 import { EntitiesWorkspaceDock } from '../entities/EntitiesWorkspaceDock';
 import { useEntitiesStore } from '../entities/entitiesStore';
 import { useProjectStore } from '../project/projectStore';
-import { SettingsDialog } from '../settings/SettingsDialog';
+import { InspectPopups } from './InspectPopups';
 import { InspectorPanel } from './InspectorPanel';
 import { LayerStrip, hasLayerStripContent } from './LayerStrip';
 import { ViewerToolStrip } from './ViewerToolStrip';
@@ -92,7 +93,6 @@ export function ViewerPage({
 
   const activeProjectUuid = useProjectStore((s) => s.activeProjectUuid);
   const setActiveProject = useProjectStore((s) => s.setActiveProject);
-  const openSettings = useProjectStore((s) => s.openSettings);
   const auth = useAuthStore((s) => s.auth);
   const logout = useAuthStore((s) => s.logout);
 
@@ -143,6 +143,18 @@ export function ViewerPage({
     selectedEntityState && selectedEntityState.projectUuid === activeProjectUuid
       ? selectedEntityState.entity
       : null;
+  // Stable callback + bail-out when nothing changed: an inline arrow here re-ran the dock's
+  // effect every render and looped (it blocked route transitions away from /entities).
+  const handleSelectedEntityChange = useCallback(
+    (ent: EntityOut | null) => {
+      setSelectedEntityState((prev) => {
+        if (!ent || !activeProjectUuid) return prev === null ? prev : null;
+        if (prev && prev.projectUuid === activeProjectUuid && prev.entity === ent) return prev;
+        return { projectUuid: activeProjectUuid, entity: ent };
+      });
+    },
+    [activeProjectUuid],
+  );
   const outerGroupRef = useGroupRef();
   const entitiesMaximized = useEntitiesStore((s) => s.entitiesMaximized);
   const toggleEntitiesMaximized = useEntitiesStore((s) => s.toggleMaximized);
@@ -172,8 +184,6 @@ export function ViewerPage({
       setActiveProject(preferred.uuid, queryClient);
     }
   }, [projects, activeProjectUuid, setActiveProject, queryClient]);
-
-  const activeProject = projects.find((p) => p.uuid === activeProjectUuid) ?? null;
 
   useEffect(() => {
     if (selectedFileState && selectedFileState.projectUuid !== activeProjectUuid) {
@@ -472,93 +482,53 @@ export function ViewerPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tree]);
 
-  const menus: MenuBarMenu[] = useMemo(
+  const workspaceExtras: MenuEntry[] = useMemo(
     () => [
       {
-        id: 'file',
-        label: 'File',
-        items: [
-          {
-            id: 'rescan',
-            label: 'Reconcile Project Disk & DB',
-            shortcut: 'Ctrl+R',
-            onSelect: async () => {
-              if (!activeProjectUuid) return;
-              const res = await apiClient.reconcileProject(activeProjectUuid);
-              await queryClient.invalidateQueries({ queryKey: ['entities', activeProjectUuid] });
-              setStatusMessage(
-                `Reconciled ${res.entities_scanned} entities (${res.files_scanned} files)`,
-              );
-            },
-          },
-          { id: 'sep-p', label: '', separator: true },
-          {
-            id: 'settings-proj',
-            label: 'Project & Preferences...',
-            onSelect: () => openSettings('project'),
-          },
-        ],
-      },
-      {
-        id: 'view',
-        label: 'View',
-        items: [
-          {
-            id: 'toggle-left',
-            label: `${leftCollapsed ? 'Show' : 'Hide'} Entities Panel`,
-            onSelect: () => {
-              const next = !leftCollapsed;
-              setLeftCollapsed(next);
-              localStorage.setItem('organum.leftCollapsed', String(next));
-            },
-          },
-          {
-            id: 'toggle-right',
-            label: `${rightCollapsed ? 'Show' : 'Hide'} Inspector Panel`,
-            onSelect: () => {
-              const next = !rightCollapsed;
-              setRightCollapsed(next);
-              localStorage.setItem('organum.rightCollapsed', String(next));
-            },
-          },
-          { id: 'sep', label: '', separator: true },
-          {
-            id: 'gallery',
-            label: 'Open Widget Gallery',
-            onSelect: () => navigate('/gallery'),
-          },
-          {
-            id: 'theme',
-            label: `Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Theme`,
-            onSelect: onToggleTheme,
-          },
-        ],
-      },
-      {
-        id: 'help',
-        label: 'Help',
-        items: [
-          {
-            id: 'keys',
-            label: 'Keyboard Shortcuts',
-            shortcut: '?',
-            onSelect: () => setHelpOpen(true),
-          },
-        ],
+        id: 'rescan',
+        label: 'Reconcile Project Disk & DB',
+        shortcut: 'Ctrl+R',
+        onSelect: async () => {
+          if (!activeProjectUuid) return;
+          const res = await apiClient.reconcileProject(activeProjectUuid);
+          await queryClient.invalidateQueries({ queryKey: ['entities', activeProjectUuid] });
+          setStatusMessage(
+            `Reconciled ${res.entities_scanned} entities (${res.files_scanned} files)`,
+          );
+        },
       },
     ],
-    [
-      leftCollapsed,
-      rightCollapsed,
-      theme,
-      navigate,
-      onToggleTheme,
-      queryClient,
-      setHelpOpen,
-      activeProjectUuid,
-      openSettings,
-    ],
+    [activeProjectUuid, queryClient],
   );
+  const viewExtras: MenuEntry[] = useMemo(
+    () => [
+      {
+        id: 'toggle-left',
+        label: `${leftCollapsed ? 'Show' : 'Hide'} Entities Panel`,
+        onSelect: () => {
+          const next = !leftCollapsed;
+          setLeftCollapsed(next);
+          localStorage.setItem('organum.leftCollapsed', String(next));
+        },
+      },
+      {
+        id: 'toggle-right',
+        label: `${rightCollapsed ? 'Show' : 'Hide'} Inspector Panel`,
+        onSelect: () => {
+          const next = !rightCollapsed;
+          setRightCollapsed(next);
+          localStorage.setItem('organum.rightCollapsed', String(next));
+        },
+      },
+    ],
+    [leftCollapsed, rightCollapsed],
+  );
+  const showShortcuts = useCallback(() => setHelpOpen(true), [setHelpOpen]);
+  const menus = useStandardMenus(theme, onToggleTheme, {
+    workspace: workspaceExtras,
+    view: viewExtras,
+    onShowShortcuts: showShortcuts,
+  });
 
   const isUdimActive = Boolean(
     selectedFile?.is_sequence &&
@@ -601,7 +571,8 @@ export function ViewerPage({
 
   const panelItems = useWorkspacePanels();
 
-  const canAdmin = hasPerm(auth?.permissions, 'role.manage');
+  const canAdmin =
+    hasPerm(auth?.permissions, 'role.manage') || hasPerm(auth?.permissions, 'rules.manage');
   const isClientRole = auth?.user.role_name === 'client';
 
   const visibleEntityTaskId = useMemo(() => {
@@ -620,8 +591,7 @@ export function ViewerPage({
     <AppShell
       menus={menus}
       panels={panelItems}
-      projectName={activeProject?.name ?? null}
-      onOpenSettings={isClientRole ? undefined : () => openSettings()}
+      onOpenSettings={isClientRole ? undefined : () => navigate('/settings')}
       theme={theme}
       onToggleTheme={onToggleTheme}
       userName={auth?.user.username ?? 'user'}
@@ -634,7 +604,16 @@ export function ViewerPage({
       }
       canAdmin={canAdmin}
       onOpenMyUser={() => navigate('/me')}
-      onOpenAdmin={canAdmin ? () => navigate('/users?section=roles') : undefined}
+      onOpenAdmin={
+        canAdmin
+          ? () =>
+              navigate(
+                hasPerm(auth?.permissions, 'role.manage')
+                  ? '/users?section=roles'
+                  : '/users?section=rules',
+              )
+          : undefined
+      }
       onLogout={() => {
         void logout().then(() => navigate('/login', { replace: true }));
       }}
@@ -682,13 +661,7 @@ export function ViewerPage({
                   selectedFileId={selectedFile?.id ?? null}
                   onSelectFile={handleSelectFile}
                   onOpenMediaScenefile={handleOpenMediaScenefile}
-                  onSelectedEntityChange={(ent) => {
-                    if (!ent || !activeProjectUuid) {
-                      setSelectedEntityState(null);
-                    } else {
-                      setSelectedEntityState({ projectUuid: activeProjectUuid, entity: ent });
-                    }
-                  }}
+                  onSelectedEntityChange={handleSelectedEntityChange}
                   onStatusMessage={setStatusMessage}
                 />
               </div>
@@ -868,7 +841,7 @@ export function ViewerPage({
         <Table columns={HOTKEY_COLS} rows={HOTKEY_ROWS} />
       </Dialog>
 
-      <SettingsDialog theme={theme} onToggleTheme={onToggleTheme} />
+      <InspectPopups />
     </AppShell>
   );
 }
