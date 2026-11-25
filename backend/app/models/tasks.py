@@ -256,3 +256,23 @@ class SavedView(TimestampMixin, Base):
     name: Mapped[str] = mapped_column(String(128), nullable=False)
     config_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
 
+
+class Rule(TimestampMixin, Base):
+    """Declarative rule evaluated on production triggers or manually in dry-run/apply mode."""
+
+    __tablename__ = "rules"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True, server_default="1", nullable=False)
+    sort_order: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0", index=True, nullable=False
+    )
+    trigger: Mapped[str] = mapped_column(
+        String(32), default="manual", nullable=False
+    )  # 'entity_created' | 'task_created' | 'link_created' | 'manual'
+    conditions_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
+    actions_json: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list, nullable=False)
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )

@@ -1034,6 +1034,13 @@ async def create_task_full_endpoint(
         source="user",
         commit=True,
     )
+    from app.services.rules_engine import run_trigger_rules
+
+    applied = await run_trigger_rules(
+        db, "task_created", task_ids=[created.id], actor_user_id=auth.user.id
+    )
+    if applied > 0:
+        await db.commit()
     loaded = await load_task_full(db, created.id)
     return await _build_task_detail_out(db, auth, loaded, acted_as=f"role:{auth.role.name}")
 

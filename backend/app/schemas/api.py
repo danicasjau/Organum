@@ -1326,3 +1326,108 @@ class SavedViewOut(BaseModel):
     name: str
     config_json: dict[str, Any]
     updated_at: datetime
+
+
+# Rules Engine & Raw DB Viewer (Phase 7E)
+class RuleCreateRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=128)
+    enabled: bool = True
+    sort_order: int = 0
+    trigger: Literal["entity_created", "task_created", "link_created", "manual"] = "manual"
+    conditions_json: dict[str, Any] = Field(default_factory=lambda: {"op": "AND", "items": []})
+    actions_json: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class RuleUpdateRequest(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=128)
+    enabled: bool | None = None
+    sort_order: int | None = None
+    trigger: Literal["entity_created", "task_created", "link_created", "manual"] | None = None
+    conditions_json: dict[str, Any] | None = None
+    actions_json: list[dict[str, Any]] | None = None
+
+
+class RuleOut(BaseModel):
+    id: UUID
+    name: str
+    enabled: bool
+    sort_order: int
+    trigger: Literal["entity_created", "task_created", "link_created", "manual"]
+    conditions_json: dict[str, Any]
+    actions_json: list[dict[str, Any]]
+    sentence: str
+    created_by: UUID | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class RulePreviewRequest(BaseModel):
+    rule_id: UUID | None = None
+    trigger: Literal["entity_created", "task_created", "link_created", "manual"] = "manual"
+    conditions_json: dict[str, Any] | None = None
+    actions_json: list[dict[str, Any]] | None = None
+    entity_ids: list[UUID] | None = None
+    task_ids: list[UUID] | None = None
+
+
+class RuleChangePreviewOut(BaseModel):
+    rule_id: UUID
+    rule_name: str
+    task_id: UUID
+    task_code: str
+    field: str
+    old_value: str | None = None
+    new_value: str | None = None
+    skipped_manual: bool = False
+
+
+class RulePreviewOut(BaseModel):
+    matched_tasks: int
+    changes: list[RuleChangePreviewOut] = Field(default_factory=list)
+    sentence: str = ""
+
+
+class RuleApplyRequest(BaseModel):
+    rule_ids: list[UUID] | None = None
+    entity_ids: list[UUID] | None = None
+    task_ids: list[UUID] | None = None
+
+
+class RuleApplyOut(BaseModel):
+    matched_tasks: int
+    applied_count: int
+    changes: list[RuleChangePreviewOut] = Field(default_factory=list)
+
+
+class DbColumnOut(BaseModel):
+    name: str
+    type: str
+    pk: bool
+    redacted: bool
+
+
+class DbTableSummaryOut(BaseModel):
+    name: str
+    row_count: int
+    columns: list[DbColumnOut] = Field(default_factory=list)
+
+
+class DbTableRowsOut(BaseModel):
+    table: str
+    columns: list[DbColumnOut] = Field(default_factory=list)
+    rows: list[list[Any]] = Field(default_factory=list)
+    total: int
+    page: int
+    page_size: int
+
+
+class DbQueryRequest(BaseModel):
+    sql: str = Field(min_length=1, max_length=8000)
+
+
+class DbQueryResultOut(BaseModel):
+    columns: list[str] = Field(default_factory=list)
+    rows: list[list[Any]] = Field(default_factory=list)
+    row_count: int
+    truncated: bool
+    elapsed_ms: float
