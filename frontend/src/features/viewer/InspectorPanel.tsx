@@ -17,6 +17,7 @@ import {
   Text,
   TextArea,
   Tree,
+  useToast,
   type IconName,
   type TableColumn,
   type TreeNode,
@@ -28,8 +29,10 @@ import {
   type FileSummaryOut,
   type InspectionDocument,
 } from '../../lib/api/client';
+import { useAuthStore } from '../auth/authStore';
 import { EntityInspectorTab } from '../entities/EntityInspectorTab';
 import { useProjectStore } from '../project/projectStore';
+import { TaskDetail } from '../tasks/TaskDetail';
 import { hasLayerStripContent } from './LayerStrip';
 import { rescalePlaneDistance, type Stroke3D } from './modules/annotationPlane3D';
 import {
@@ -105,6 +108,7 @@ export interface InspectorPanelProps {
   file: FileSummaryOut | null;
   inspection: InspectionDocument | null;
   selectedEntity?: EntityOut | null;
+  selectedTaskId?: string | null;
   viewerState: PerFileViewerState;
   onUpdateState: (patch: Partial<PerFileViewerState>) => void;
   noteDraft: string;
@@ -115,12 +119,16 @@ export function InspectorPanel({
   file,
   inspection,
   selectedEntity = null,
+  selectedTaskId = null,
   viewerState,
   onUpdateState,
   noteDraft,
   onNoteDraftChange,
 }: InspectorPanelProps) {
   const queryClient = useQueryClient();
+  const toast = useToast();
+  const auth = useAuthStore((s) => s.auth);
+  const isClientRole = auth?.user.role_name === 'client';
   const activeProjectUuid = useProjectStore((s) => s.activeProjectUuid);
   const [activeTab, setActiveTab] = useState('structure');
   const [metaQuery, setMetaQuery] = useState('');
@@ -190,22 +198,35 @@ export function InspectorPanel({
   const expandedSceneIds = useMemo(() => collectAllNodeIds(sceneNodes), [sceneNodes]);
 
   if (!file || !inspection) {
-    if (selectedEntity) {
+    if (selectedEntity || selectedTaskId) {
       return (
         <Panel title="Inspector" className="org-inspector-panel">
           <Tabs
-            activeId="entity"
+            activeId={selectedEntity ? 'entity' : 'task'}
             onChange={() => { }}
             items={[
-              {
-                id: 'entity',
-                label: 'Entity',
-                content: (
-                  <ScrollArea>
-                    <EntityInspectorTab entity={selectedEntity} />
-                  </ScrollArea>
-                ),
-              },
+              ...(selectedEntity
+                ? [
+                  {
+                    id: 'entity',
+                    label: 'Entity',
+                    content: (
+                      <ScrollArea>
+                        <EntityInspectorTab entity={selectedEntity} />
+                      </ScrollArea>
+                    ),
+                  },
+                ]
+                : []),
+              ...(selectedTaskId
+                ? [
+                  {
+                    id: 'task',
+                    label: 'Task',
+                    content: <TaskDetail taskId={selectedTaskId} compact />,
+                  },
+                ]
+                : []),
             ]}
           />
         </Panel>
@@ -722,6 +743,42 @@ export function InspectorPanel({
                                   Jump
                                 </Button>
                               )}
+                              {selectedTaskId && !isPreview && (
+                                <Button
+                                  size="sm"
+                                  onClick={async () => {
+                                    try {
+                                      await apiClient.createTaskComment(
+                                        selectedTaskId,
+                                        {
+                                          body:
+                                            ann.note_text?.trim() ||
+                                            `Media annotation (${ann.kind.toUpperCase()})`,
+                                          kind: 'media',
+                                          visibility: isClientRole ? 'client' : 'internal',
+                                          file_id: file.id,
+                                          annotation_id: ann.id,
+                                          frame: ann.frame_in ?? null,
+                                        },
+                                        activeProjectUuid,
+                                      );
+                                      await queryClient.invalidateQueries({
+                                        queryKey: ['task', activeProjectUuid, selectedTaskId],
+                                      });
+                                      toast.push('success', 'Posted annotation to task thread');
+                                    } catch (err) {
+                                      toast.push(
+                                        'danger',
+                                        err instanceof Error
+                                          ? err.message
+                                          : 'Failed to post to task',
+                                      );
+                                    }
+                                  }}
+                                >
+                                  Post to task
+                                </Button>
+                              )}
                               <Button
                                 variant="icon"
                                 size="sm"
@@ -783,6 +840,15 @@ export function InspectorPanel({
                     <EntityInspectorTab entity={selectedEntity} />
                   </ScrollArea>
                 ),
+              },
+            ]
+            : []),
+          ...(selectedTaskId
+            ? [
+              {
+                id: 'task',
+                label: 'Task',
+                content: <TaskDetail taskId={selectedTaskId} compact />,
               },
             ]
             : []),

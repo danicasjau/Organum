@@ -1,0 +1,192 @@
+@layer components {
+  .org-kanban {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    background: var(--surface-window);
+  }
+
+  .org-kanban__toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: var(--header-h);
+    padding: 0 var(--space-3);
+    border-bottom: 1px solid var(--border-dark);
+    background: var(--surface-panel);
+  }
+
+  .org-kanban__lane-ctrl {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .org-kanban__board {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: var(--space-2);
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: var(--space-2);
+  }
+
+  .org-kanban__board--lane {
+    overflow-y: visible;
+    flex: none;
+  }
+
+  .org-kanban__swim-scroll {
+    flex: 1;
+    overflow: auto;
+    padding: var(--space-2);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .org-kanban__swimlane {
+    border: 1px solid var(--border-dark);
+    background: var(--surface-panel);
+  }
+
+  .org-kanban__swim-hdr {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    height: var(--header-h);
+    padding: 0 var(--space-2);
+    border-bottom: 1px solid var(--border-dark);
+    background: var(--surface-raised);
+  }
+
+  .org-kanban__col {
+    flex: 0 0 var(--kanban-col-w);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border: 1px solid var(--border-dark);
+    background: var(--surface-panel);
+  }
+
+  .org-kanban__col[data-drop-active='true'] {
+    border-color: var(--accent);
+    background: var(--surface-raised);
+  }
+
+  .org-kanban__col-hdr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: var(--header-h);
+    padding: 0 var(--space-2);
+    border-bottom: 1px solid var(--border-dark);
+    background: var(--surface-raised);
+  }
+
+  .org-kanban__col-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: var(--space-1);
+  }
+
+  .org-kanban__vlist {
+    position: relative;
+    width: 100%;
+    height: var(--kv-total-h, 0px);
+  }
+
+  .org-kanban__vrow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    transform: translateY(var(--kv-offset, 0px));
+  }
+
+  .org-kanban__lane-cards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-1);
+  }
+
+  .org-kanban__card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-height: var(--kanban-card-min-h);
+    padding: var(--space-2);
+    border: 1px solid var(--border-dark);
+    border-radius: var(--radius-1);
+    background: var(--surface-field);
+    cursor: grab;
+  }
+
+  .org-kanban__card[data-selected='true'],
+  .org-kanban__card:hover {
+    border-color: var(--accent);
+    background: var(--surface-raised);
+  }
+
+  .org-kanban__card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-1);
+  }
+
+  .org-kanban__code {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .org-kanban__card-entity {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-1);
+  }
+
+  .org-kanban__card-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    flex-wrap: wrap;
+  }
+
+  .org-kanban__card-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-1);
+  }
+
+  .org-kanban__avatars {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .org-kanban__progress {
+    height: var(--progress-thin-h);
+    width: 100%;
+    border: 1px solid var(--border-dark);
+    background: var(--surface-window);
+    overflow: hidden;
+  }
+
+  .org-kanban__progress-fill {
+    height: 100%;
+    width: var(--kv-fill-pct, 0%);
+    background: var(--accent);
+  }
+}
+

@@ -10,6 +10,7 @@ import {
   Inline,
   Select,
   Stack,
+  StatusChip,
   Text,
   useToast,
 } from '../../components/ui';
@@ -196,6 +197,7 @@ export function DeptTaskColumn({
                       >
                         <Icon name="layers" size="sm" />
                         <span className="org-dtcol__label">{task.name}</span>
+                        <StatusChip status={task.status ?? 'RDY'} compact />
                         <CapacityBadgeList capacities={task.my_capacities ?? []} />
                         {(task.assignments ?? []).slice(0, 2).map((a) => (
                           <Avatar

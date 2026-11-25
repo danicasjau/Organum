@@ -10,6 +10,9 @@ import './App.css';
 const ViewerPage = lazy(() =>
   import('../features/viewer/ViewerPage').then((m) => ({ default: m.ViewerPage })),
 );
+const TasksPage = lazy(() =>
+  import('../features/tasks/TasksPage').then((m) => ({ default: m.TasksPage })),
+);
 const GalleryPage = lazy(() =>
   import('../gallery/GalleryPage').then((m) => ({ default: m.GalleryPage })),
 );
@@ -103,6 +106,14 @@ export function App() {
                   element={
                     <RequireAuth>
                       <ViewerPage theme={theme} onToggleTheme={toggleTheme} />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/tasks"
+                  element={
+                    <RequireAuth requiredPerm="task.view">
+                      <TasksPage theme={theme} onToggleTheme={toggleTheme} />
                     </RequireAuth>
                   }
                 />

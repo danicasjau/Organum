@@ -26,6 +26,12 @@ export function getVisiblePanels(
 
 registerPanel({ id: 'entities', label: 'ENTITIES', route: '/entities' });
 registerPanel({
+  id: 'tasks',
+  label: 'TASKS',
+  route: '/tasks',
+  visibleFor: (perms) => (perms['task.view'] ?? 'none') !== 'none',
+});
+registerPanel({
   id: 'users',
   label: 'USERS',
   route: '/users',

@@ -96,7 +96,8 @@
     background: var(--surface-hover);
   }
 
-  .org-ecol__card[data-selected='true'] {
+  .org-ecol__card[data-selected='true'],
+  .org-ecol__card[data-multi-selected='true'] {
     background: var(--accent-soft);
     border-left-color: var(--accent);
   }

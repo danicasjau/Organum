@@ -1,6 +1,6 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, type MouseEvent } from 'react';
 import {
   Badge,
   Button,
@@ -21,6 +21,7 @@ import {
   type EntityOut,
   type EntityTreeOut,
 } from '../../lib/api/client';
+import { hasPerm, useAuthStore } from '../auth/authStore';
 import { useProjectStore } from '../project/projectStore';
 import { type EntitySortMode, useEntitiesStore } from './entitiesStore';
 import {
@@ -29,6 +30,7 @@ import {
   CreateFolderDialog,
   EditEntityDialog,
 } from './EntityDialogs';
+import { EntityLinkPickerDialog } from './EntityLinkDialogs';
 import './EntityColumn.css';
 
 type BrowseItem =
@@ -63,20 +65,32 @@ function VirtualCardRow({
 function EntityCard({
   entity,
   selected,
+  multiSelected,
+  multiCount,
+  linkCount,
+  canLink,
   projectUuid,
   onSelect,
   onEdit,
   onAddDept,
+  onLinkTo,
+  onLinkFrom,
   onResetThumb,
   onReveal,
   onDelete,
 }: {
   entity: EntityOut;
   selected: boolean;
+  multiSelected: boolean;
+  multiCount: number;
+  linkCount: number;
+  canLink: boolean;
   projectUuid: string | null;
-  onSelect: () => void;
+  onSelect: (e: MouseEvent) => void;
   onEdit: () => void;
   onAddDept: () => void;
+  onLinkTo: () => void;
+  onLinkFrom: () => void;
   onResetThumb: () => void;
   onReveal: () => void;
   onDelete: () => void;
@@ -89,6 +103,26 @@ function EntityCard({
       items={[
         { id: 'edit', label: 'Rename / Edit Tags & Type...', onSelect: onEdit },
         { id: 'dept', label: 'Add Department...', onSelect: onAddDept },
+        ...(canLink
+          ? [
+              {
+                id: 'link-to',
+                label:
+                  multiCount > 1
+                    ? `Link ${multiCount} selected to…`
+                    : 'Link selected to…',
+                onSelect: onLinkTo,
+              },
+              {
+                id: 'link-from',
+                label:
+                  multiCount > 1
+                    ? `Link ${multiCount} selected from…`
+                    : 'Link from…',
+                onSelect: onLinkFrom,
+              },
+            ]
+          : []),
         ...(entity.thumbnail_source === 'manual'
           ? [{ id: 'reset-thumb', label: 'Reset Thumbnail to Auto', onSelect: onResetThumb }]
           : []),
@@ -103,12 +137,13 @@ function EntityCard({
         aria-selected={selected}
         data-entity-id={entity.id}
         data-selected={selected ? 'true' : undefined}
+        data-multi-selected={multiSelected ? 'true' : undefined}
         className="org-ecol__card"
         onClick={onSelect}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            onSelect();
+            onSelect(e as unknown as MouseEvent);
           }
         }}
       >
@@ -130,6 +165,13 @@ function EntityCard({
               {entity.name}
             </span>
             {entity.entity_type && <Badge tone="accent">{entity.entity_type}</Badge>}
+            {linkCount > 0 && (
+              <span title={`${linkCount} entity link(s)`}>
+                <Badge tone="info">
+                  {linkCount} link{linkCount === 1 ? '' : 's'}
+                </Badge>
+              </span>
+            )}
             {entity.is_missing && <Badge tone="danger">missing</Badge>}
           </div>
           <div className="org-ecol__chips">
@@ -167,6 +209,10 @@ export function EntityColumn({
   const queryClient = useQueryClient();
   const toast = useToast();
   const activeProjectUuid = useProjectStore((s) => s.activeProjectUuid);
+  const auth = useAuthStore((s) => s.auth);
+  const isClientRole = auth?.user.role_name === 'client';
+  const canLinkEntities = !isClientRole && hasPerm(auth?.permissions, 'entity.link');
+  const canViewGraph = !isClientRole && hasPerm(auth?.permissions, 'views.graph');
   const currentFolder = useEntitiesStore((s) => s.currentFolder);
   const setCurrentFolder = useEntitiesStore((s) => s.setCurrentFolder);
   const sortMode = useEntitiesStore((s) => s.sortMode);
@@ -176,10 +222,30 @@ export function EntityColumn({
   const [filterType, setFilterType] = useState('');
   const [filterDept, setFilterDept] = useState('');
   const [filterTags, setFilterTags] = useState<string[]>([]);
+  const [multiSelectedIds, setMultiSelectedIds] = useState<string[]>([]);
+  const [bulkLinkState, setBulkLinkState] = useState<{
+    anchors: EntityOut[];
+    direction: 'uses' | 'used_in';
+  } | null>(null);
   const [createEntityOpen, setCreateEntityOpen] = useState(false);
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
   const [editingEntity, setEditingEntity] = useState<EntityOut | null>(null);
   const [deletingEntity, setDeletingEntity] = useState<EntityOut | null>(null);
+
+  const { data: linksGraph } = useQuery({
+    queryKey: ['entity-links-graph', activeProjectUuid],
+    queryFn: () => apiClient.getEntityLinksGraph(activeProjectUuid),
+    enabled: Boolean(activeProjectUuid && canViewGraph),
+  });
+
+  const linkCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const edge of linksGraph?.edges ?? []) {
+      m.set(edge.source_entity_id, (m.get(edge.source_entity_id) ?? 0) + 1);
+      m.set(edge.target_entity_id, (m.get(edge.target_entity_id) ?? 0) + 1);
+    }
+    return m;
+  }, [linksGraph]);
 
   const availableTypes = useMemo(() => {
     const set = new Set<string>(tree?.available_types ?? []);
@@ -525,10 +591,58 @@ export function EntityColumn({
                     <EntityCard
                       entity={item.entity}
                       selected={item.entity.id === selectedEntityId}
+                      multiSelected={multiSelectedIds.includes(item.entity.id)}
+                      multiCount={
+                        multiSelectedIds.includes(item.entity.id)
+                          ? multiSelectedIds.length
+                          : 1
+                      }
+                      linkCount={linkCounts.get(item.entity.id) ?? 0}
+                      canLink={canLinkEntities}
                       projectUuid={activeProjectUuid}
-                      onSelect={() => onSelectEntity(item.entity.id)}
+                      onSelect={(e) => {
+                        const eid = item.entity.id;
+                        if (e.ctrlKey || e.metaKey) {
+                          setMultiSelectedIds((prev) =>
+                            prev.includes(eid) ? prev.filter((x) => x !== eid) : [...prev, eid],
+                          );
+                        } else if (e.shiftKey && selectedEntityId) {
+                          const entItems = items.filter(
+                            (it): it is Extract<BrowseItem, { kind: 'entity' }> =>
+                              it.kind === 'entity',
+                          );
+                          const iA = entItems.findIndex((it) => it.entity.id === selectedEntityId);
+                          const iB = entItems.findIndex((it) => it.entity.id === eid);
+                          if (iA >= 0 && iB >= 0) {
+                            const lo = Math.min(iA, iB);
+                            const hi = Math.max(iA, iB);
+                            setMultiSelectedIds(
+                              entItems.slice(lo, hi + 1).map((it) => it.entity.id),
+                            );
+                          }
+                        } else {
+                          setMultiSelectedIds([eid]);
+                        }
+                        onSelectEntity(eid);
+                      }}
                       onEdit={() => setEditingEntity(item.entity)}
                       onAddDept={() => onRequestAddDepartment(item.entity.id)}
+                      onLinkTo={() => {
+                        const ids =
+                          multiSelectedIds.includes(item.entity.id) && multiSelectedIds.length > 0
+                            ? multiSelectedIds
+                            : [item.entity.id];
+                        const anchors = (tree?.entities ?? []).filter((e) => ids.includes(e.id));
+                        setBulkLinkState({ anchors, direction: 'used_in' });
+                      }}
+                      onLinkFrom={() => {
+                        const ids =
+                          multiSelectedIds.includes(item.entity.id) && multiSelectedIds.length > 0
+                            ? multiSelectedIds
+                            : [item.entity.id];
+                        const anchors = (tree?.entities ?? []).filter((e) => ids.includes(e.id));
+                        setBulkLinkState({ anchors, direction: 'uses' });
+                      }}
                       onResetThumb={async () => {
                         await apiClient.putEntityThumbnail(
                           item.entity.id,
@@ -631,6 +745,16 @@ export function EntityColumn({
           await refreshTree();
           toast.push('info', `Moved '${deletingEntity.name}' to trash`);
         }}
+      />
+
+      <EntityLinkPickerDialog
+        open={bulkLinkState !== null}
+        onOpenChange={(o) => {
+          if (!o) setBulkLinkState(null);
+        }}
+        anchorEntities={bulkLinkState?.anchors ?? []}
+        allEntities={tree?.entities ?? []}
+        direction={bulkLinkState?.direction ?? 'used_in'}
       />
     </div>
   );

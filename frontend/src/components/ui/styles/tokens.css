@@ -270,6 +270,25 @@
     --graph-node-w: 160px;
     --graph-node-h: 40px;
     --badge-cap-h: 16px;
+    --status-chip-h: 18px;
+    --status-chip-pad-x: 4px;
+    --priority-h: 16px;
+    --dock-min-w: 300px;
+    --dock-max-w: 640px;
+    --matrix-entity-col-w: 220px;
+    --matrix-cell-w: 116px;
+    --matrix-subcol-w: 96px;
+    --kanban-card-min-h: 78px;
+    --thumb-sm: 36px;
+    --thumb-md: 48px;
+    --review-card-thumb-w: 96px;
+    --review-card-thumb-h: 60px;
+    --inbox-card-w: 320px;
+    --filter-select-w: 112px;
+    --filter-search-w: 176px;
+    --dialog-wide-w: 680px;
+    --badge-dot-w: 6px;
+    --progress-thin-h: 6px;
 
     --capacity-do: #38BDF8;
     --capacity-do-bg: #132C42;

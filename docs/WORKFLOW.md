@@ -56,3 +56,14 @@ All status changes write append-only `task_events` recording `acted_as` (`role:<
 - Dates strictly before `today` display actual `TimeLog` hours; dates from `max(today, ideal_start_date)` through `ideal_finish_date` on configured `working_days` distribute `max(0, bid_hours - logged_hours)` evenly across working days (and across assigned artists).
 - Unscheduled non-`APP` tasks (missing `ideal_finish_date` or no artist assignee) appear in `unscheduled_tasks`.
 
+---
+
+## 5. Production Views & Focus Inbox (Phase 7C)
+- **Tasks Workspace (`/tasks`):** Segmented `ViewSwitcher` (`Grid`, `Matrix`, `Kanban`, `Review Queue` — server-scoped and permission-gated) plus shared `TaskFilterBar` with saved views (`saved_views`) and resizable `TaskDetail` dock (`--task-panel-w: 380px`).
+- **Task Grid (`TaskGridView`):** Virtualized TanStack Table v9 with column chooser, column resize, multi-sort, CSV export, and permission-checked inline editing; clients see only reduced allowlist columns.
+- **Department × Entity Matrix (`DepartmentMatrixView`):** Groups rows by folder path hierarchy or entity type, honors `Include linked`, shows `computeRollupStatus` on collapsed departments, expands into task sub-columns, and supports TSV copy/paste with dry-run preview, atomic commit, and `Ctrl+Z` undo.
+- **Kanban (`KanbanView`):** 9 workflow columns (`WTG..HLD`) with optional department/assignee swimlanes and drag-and-drop transitions (opening a prompt when comment or version input is required).
+- **Review Queue (`ReviewQueueView`) & My Tasks (`/me`):** Oldest-first review queue and capacity-separated Focus Inbox (`All | I DO | I LEAD | I SUPERVISE`) with `Start`, `Log hours`, `Submit for review`, `Approve`, `Retake`, `Open in viewer`, and `Open task folder`.
+- **ENTITIES Integration:** Right inspector appends the shared `Task` tab (`TaskDetail`), and saved viewer annotations offer **Post to task** (`kind="media"` with thumbnail and frame deep-link).
+
+

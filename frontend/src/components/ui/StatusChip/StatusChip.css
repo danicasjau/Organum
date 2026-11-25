@@ -1,0 +1,77 @@
+@layer components {
+  .org-statuschip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    height: var(--status-chip-h);
+    padding: 0 var(--status-chip-pad-x);
+    border: 1px solid var(--border-control);
+    border-radius: var(--radius-1);
+    background: var(--surface-field);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .org-statuschip[data-compact='true'] {
+    height: var(--badge-cap-h);
+  }
+
+  .org-statuschip__glyph {
+    font-size: var(--font-size-sm);
+    line-height: 1;
+  }
+
+  .org-statuschip__code {
+    letter-spacing: 0.02em;
+  }
+
+  .org-statuschip[data-status='WTG'] {
+    color: var(--status-wtg);
+    border-color: var(--status-wtg);
+  }
+
+  .org-statuschip[data-status='RDY'] {
+    color: var(--status-rdy);
+    border-color: var(--status-rdy);
+  }
+
+  .org-statuschip[data-status='IP'] {
+    color: var(--status-ip);
+    border-color: var(--status-ip);
+  }
+
+  .org-statuschip[data-status='RTK'] {
+    color: var(--status-rtk);
+    border-color: var(--status-rtk);
+  }
+
+  .org-statuschip[data-status='P_LEAD'] {
+    color: var(--status-p-lead);
+    border-color: var(--status-p-lead);
+  }
+
+  .org-statuschip[data-status='P_SUP'] {
+    color: var(--status-p-sup);
+    border-color: var(--status-p-sup);
+  }
+
+  .org-statuschip[data-status='P_CLIENT'] {
+    color: var(--status-p-client);
+    border-color: var(--status-p-client);
+  }
+
+  .org-statuschip[data-status='APP'] {
+    color: var(--status-app);
+    border-color: var(--status-app);
+  }
+
+  .org-statuschip[data-status='HLD'] {
+    color: var(--status-hld);
+    border-color: var(--status-hld);
+  }
+}
+

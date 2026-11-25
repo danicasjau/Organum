@@ -60,6 +60,9 @@ export function AuthenticatedShell({
             label: 'Workspace',
             items: [
               { id: 'ws-ent', label: 'Entities & Viewer', onSelect: () => navigate('/entities') },
+              ...(hasPerm(auth?.permissions, 'task.view')
+                ? [{ id: 'ws-tasks', label: 'Tasks Workspace', onSelect: () => navigate('/tasks') }]
+                : []),
               ...(hasPerm(auth?.permissions, 'user.view')
                 ? [{ id: 'ws-users', label: 'Users Directory', onSelect: () => navigate('/users') }]
                 : []),

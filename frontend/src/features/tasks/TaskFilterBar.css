@@ -1,0 +1,54 @@
+@layer components {
+  .org-tfilter {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    flex-wrap: wrap;
+    min-height: var(--filterbar-h);
+    padding: var(--space-1) var(--space-2);
+    border-bottom: 1px solid var(--border-dark);
+    background: var(--surface-panel);
+  }
+
+  .org-tfilter__search {
+    width: var(--filter-search-w);
+  }
+
+  .org-tfilter__sel {
+    width: var(--filter-select-w);
+  }
+
+  .org-tfilter__pop {
+    min-width: var(--kanban-col-w);
+  }
+
+  .org-tfilter__dates {
+    display: flex;
+    gap: var(--space-1);
+  }
+
+  .org-tfilter__date {
+    flex: 1;
+    height: var(--ctl-h);
+    padding: 0 var(--space-1);
+    border: 1px solid var(--border-dark);
+    border-radius: var(--radius-1);
+    background: var(--surface-field);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+  }
+
+  .org-tfilter__save-row {
+    display: flex;
+    gap: var(--space-1);
+  }
+
+  .org-tfilter__view-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-1);
+  }
+}
+

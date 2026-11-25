@@ -1,0 +1,105 @@
+@layer components {
+  .org-rqueue {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    background: var(--surface-window);
+  }
+
+  .org-rqueue__bar {
+    display: flex;
+    align-items: center;
+    height: var(--header-h);
+    padding: 0 var(--space-3);
+    border-bottom: 1px solid var(--border-dark);
+    background: var(--surface-panel);
+  }
+
+  .org-rqueue__empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    padding: var(--space-5);
+  }
+
+  .org-rqueue__list {
+    flex: 1;
+    overflow: auto;
+    padding: var(--space-2);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .org-rqueue__card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2);
+    border: 1px solid var(--border-dark);
+    border-radius: var(--radius-1);
+    background: var(--surface-panel);
+    cursor: pointer;
+  }
+
+  .org-rqueue__card[data-selected='true'],
+  .org-rqueue__card:hover {
+    border-color: var(--accent);
+    background: var(--surface-raised);
+  }
+
+  .org-rqueue__thumb {
+    width: var(--review-card-thumb-w);
+    height: var(--review-card-thumb-h);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-dark);
+    background: var(--surface-field);
+    overflow: hidden;
+  }
+
+  .org-rqueue__thumb-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .org-rqueue__info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .org-rqueue__top {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    flex-wrap: wrap;
+  }
+
+  .org-rqueue__code {
+    font-family: var(--font-mono);
+    font-weight: 700;
+  }
+
+  .org-rqueue__sub {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-0);
+  }
+
+  .org-rqueue__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+}
+

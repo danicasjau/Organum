@@ -16,6 +16,7 @@ import {
 import { apiClient } from '../../lib/api/client';
 import { AuthenticatedShell } from '../auth/AuthenticatedShell';
 import { useAuthStore } from '../auth/authStore';
+import { MyTasksInbox } from './MyTasksInbox';
 import './MyUserPage.css';
 
 export function MyUserPage({
@@ -274,6 +275,11 @@ export function MyUserPage({
                   </Stack>
                 </div>
               ),
+            },
+            {
+              id: 'tasks',
+              label: 'My Tasks',
+              content: <MyTasksInbox />,
             },
             {
               id: 'preferences',

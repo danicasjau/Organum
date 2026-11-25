@@ -28,3 +28,10 @@ Entity Links model non-filesystem production relationships between entities (for
   - Inserts confirmed dependencies in a single transaction with `from_entity_link = true`, performs cycle validation across the batch, updates `WTG` status if all deps are met, and writes `task_events` + `audit_log`.
 - **Entities Scope Filter:** `GET /tasks?entity_id=<id>&include_linked_entities=true` expands to upstream/downstream linked entities up to `project_meta.link_dependency_depth`.
 
+---
+
+## 3. ENTITIES Links UI (Phase 7C)
+- **Column 1 Badges & Bulk Linking (`EntityColumn`):** Entity cards display direct link counts (`N links`) and support `Ctrl/Meta+Click` or `Shift+Click` multi-selection with context menu actions (**Link selected to…** / **Link from…**) when `entity.link` is permitted.
+- **Inspector Links Section (`EntityInspectorTab`):** Displays direct **Uses** and **Used in** cards (with entity type and free-text `link_type` badges), plus lighter indented **indirect links** (`indirect, via ...`, up to depth 3), **+ Uses… / + Used in…** searchable multi-select pickers, and **Suggest Deps…** preview modal (`POST /entities/{id}/suggest-dependencies` -> confirm -> `POST /entities/{id}/apply-dependencies`).
+
+

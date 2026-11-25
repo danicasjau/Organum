@@ -188,36 +188,68 @@ export function ViewerPage({
     enabled: Boolean(activeProjectUuid),
   });
 
+  const setSelectedEntity = useEntitiesStore((s) => s.setSelectedEntity);
+  const setSelectedDept = useEntitiesStore((s) => s.setSelectedDept);
+  const setSelectedTask = useEntitiesStore((s) => s.setSelectedTask);
+  const selectedEntityTaskId = useEntitiesStore((s) => s.selectedTaskId);
+
   useEffect(() => {
     if (selectedFile || !tree || !activeProjectUuid) return;
-    const allFiles: FileSummaryOut[] = [];
+    const requestedTaskId = searchParams.get('task');
+    const requestedFileId = searchParams.get('file');
+    const requestedFrame = searchParams.get('frame');
+
+    const allFiles: Array<{ file: FileSummaryOut; entityId: string; deptId: string; taskId: string }> = [];
+    let taskMatchedFile: FileSummaryOut | null = null;
     for (const ent of tree.entities ?? []) {
       for (const dept of ent.departments ?? []) {
         for (const task of dept.tasks ?? []) {
+          if (requestedTaskId && task.id === requestedTaskId) {
+            setSelectedEntity(ent.id);
+            setSelectedDept(dept.id);
+            setSelectedTask(task.id);
+          }
           for (const ver of task.product?.versions ?? []) {
-            allFiles.push(...(ver.files ?? []));
+            for (const f of ver.files ?? []) {
+              allFiles.push({ file: f, entityId: ent.id, deptId: dept.id, taskId: task.id });
+              if (requestedTaskId && task.id === requestedTaskId && !taskMatchedFile) {
+                taskMatchedFile = f;
+              }
+            }
           }
         }
       }
     }
-    const requestedId = searchParams.get('file');
-    if (requestedId) {
-      const found = allFiles.find((f) => f.id === requestedId);
-      if (found) {
-        setSelectedFileState({ projectUuid: activeProjectUuid, file: found });
-        selectFile(found.id, found.colorspace_override);
-        return;
+
+    const chosen =
+      (requestedFileId ? allFiles.find((x) => x.file.id === requestedFileId)?.file : null) ??
+      taskMatchedFile ??
+      allFiles.find((x) => x.file.detected_format === 'png')?.file ??
+      allFiles.find((x) => x.file.media_kind === 'image2d')?.file ??
+      allFiles[0]?.file;
+
+    if (chosen) {
+      setSelectedFileState({ projectUuid: activeProjectUuid, file: chosen });
+      selectFile(chosen.id, chosen.colorspace_override);
+      if (requestedFrame) {
+        const frameNum = Number(requestedFrame);
+        if (Number.isFinite(frameNum)) {
+          window.setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('organum:seek-frame', { detail: frameNum }));
+          }, 120);
+        }
       }
     }
-    const png =
-      allFiles.find((f) => f.detected_format === 'png') ??
-      allFiles.find((f) => f.media_kind === 'image2d') ??
-      allFiles[0];
-    if (png) {
-      setSelectedFileState({ projectUuid: activeProjectUuid, file: png });
-      selectFile(png.id, png.colorspace_override);
-    }
-  }, [tree, selectedFile, activeProjectUuid, selectFile, searchParams]);
+  }, [
+    tree,
+    selectedFile,
+    activeProjectUuid,
+    selectFile,
+    searchParams,
+    setSelectedEntity,
+    setSelectedDept,
+    setSelectedTask,
+  ]);
 
   const { data: inspection, isLoading: inspectionLoading } = useQuery({
     queryKey: [
@@ -805,6 +837,7 @@ export function ViewerPage({
                 file={selectedFile}
                 inspection={inspection ?? null}
                 selectedEntity={selectedEntity}
+                selectedTaskId={selectedEntityTaskId}
                 viewerState={viewerState}
                 onUpdateState={(patch) => {
                   if (currentFileId) updateFileState(currentFileId, patch);

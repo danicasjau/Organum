@@ -50,6 +50,67 @@ export type ProjectSettingsPatchRequest = components['schemas']['ProjectSettings
 export type AuditLogOut = components['schemas']['AuditLogOut'];
 export type TaskAssignmentOut = components['schemas']['TaskAssignmentOut'];
 export type TaskAssignmentItemIn = components['schemas']['TaskAssignmentItemIn'];
+export type TaskListItemOut = components['schemas']['TaskListItemOut'];
+export type TaskListOut = components['schemas']['TaskListOut'];
+export type TaskDetailOut = components['schemas']['TaskDetailOut'];
+export type TaskCreateFullRequest = components['schemas']['TaskCreateFullRequest'];
+export type TaskPatchRequest = components['schemas']['TaskPatchRequest'];
+export type TaskTransitionRequest = components['schemas']['TaskTransitionRequest'];
+export type TransitionOptionOut = components['schemas']['TransitionOptionOut'];
+export type TaskDependencyOut = components['schemas']['TaskDependencyOut'];
+export type TaskDependencyIn = components['schemas']['TaskDependencyIn'];
+export type TaskLinkOut = components['schemas']['TaskLinkOut'];
+export type TaskLinkIn = components['schemas']['TaskLinkIn'];
+export type TimeLogOut = components['schemas']['TimeLogOut'];
+export type TimeLogCreateRequest = components['schemas']['TimeLogCreateRequest'];
+export type TaskCommentOut = components['schemas']['TaskCommentOut'];
+export type TaskCommentCreateRequest = components['schemas']['TaskCommentCreateRequest'];
+export type TaskReviewOut = components['schemas']['TaskReviewOut'];
+export type TaskEventOut = components['schemas']['TaskEventOut'];
+export type TaskBulkRowIn = components['schemas']['TaskBulkRowIn'];
+export type TaskBulkRequest = components['schemas']['TaskBulkRequest'];
+export type TaskBulkResponse = components['schemas']['TaskBulkResponse'];
+export type TaskSharesPutRequest = components['schemas']['TaskSharesPutRequest'];
+export type ReviewQueueItemOut = components['schemas']['ReviewQueueItemOut'];
+export type MyTasksResponse = components['schemas']['MyTasksResponse'];
+export type ClientTaskListItemOut = components['schemas']['ClientTaskListItemOut'];
+export type ClientTaskListOut = components['schemas']['ClientTaskListOut'];
+export type ClientTaskDetailOut = components['schemas']['ClientTaskDetailOut'];
+export type ClientReviewQueueItemOut = components['schemas']['ClientReviewQueueItemOut'];
+export type ClientTaskCommentOut = components['schemas']['ClientTaskCommentOut'];
+export type ClientTaskReviewOut = components['schemas']['ClientTaskReviewOut'];
+export type ClientProductOut = components['schemas']['ClientProductOut'];
+export type EntityLinkOut = components['schemas']['EntityLinkOut'];
+export type IndirectEntityLinkOut = components['schemas']['IndirectEntityLinkOut'];
+export type EntityLinksResponse = components['schemas']['EntityLinksResponse'];
+export type EntityLinkCreateRequest = components['schemas']['EntityLinkCreateRequest'];
+export type EntityLinkBulkCreateRequest = components['schemas']['EntityLinkBulkCreateRequest'];
+export type EntityLinksGraphOut = components['schemas']['EntityLinksGraphOut'];
+export type SuggestedDependencyOut = components['schemas']['SuggestedDependencyOut'];
+export type ApplyDependenciesRequest = components['schemas']['ApplyDependenciesRequest'];
+export type SavedViewOut = components['schemas']['SavedViewOut'];
+export type SavedViewCreateRequest = components['schemas']['SavedViewCreateRequest'];
+
+export interface TaskListQuery {
+  status?: string;
+  priority?: string;
+  department_id?: string;
+  entity_id?: string;
+  entity_path_prefix?: string;
+  tag?: string;
+  company_id?: string;
+  user_id?: string;
+  role_name?: string;
+  my_capacity?: 'artist' | 'lead' | 'supervisor';
+  mine_only?: boolean;
+  include_linked_entities?: boolean;
+  date_from?: string;
+  date_to?: string;
+  q?: string;
+  sort?: 'code' | 'status' | 'priority' | 'due' | 'updated';
+  cursor?: string;
+  limit?: number;
+}
 
 export interface LayerThumbItem {
   id: string;
@@ -356,16 +417,177 @@ export const apiClient = {
       method: 'PUT',
       body: JSON.stringify({ assignments }),
     }),
-  putTaskShares: (taskId: string, companyIds: string[], projectUuid?: string | null) =>
+  putTaskShares: (
+    taskId: string,
+    payload: string[] | TaskSharesPutRequest,
+    projectUuid?: string | null,
+  ) =>
     apiFetch<string[]>(`${getProjBase(projectUuid)}/tasks/${taskId}/shares`, {
       method: 'PUT',
-      body: JSON.stringify({ company_ids: companyIds }),
+      body: JSON.stringify(
+        Array.isArray(payload) ? { company_ids: payload } : payload,
+      ),
     }),
   putVersionShares: (versionId: string, companyIds: string[], projectUuid?: string | null) =>
     apiFetch<string[]>(`${getProjBase(projectUuid)}/versions/${versionId}/shares`, {
       method: 'PUT',
       body: JSON.stringify({ company_ids: companyIds }),
     }),
+
+  // Phase 7B/7C Tasks, Workflow, Comments, Reviews, TimeLogs, Bulk, MyTasks & Entity Links
+  listTasks: (query: TaskListQuery = {}, projectUuid?: string | null) => {
+    const qs = new URLSearchParams();
+    for (const [k, v] of Object.entries(query)) {
+      if (v === undefined || v === null || v === '' || v === false) continue;
+      qs.set(k, String(v));
+    }
+    const suffix = qs.toString() ? `?${qs.toString()}` : '';
+    return apiFetch<TaskListOut | ClientTaskListOut>(`${getProjBase(projectUuid)}/tasks${suffix}`);
+  },
+  createFullTask: (payload: TaskCreateFullRequest, projectUuid?: string | null) =>
+    apiFetch<TaskDetailOut>(`${getProjBase(projectUuid)}/tasks`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  getTask: (taskId: string, projectUuid?: string | null) =>
+    apiFetch<TaskDetailOut | ClientTaskDetailOut>(`${getProjBase(projectUuid)}/tasks/${taskId}`),
+  patchTask: (taskId: string, payload: TaskPatchRequest, projectUuid?: string | null) =>
+    apiFetch<TaskDetailOut>(`${getProjBase(projectUuid)}/tasks/${taskId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    }),
+  transitionTask: (
+    taskId: string,
+    payload: TaskTransitionRequest,
+    projectUuid?: string | null,
+  ) =>
+    apiFetch<TaskDetailOut | ClientTaskDetailOut>(
+      `${getProjBase(projectUuid)}/tasks/${taskId}/transition`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+    ),
+  putTaskDependencies: (
+    taskId: string,
+    dependencies: TaskDependencyIn[],
+    projectUuid?: string | null,
+  ) =>
+    apiFetch<TaskDependencyOut[]>(`${getProjBase(projectUuid)}/tasks/${taskId}/dependencies`, {
+      method: 'PUT',
+      body: JSON.stringify({ dependencies }),
+    }),
+  putTaskLinks: (taskId: string, links: TaskLinkIn[], projectUuid?: string | null) =>
+    apiFetch<TaskLinkOut[]>(`${getProjBase(projectUuid)}/tasks/${taskId}/links`, {
+      method: 'PUT',
+      body: JSON.stringify({ links }),
+    }),
+  putTaskTags: (taskId: string, tags: string[], projectUuid?: string | null) =>
+    apiFetch<string[]>(`${getProjBase(projectUuid)}/tasks/${taskId}/tags`, {
+      method: 'PUT',
+      body: JSON.stringify({ tags }),
+    }),
+  listTaskComments: (taskId: string, projectUuid?: string | null) =>
+    apiFetch<Array<TaskCommentOut | ClientTaskCommentOut>>(
+      `${getProjBase(projectUuid)}/tasks/${taskId}/comments`,
+    ),
+  createTaskComment: (
+    taskId: string,
+    payload: TaskCommentCreateRequest,
+    projectUuid?: string | null,
+  ) =>
+    apiFetch<TaskCommentOut | ClientTaskCommentOut>(
+      `${getProjBase(projectUuid)}/tasks/${taskId}/comments`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+    ),
+  listTaskEvents: (taskId: string, projectUuid?: string | null) =>
+    apiFetch<TaskEventOut[]>(`${getProjBase(projectUuid)}/tasks/${taskId}/events`),
+  listTimeLogs: (taskId: string, projectUuid?: string | null) =>
+    apiFetch<TimeLogOut[]>(`${getProjBase(projectUuid)}/tasks/${taskId}/time-logs`),
+  createTimeLog: (
+    taskId: string,
+    payload: TimeLogCreateRequest,
+    projectUuid?: string | null,
+  ) =>
+    apiFetch<TimeLogOut>(`${getProjBase(projectUuid)}/tasks/${taskId}/time-logs`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  deleteTimeLog: (taskId: string, logId: string, projectUuid?: string | null) =>
+    apiFetch<void>(`${getProjBase(projectUuid)}/tasks/${taskId}/time-logs/${logId}`, {
+      method: 'DELETE',
+    }),
+  bulkTasks: (payload: TaskBulkRequest, projectUuid?: string | null) =>
+    apiFetch<TaskBulkResponse>(`${getProjBase(projectUuid)}/tasks/bulk`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  listReviewQueue: (projectUuid?: string | null) =>
+    apiFetch<Array<ReviewQueueItemOut | ClientReviewQueueItemOut>>(
+      `${getProjBase(projectUuid)}/review-queue`,
+    ),
+  getMyTasks: (projectUuid?: string | null) =>
+    apiFetch<MyTasksResponse>(`${getProjBase(projectUuid)}/my/tasks`),
+  listSavedViews: (viewKind?: string, projectUuid?: string | null) => {
+    const suffix = viewKind ? `?view_kind=${encodeURIComponent(viewKind)}` : '';
+    return apiFetch<SavedViewOut[]>(`${getProjBase(projectUuid)}/saved-views${suffix}`);
+  },
+  createSavedView: (payload: SavedViewCreateRequest, projectUuid?: string | null) =>
+    apiFetch<SavedViewOut>(`${getProjBase(projectUuid)}/saved-views`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  deleteSavedView: (viewId: string, projectUuid?: string | null) =>
+    apiFetch<void>(`${getProjBase(projectUuid)}/saved-views/${viewId}`, {
+      method: 'DELETE',
+    }),
+  getEntityLinks: (entityId: string, depth = 3, projectUuid?: string | null) =>
+    apiFetch<EntityLinksResponse>(
+      `${getProjBase(projectUuid)}/entities/${entityId}/links?depth=${depth}`,
+    ),
+  createEntityLink: (payload: EntityLinkCreateRequest, projectUuid?: string | null) =>
+    apiFetch<EntityLinkOut>(`${getProjBase(projectUuid)}/entity-links`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  bulkCreateEntityLinks: (payload: EntityLinkBulkCreateRequest, projectUuid?: string | null) =>
+    apiFetch<EntityLinkOut[]>(`${getProjBase(projectUuid)}/entity-links/bulk`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  deleteEntityLink: (linkId: string, projectUuid?: string | null) =>
+    apiFetch<void>(`${getProjBase(projectUuid)}/entity-links/${linkId}`, {
+      method: 'DELETE',
+    }),
+  getEntityLinksGraph: (projectUuid?: string | null) =>
+    apiFetch<EntityLinksGraphOut>(`${getProjBase(projectUuid)}/entity-links/graph`),
+  suggestEntityDependencies: (
+    entityId: string,
+    payload: { link_ids?: string[] | null; depth?: number | null } = {},
+    projectUuid?: string | null,
+  ) =>
+    apiFetch<SuggestedDependencyOut[]>(
+      `${getProjBase(projectUuid)}/entities/${entityId}/suggest-dependencies`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+    ),
+  applyEntityDependencies: (
+    entityId: string,
+    payload: ApplyDependenciesRequest,
+    projectUuid?: string | null,
+  ) =>
+    apiFetch<{ applied: number }>(
+      `${getProjBase(projectUuid)}/entities/${entityId}/apply-dependencies`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+    ),
 
   // App-level project registry & preferences
   listProjects: () => apiFetch<KnownProjectOut[]>('/api/v1/projects'),

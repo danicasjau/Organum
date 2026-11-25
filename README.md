@@ -134,6 +134,7 @@ npm run test:e2e
 | `VectorField` / `ColorField` | `values`, `lockable`, `rgba` | XYZ axis indicators, uniform lock toggle, RGBA swatch popover |
 | `AngleDial` / `Knob` / `Stepper` / `CurveRamp` | `value`, `points`, `onChange` | SVG radial/ramp editing, Shift 15° snap, presets |
 | `Select` / `SearchField` | `options`, `filterable`, `debounceMs`, `captureCtrlF` | Filterable popup, keyboard navigation, match counter |
+| `StatusChip` / `PriorityMarker` / `ViewSwitcher` | `status`, `compact`, `priority`, `items`, `activeId` | Non-color-only glyphs (`○▷▶↺◆◈★✓❚❚`), priority markers (`▲`, `■ STOP`), 2002 workspace switcher |
 | `PropertyEditor` / `PropertyRow` | `groups`, `dirty`, `onReset` | 35/65 split, search filter, "Modified" filter, dirty indicator |
 | `DataGrid` / `SceneFileIcon` | `columns`, `rows`, `extension`, `customIconUrl` | Virtualized grid + 32px family-coded DCC badges |
 | `Charts` (`LineChart`, `ScatterPlot`, `BarChart`, `Histogram`, `Heatmap`, `Sparkline`, `GaugeBar`, `NodeGraph`) | `series` / `channels` / `matrix` / `nodes` | Zero animation, 1px 30% grid, mono ticks, max 8 token series + dash patterns, hover readout |
@@ -154,4 +155,11 @@ npm run test:e2e
 - **DO** support full keyboard operation, `focus-visible` rings, and ARIA roles.
 - **DO NOT** use inline JSX `style={}`, Tailwind, CSS-in-JS, blur, or CSS transitions.
 - **DO NOT** integrate or stub any excluded format listed in `docs/DEPENDENCIES.md` / project spec §6.3.
+
+## Phase 7B/7C Task & Production Modules
+
+- **Workflow & Links Backend:** See [`docs/WORKFLOW.md`](docs/WORKFLOW.md) and [`docs/ENTITY_LINKS.md`](docs/ENTITY_LINKS.md).
+- **Tasks Workspace (`/tasks`):** Permission-gated `Grid`, `Matrix` (path/type grouping + TSV paste preview + undo), `Kanban`, and `Review Queue`, plus the shared `TaskDetail` inspector dock.
+- **Focus Inbox (`/me` > `My Tasks`):** Capacity-separated inbox (`All | I DO | I LEAD | I SUPERVISE`) and inline review queue.
+
 

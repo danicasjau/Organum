@@ -15,8 +15,9 @@ import {
   type PropertyGroupDef,
 } from '../../components/ui';
 import { apiClient, type EntityDataItem, type EntityOut } from '../../lib/api/client';
-import { useAuthStore } from '../auth/authStore';
+import { useAuthStore, hasPerm } from '../auth/authStore';
 import { useProjectStore } from '../project/projectStore';
+import { EntityLinkPickerDialog, SuggestDependenciesDialog } from './EntityLinkDialogs';
 import './EntityInspectorTab.css';
 
 const EMPTY_ENTITY_DATA: EntityDataItem[] = [];
@@ -39,7 +40,29 @@ export function EntityInspectorTab({
   const queryClient = useQueryClient();
   const toast = useToast();
   const activeProjectUuid = useProjectStore((s) => s.activeProjectUuid);
-  const isClientRole = useAuthStore((s) => s.auth?.user.role_name === 'client');
+  const auth = useAuthStore((s) => s.auth);
+  const isClientRole = auth?.user.role_name === 'client';
+  const canViewLinks =
+    !isClientRole &&
+    (hasPerm(auth?.permissions, 'task.view') ||
+      hasPerm(auth?.permissions, 'media.view') ||
+      hasPerm(auth?.permissions, 'entity.link'));
+  const canLinkEntities = !isClientRole && hasPerm(auth?.permissions, 'entity.link');
+  const canSuggestDeps = !isClientRole && hasPerm(auth?.permissions, 'task.dependencies');
+  const [linkDialogDir, setLinkDialogDir] = useState<'uses' | 'used_in' | null>(null);
+  const [suggestOpen, setSuggestOpen] = useState(false);
+
+  const { data: treeData } = useQuery({
+    queryKey: ['entities', activeProjectUuid],
+    queryFn: () => apiClient.listEntities(activeProjectUuid),
+    enabled: Boolean(activeProjectUuid && !isClientRole),
+  });
+
+  const { data: linksData } = useQuery({
+    queryKey: ['entity-links', activeProjectUuid, entity.id],
+    queryFn: () => apiClient.getEntityLinks(entity.id, 3, activeProjectUuid),
+    enabled: Boolean(activeProjectUuid && entity.id && canViewLinks),
+  });
   const [thumbBroken, setThumbBroken] = useState(false);
   const [tagDraft, setTagDraft] = useState('');
   const [draftRows, setDraftRows] = useState<EntityDataItem[]>([]);
@@ -243,6 +266,142 @@ export function EntityInspectorTab({
         </Inline>
       </Stack>
 
+      {!isClientRole && (
+        <>
+          <Separator />
+          <Stack gap="2" className="org-enttab__links" data-ui="entity-links-section">
+            <div className="org-enttab__links-hdr">
+              <Text size="sm" variant="accent">
+                Links ({(linksData?.uses?.length ?? 0) + (linksData?.used_in?.length ?? 0)})
+              </Text>
+              <Inline gap="1" wrap>
+                {canLinkEntities && (
+                  <>
+                    <Button size="sm" onClick={() => setLinkDialogDir('uses')}>
+                      + Uses…
+                    </Button>
+                    <Button size="sm" onClick={() => setLinkDialogDir('used_in')}>
+                      + Used in…
+                    </Button>
+                  </>
+                )}
+                {canSuggestDeps && (
+                  <Button size="sm" variant="primary" onClick={() => setSuggestOpen(true)}>
+                    Suggest Deps…
+                  </Button>
+                )}
+              </Inline>
+            </div>
+
+            <Stack gap="1">
+              <Text size="sm" variant="muted">
+                Uses ({linksData?.uses?.length ?? 0})
+              </Text>
+              {(linksData?.uses ?? []).length === 0 ? (
+                <Text size="sm" variant="muted">
+                  No direct upstream entities.
+                </Text>
+              ) : (
+                (linksData?.uses ?? []).map((lk) => (
+                  <div
+                    key={lk.id}
+                    className={`org-enttab__link-row${lk.source_archived ? ' org-enttab__link-row--arch' : ''}`}
+                  >
+                    <span className="org-enttab__link-name">
+                      <Icon name="box3d" size="sm" />
+                      <span>{lk.source_name}</span>
+                      {lk.source_type && <Badge tone="accent">{lk.source_type}</Badge>}
+                      {lk.link_type && <Badge tone="neutral">{lk.link_type}</Badge>}
+                    </span>
+                    {canLinkEntities && (
+                      <Button
+                        size="sm"
+                        variant="icon"
+                        aria-label={`Remove link from ${lk.source_name}`}
+                        onClick={async () => {
+                          await apiClient.deleteEntityLink(lk.id, activeProjectUuid);
+                          await Promise.all([
+                            queryClient.invalidateQueries({
+                              queryKey: ['entity-links', activeProjectUuid],
+                            }),
+                            queryClient.invalidateQueries({
+                              queryKey: ['entity-links-graph', activeProjectUuid],
+                            }),
+                          ]);
+                        }}
+                      >
+                        <Icon name="close" size="sm" />
+                      </Button>
+                    )}
+                  </div>
+                ))
+              )}
+              {(linksData?.uses_indirect ?? []).map((ind) => (
+                <div key={`uind-${ind.entity_id}`} className="org-enttab__link-indirect">
+                  <span>{ind.entity_name}</span>
+                  <Text size="sm" variant="muted">
+                    indirect, via {(ind.via_entity_names ?? []).join(' → ')}
+                  </Text>
+                </div>
+              ))}
+            </Stack>
+
+            <Stack gap="1">
+              <Text size="sm" variant="muted">
+                Used in ({linksData?.used_in?.length ?? 0})
+              </Text>
+              {(linksData?.used_in ?? []).length === 0 ? (
+                <Text size="sm" variant="muted">
+                  Not linked into downstream entities.
+                </Text>
+              ) : (
+                (linksData?.used_in ?? []).map((lk) => (
+                  <div
+                    key={lk.id}
+                    className={`org-enttab__link-row${lk.target_archived ? ' org-enttab__link-row--arch' : ''}`}
+                  >
+                    <span className="org-enttab__link-name">
+                      <Icon name="box3d" size="sm" />
+                      <span>{lk.target_name}</span>
+                      {lk.target_type && <Badge tone="accent">{lk.target_type}</Badge>}
+                      {lk.link_type && <Badge tone="neutral">{lk.link_type}</Badge>}
+                    </span>
+                    {canLinkEntities && (
+                      <Button
+                        size="sm"
+                        variant="icon"
+                        aria-label={`Remove link to ${lk.target_name}`}
+                        onClick={async () => {
+                          await apiClient.deleteEntityLink(lk.id, activeProjectUuid);
+                          await Promise.all([
+                            queryClient.invalidateQueries({
+                              queryKey: ['entity-links', activeProjectUuid],
+                            }),
+                            queryClient.invalidateQueries({
+                              queryKey: ['entity-links-graph', activeProjectUuid],
+                            }),
+                          ]);
+                        }}
+                      >
+                        <Icon name="close" size="sm" />
+                      </Button>
+                    )}
+                  </div>
+                ))
+              )}
+              {(linksData?.used_in_indirect ?? []).map((ind) => (
+                <div key={`dind-${ind.entity_id}`} className="org-enttab__link-indirect">
+                  <span>{ind.entity_name}</span>
+                  <Text size="sm" variant="muted">
+                    indirect, via {(ind.via_entity_names ?? []).join(' → ')}
+                  </Text>
+                </div>
+              ))}
+            </Stack>
+          </Stack>
+        </>
+      )}
+
       <Separator />
 
       <PropertyEditor groups={groups} searchable />
@@ -296,6 +455,24 @@ export function EntityInspectorTab({
           Save Entity Data
         </Button>
       </Inline>
+
+      <EntityLinkPickerDialog
+        open={linkDialogDir !== null}
+        onOpenChange={(o) => {
+          if (!o) setLinkDialogDir(null);
+        }}
+        anchorEntities={[entity]}
+        allEntities={treeData?.entities ?? []}
+        direction={linkDialogDir ?? 'used_in'}
+        linkTypeSuggestions={linksData?.link_types ?? []}
+      />
+
+      <SuggestDependenciesDialog
+        open={suggestOpen}
+        onOpenChange={setSuggestOpen}
+        entityId={entity.id}
+        entityName={entity.name}
+      />
     </Stack>
   );
 }

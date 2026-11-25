@@ -1,0 +1,31 @@
+@layer components {
+  .org-ctdlg__grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+  }
+
+  .org-ctdlg__dates {
+    display: flex;
+    gap: var(--space-1);
+  }
+
+  .org-ctdlg__date {
+    flex: 1;
+    height: var(--ctl-h);
+    padding: 0 var(--space-1);
+    border: 1px solid var(--border-dark);
+    border-radius: var(--radius-1);
+    background: var(--surface-field);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+  }
+
+  .org-ctdlg__checks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+}
+

@@ -1,0 +1,12 @@
+@layer components {
+  .org-tdlg__summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    border: 1px solid var(--border-dark);
+    background: var(--surface-field);
+  }
+}
+
