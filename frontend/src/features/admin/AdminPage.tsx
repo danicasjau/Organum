@@ -16,10 +16,33 @@ import {
 } from '../../components/ui';
 import { apiClient, type ProjectSettingsOut, type RoleOut } from '../../lib/api/client';
 import { AuthenticatedShell } from '../auth/AuthenticatedShell';
-import { useAuthStore } from '../auth/authStore';
+import { hasPerm, useAuthStore } from '../auth/authStore';
+import { AdminDatabaseSection } from './AdminDatabaseSection';
+import { AdminDefaultTasksSection } from './AdminDefaultTasksSection';
+import { AdminDepTemplatesSection } from './AdminDepTemplatesSection';
+import { AdminRulesSection } from './AdminRulesSection';
 import './AdminPage.css';
 
-type AdminSection = 'roles' | 'project' | 'audit' | 'users' | 'departments';
+type AdminSection =
+  | 'roles'
+  | 'default_tasks'
+  | 'dep_templates'
+  | 'rules'
+  | 'project'
+  | 'database'
+  | 'audit'
+  | 'users'
+  | 'departments';
+
+const WEEKDAY_OPTIONS: ReadonlyArray<{ day: number; label: string }> = [
+  { day: 1, label: 'Mon' },
+  { day: 2, label: 'Tue' },
+  { day: 3, label: 'Wed' },
+  { day: 4, label: 'Thu' },
+  { day: 5, label: 'Fri' },
+  { day: 6, label: 'Sat' },
+  { day: 7, label: 'Sun' },
+];
 
 type PermScope = 'all' | 'company' | 'mine' | 'shared' | 'none';
 
@@ -48,8 +71,16 @@ export function AdminPage({
   const auth = useAuthStore((s) => s.auth);
   const queryClient = useQueryClient();
   const projectUuid = auth?.project_uuid ?? null;
+  const canManageRoles = hasPerm(auth?.permissions, 'role.manage');
+  const canManageRules = hasPerm(auth?.permissions, 'rules.manage');
+  const canManageEntities = hasPerm(auth?.permissions, 'entity.manage');
+  const canAdminDb =
+    auth?.user.role_name === 'admin' && hasPerm(auth?.permissions, 'admin.db');
+  const canViewUsers = hasPerm(auth?.permissions, 'user.view');
 
-  const [section, setSection] = useState<AdminSection>('roles');
+  const [section, setSection] = useState<AdminSection>(() =>
+    hasPerm(auth?.permissions, 'role.manage') ? 'roles' : 'rules',
+  );
   const [matrixTab, setMatrixTab] = useState('role-matrix');
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -60,13 +91,13 @@ export function AdminPage({
   const rolesQuery = useQuery({
     queryKey: ['admin-roles', projectUuid],
     queryFn: () => apiClient.listRoles(projectUuid),
-    enabled: Boolean(projectUuid),
+    enabled: Boolean(projectUuid && canManageRoles),
   });
 
   const capsQuery = useQuery({
     queryKey: ['admin-capacities', projectUuid],
     queryFn: () => apiClient.getCapacities(projectUuid),
-    enabled: Boolean(projectUuid),
+    enabled: Boolean(projectUuid && canManageRoles),
   });
 
   const projSettingsQuery = useQuery({
@@ -78,7 +109,7 @@ export function AdminPage({
   const auditQuery = useQuery({
     queryKey: ['admin-audit', projectUuid, auditFilter],
     queryFn: () => apiClient.listAuditLogs(auditFilter || undefined, 150, projectUuid),
-    enabled: Boolean(projectUuid) && section === 'audit',
+    enabled: Boolean(projectUuid && canManageRoles && section === 'audit'),
   });
 
   const roles = useMemo(() => rolesQuery.data ?? [], [rolesQuery.data]);
@@ -176,6 +207,7 @@ export function AdminPage({
           name: projDraft.name,
           status: projDraft.status,
           hours_per_day: projDraft.hours_per_day,
+          working_days: projDraft.working_days,
           task_code_pattern: projDraft.task_code_pattern,
           require_version_to_submit: projDraft.require_version_to_submit,
           enforce_dependencies_in_gantt: projDraft.enforce_dependencies_in_gantt,
@@ -204,27 +236,33 @@ export function AdminPage({
           <div className="org-admin-nav__title">Admin Console</div>
           {(
             [
-              ['roles', 'Roles & Permissions'],
-              ['project', 'Project Settings'],
-              ['audit', 'Audit Log'],
-              ['users', 'Users Directory'],
-              ['departments', 'Departments'],
-            ] as const
-          ).map(([id, label]) => (
-            <button
-              key={id}
-              type="button"
-              className="org-admin-nav__item"
-              data-active={section === id ? 'true' : undefined}
-              onClick={() => {
-                if (id === 'users') navigate('/users');
-                else if (id === 'departments') navigate('/users?tab=departments');
-                else setSection(id);
-              }}
-            >
-              {label}
-            </button>
-          ))}
+              ['users', 'Users', canViewUsers],
+              ['roles', 'Roles & Permissions', canManageRoles],
+              ['departments', 'Departments', canViewUsers],
+              ['default_tasks', 'Default Tasks', canManageEntities],
+              ['dep_templates', 'Dependency Templates', canManageEntities],
+              ['rules', 'Rules', canManageRules],
+              ['project', 'Project', canManageRoles],
+              ['database', 'Database', canAdminDb],
+              ['audit', 'Audit Log', canManageRoles],
+            ] as ReadonlyArray<readonly [AdminSection, string, boolean]>
+          )
+            .filter(([, , visible]) => visible)
+            .map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                className="org-admin-nav__item"
+                data-active={section === id ? 'true' : undefined}
+                onClick={() => {
+                  if (id === 'users') navigate('/users');
+                  else if (id === 'departments') navigate('/users?tab=departments');
+                  else setSection(id);
+                }}
+              >
+                {label}
+              </button>
+            ))}
         </aside>
 
         <section className="org-admin-content">
@@ -394,6 +432,44 @@ export function AdminPage({
                     }
                   />
                 </label>
+                <div className="org-admin-field">
+                  <Text size="sm" variant="muted">Working Days</Text>
+                  <div className="org-admin-toolbar">
+                    {WEEKDAY_OPTIONS.map((w) => {
+                      const active = (projDraft.working_days ?? []).includes(w.day);
+                      return (
+                        <Checkbox
+                          key={w.day}
+                          label={w.label}
+                          checked={active}
+                          onChange={(checked) => {
+                            const next = new Set(projDraft.working_days ?? []);
+                            if (checked) next.add(w.day);
+                            else next.delete(w.day);
+                            setProjDraft({
+                              ...projDraft,
+                              working_days: Array.from(next).sort((a, b) => a - b),
+                            });
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+                <label className="org-admin-field">
+                  <Text size="sm" variant="muted">Link Dependency Depth</Text>
+                  <Select
+                    ariaLabel="Link Dependency Depth"
+                    value={String(projDraft.link_dependency_depth ?? 1)}
+                    onChange={(v) =>
+                      setProjDraft({ ...projDraft, link_dependency_depth: Number(v) })
+                    }
+                    options={[
+                      { value: '1', label: '1 hop (direct links)' },
+                      { value: '2', label: '2 hops (indirect links)' },
+                    ]}
+                  />
+                </label>
                 <Checkbox
                   label="Require published version to submit for review"
                   checked={projDraft.require_version_to_submit}
@@ -409,7 +485,7 @@ export function AdminPage({
                   }
                 />
                 <Checkbox
-                  label="Enable read-only admin SQL console (Phase 7E)"
+                  label="Enable read-only admin SQL console"
                   checked={projDraft.admin_sql_console_enabled}
                   onChange={(v) =>
                     setProjDraft({ ...projDraft, admin_sql_console_enabled: v })
@@ -422,6 +498,25 @@ export function AdminPage({
                 </div>
               </Stack>
             </Panel>
+          )}
+
+          {section === 'default_tasks' && canManageEntities && (
+            <AdminDefaultTasksSection projectUuid={projectUuid} />
+          )}
+
+          {section === 'dep_templates' && canManageEntities && (
+            <AdminDepTemplatesSection projectUuid={projectUuid} />
+          )}
+
+          {section === 'rules' && canManageRules && (
+            <AdminRulesSection projectUuid={projectUuid} />
+          )}
+
+          {section === 'database' && canAdminDb && (
+            <AdminDatabaseSection
+              projectUuid={projectUuid}
+              sqlConsoleEnabled={Boolean(projSettingsQuery.data?.admin_sql_console_enabled)}
+            />
           )}
 
           {section === 'audit' && (

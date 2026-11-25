@@ -704,6 +704,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_uuid}/admin/db/tables": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Admin Db List Tables */
+        get: operations["admin_db_list_tables_api_v1_projects__project_uuid__admin_db_tables_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/admin/db/tables/{table_name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Admin Db Browse Table */
+        get: operations["admin_db_browse_table_api_v1_projects__project_uuid__admin_db_tables__table_name__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/admin/db/query": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Admin Db Query */
+        post: operations["admin_db_query_api_v1_projects__project_uuid__admin_db_query_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_uuid}/departments": {
         parameters: {
             query?: never;
@@ -1465,6 +1516,93 @@ export interface paths {
         head?: never;
         /** Update Dependency Template */
         patch: operations["update_dependency_template_api_v1_projects__project_uuid__dependency_templates__template_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Rules */
+        get: operations["list_rules_api_v1_projects__project_uuid__rules_get"];
+        put?: never;
+        /** Create Rule */
+        post: operations["create_rule_api_v1_projects__project_uuid__rules_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/rules/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Reorder Rules */
+        put: operations["reorder_rules_api_v1_projects__project_uuid__rules_reorder_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/rules/{rule_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Rule */
+        delete: operations["delete_rule_api_v1_projects__project_uuid__rules__rule_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Rule */
+        patch: operations["update_rule_api_v1_projects__project_uuid__rules__rule_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/rules/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Rule */
+        post: operations["preview_rule_api_v1_projects__project_uuid__rules_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_uuid}/rules/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply Rules */
+        post: operations["apply_rules_api_v1_projects__project_uuid__rules_apply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/projects/{project_uuid}/tasks/{task_id}/product": {
@@ -2746,6 +2884,59 @@ export interface components {
             /** Notes */
             notes?: string | null;
         };
+        /** DbColumnOut */
+        DbColumnOut: {
+            /** Name */
+            name: string;
+            /** Type */
+            type: string;
+            /** Pk */
+            pk: boolean;
+            /** Redacted */
+            redacted: boolean;
+        };
+        /** DbQueryRequest */
+        DbQueryRequest: {
+            /** Sql */
+            sql: string;
+        };
+        /** DbQueryResultOut */
+        DbQueryResultOut: {
+            /** Columns */
+            columns?: string[];
+            /** Rows */
+            rows?: unknown[][];
+            /** Row Count */
+            row_count: number;
+            /** Truncated */
+            truncated: boolean;
+            /** Elapsed Ms */
+            elapsed_ms: number;
+        };
+        /** DbTableRowsOut */
+        DbTableRowsOut: {
+            /** Table */
+            table: string;
+            /** Columns */
+            columns?: components["schemas"]["DbColumnOut"][];
+            /** Rows */
+            rows?: unknown[][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /** DbTableSummaryOut */
+        DbTableSummaryOut: {
+            /** Name */
+            name: string;
+            /** Row Count */
+            row_count: number;
+            /** Columns */
+            columns?: components["schemas"]["DbColumnOut"][];
+        };
         /** DefaultTaskCreate */
         DefaultTaskCreate: {
             /** Name */
@@ -3814,6 +4005,176 @@ export interface components {
             label?: string | null;
             /** Rank */
             rank?: number | null;
+        };
+        /** RuleApplyOut */
+        RuleApplyOut: {
+            /** Matched Tasks */
+            matched_tasks: number;
+            /** Applied Count */
+            applied_count: number;
+            /** Changes */
+            changes?: components["schemas"]["RuleChangePreviewOut"][];
+        };
+        /** RuleApplyRequest */
+        RuleApplyRequest: {
+            /** Rule Ids */
+            rule_ids?: string[] | null;
+            /** Entity Ids */
+            entity_ids?: string[] | null;
+            /** Task Ids */
+            task_ids?: string[] | null;
+        };
+        /** RuleChangePreviewOut */
+        RuleChangePreviewOut: {
+            /**
+             * Rule Id
+             * Format: uuid
+             */
+            rule_id: string;
+            /** Rule Name */
+            rule_name: string;
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /** Task Code */
+            task_code: string;
+            /** Field */
+            field: string;
+            /** Old Value */
+            old_value?: string | null;
+            /** New Value */
+            new_value?: string | null;
+            /**
+             * Skipped Manual
+             * @default false
+             */
+            skipped_manual: boolean;
+        };
+        /** RuleCreateRequest */
+        RuleCreateRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+            /**
+             * Sort Order
+             * @default 0
+             */
+            sort_order: number;
+            /**
+             * Trigger
+             * @default manual
+             * @enum {string}
+             */
+            trigger: "entity_created" | "task_created" | "link_created" | "manual";
+            /** Conditions Json */
+            conditions_json?: {
+                [key: string]: unknown;
+            };
+            /** Actions Json */
+            actions_json?: {
+                [key: string]: unknown;
+            }[];
+        };
+        /** RuleOut */
+        RuleOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Enabled */
+            enabled: boolean;
+            /** Sort Order */
+            sort_order: number;
+            /**
+             * Trigger
+             * @enum {string}
+             */
+            trigger: "entity_created" | "task_created" | "link_created" | "manual";
+            /** Conditions Json */
+            conditions_json: {
+                [key: string]: unknown;
+            };
+            /** Actions Json */
+            actions_json: {
+                [key: string]: unknown;
+            }[];
+            /** Sentence */
+            sentence: string;
+            /** Created By */
+            created_by?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** RulePreviewOut */
+        RulePreviewOut: {
+            /** Matched Tasks */
+            matched_tasks: number;
+            /** Changes */
+            changes?: components["schemas"]["RuleChangePreviewOut"][];
+            /**
+             * Sentence
+             * @default
+             */
+            sentence: string;
+        };
+        /** RulePreviewRequest */
+        RulePreviewRequest: {
+            /** Rule Id */
+            rule_id?: string | null;
+            /**
+             * Trigger
+             * @default manual
+             * @enum {string}
+             */
+            trigger: "entity_created" | "task_created" | "link_created" | "manual";
+            /** Conditions Json */
+            conditions_json?: {
+                [key: string]: unknown;
+            } | null;
+            /** Actions Json */
+            actions_json?: {
+                [key: string]: unknown;
+            }[] | null;
+            /** Entity Ids */
+            entity_ids?: string[] | null;
+            /** Task Ids */
+            task_ids?: string[] | null;
+        };
+        /** RuleUpdateRequest */
+        RuleUpdateRequest: {
+            /** Name */
+            name?: string | null;
+            /** Enabled */
+            enabled?: boolean | null;
+            /** Sort Order */
+            sort_order?: number | null;
+            /** Trigger */
+            trigger?: ("entity_created" | "task_created" | "link_created" | "manual") | null;
+            /** Conditions Json */
+            conditions_json?: {
+                [key: string]: unknown;
+            } | null;
+            /** Actions Json */
+            actions_json?: {
+                [key: string]: unknown;
+            }[] | null;
         };
         /** SavedViewCreateRequest */
         SavedViewCreateRequest: {
@@ -6673,6 +7034,110 @@ export interface operations {
             };
         };
     };
+    admin_db_list_tables_api_v1_projects__project_uuid__admin_db_tables_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DbTableSummaryOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_db_browse_table_api_v1_projects__project_uuid__admin_db_tables__table_name__get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+                sort?: string | null;
+                sort_dir?: "asc" | "desc";
+                filter?: string | null;
+            };
+            header?: never;
+            path: {
+                table_name: string;
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DbTableRowsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_db_query_api_v1_projects__project_uuid__admin_db_query_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DbQueryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DbQueryResultOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_departments_api_v1_projects__project_uuid__departments_get: {
         parameters: {
             query?: never;
@@ -8682,6 +9147,243 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DependencyTemplateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_rules_api_v1_projects__project_uuid__rules_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuleOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_rule_api_v1_projects__project_uuid__rules_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RuleCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuleOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reorder_rules_api_v1_projects__project_uuid__rules_reorder_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuleOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_rule_api_v1_projects__project_uuid__rules__rule_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rule_id: string;
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_rule_api_v1_projects__project_uuid__rules__rule_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rule_id: string;
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RuleUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuleOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_rule_api_v1_projects__project_uuid__rules_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RulePreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RulePreviewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_rules_api_v1_projects__project_uuid__rules_apply_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RuleApplyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuleApplyOut"];
                 };
             };
             /** @description Validation Error */

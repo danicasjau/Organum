@@ -49,7 +49,8 @@ export function AuthenticatedShell({
     [auth?.permissions, location.pathname, navigate],
   );
 
-  const canAdmin = hasPerm(auth?.permissions, 'role.manage');
+  const canAdmin =
+    hasPerm(auth?.permissions, 'role.manage') || hasPerm(auth?.permissions, 'rules.manage');
 
   return (
     <>

@@ -171,16 +171,14 @@ async def test_rules_engine_ordering_manual_protection_links_and_triggers(tmp_pa
                 },
             )
         ).json()
-        e_sh030 = (
-            await admin.post(
-                f"/api/v1/projects/{proj_uuid}/entities",
-                json={
-                    "name": "sh030",
-                    "entity_type": "shot",
-                    "department_ids": [depts["Lighting"]],
-                },
-            )
-        ).json()
+        await admin.post(
+            f"/api/v1/projects/{proj_uuid}/entities",
+            json={
+                "name": "sh030",
+                "entity_type": "shot",
+                "department_ids": [depts["Lighting"]],
+            },
+        )
         e_sh045 = (
             await admin.post(
                 f"/api/v1/projects/{proj_uuid}/entities",
@@ -191,16 +189,14 @@ async def test_rules_engine_ordering_manual_protection_links_and_triggers(tmp_pa
                 },
             )
         ).json()
-        e_sh1000 = (
-            await admin.post(
-                f"/api/v1/projects/{proj_uuid}/entities",
-                json={
-                    "name": "sh1000",
-                    "entity_type": "shot",
-                    "department_ids": [depts["Lighting"]],
-                },
-            )
-        ).json()
+        await admin.post(
+            f"/api/v1/projects/{proj_uuid}/entities",
+            json={
+                "name": "sh1000",
+                "entity_type": "shot",
+                "department_ids": [depts["Lighting"]],
+            },
+        )
         await admin.post(
             f"/api/v1/projects/{proj_uuid}/entities",
             json={"name": "ab050", "entity_type": "shot", "department_ids": [depts["Lighting"]]},
@@ -311,7 +307,7 @@ async def test_rules_engine_ordering_manual_protection_links_and_triggers(tmp_pa
             )
             assert len(evs) >= 1
 
-        # Manually assign light_b to sh1000 -> protected from subsequent rule without override_manual
+        # Manually assign light_b to sh1000 -> protected from rules without override_manual
         await admin.put(
             f"/api/v1/projects/{proj_uuid}/tasks/{task_by_ent['sh1000']['id']}/assignments",
             json={"assignments": [{"user_id": u_b["id"], "assignment_role": "artist"}]},
@@ -350,7 +346,7 @@ async def test_rules_engine_ordering_manual_protection_links_and_triggers(tmp_pa
         skipped_manual = [c for c in app2["changes"] if c["skipped_manual"]]
         assert any(c["task_code"] == task_by_ent["sh1000"]["task_code"] for c in skipped_manual)
 
-        # Link-based condition + dependency rule (entity.uses.name = char_01 -> add dep on uses Rigging APP)
+        # Link-based condition + dependency rule (entity.uses.name = char_01 -> uses Rigging APP)
         r_dep = (
             await admin.post(
                 f"/api/v1/projects/{proj_uuid}/rules",

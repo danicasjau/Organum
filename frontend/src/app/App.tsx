@@ -4,7 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { Spinner, ToastProvider, TooltipProvider } from '../components/ui';
 import { ForcePasswordChangeDialog } from '../features/auth/ForcePasswordChangeDialog';
 import { LoginPage } from '../features/auth/LoginPage';
-import { hasPerm, useAuthStore } from '../features/auth/authStore';
+import { hasPerm, registerQueryClearer, useAuthStore } from '../features/auth/authStore';
 import './App.css';
 
 const ViewerPage = lazy(() =>
@@ -26,7 +26,21 @@ const AdminPage = lazy(() =>
   import('../features/admin/AdminPage').then((m) => ({ default: m.AdminPage })),
 );
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: false,
+    },
+  },
+});
+
+registerQueryClearer((mode) => {
+  void queryClient.cancelQueries();
+  if (mode === 'clear') {
+    queryClient.clear();
+  }
+});
 
 export type ThemeMode = 'dark' | 'light';
 export type DensityMode = 'compact' | 'comfortable';
@@ -35,7 +49,7 @@ function RequireAuth({
   requiredPerm,
   children,
 }: {
-  requiredPerm?: string;
+  requiredPerm?: string | string[];
   children: ReactNode;
 }) {
   const initialized = useAuthStore((s) => s.initialized);
@@ -47,8 +61,11 @@ function RequireAuth({
   if (!auth) {
     return <Navigate to="/login" replace />;
   }
-  if (requiredPerm && !hasPerm(auth.permissions, requiredPerm)) {
-    return <Navigate to="/entities" replace />;
+  if (requiredPerm) {
+    const perms = Array.isArray(requiredPerm) ? requiredPerm : [requiredPerm];
+    if (!perms.some((p) => hasPerm(auth.permissions, p))) {
+      return <Navigate to="/entities" replace />;
+    }
   }
   return <>{children}</>;
 }
@@ -141,7 +158,7 @@ export function App() {
                 <Route
                   path="/admin"
                   element={
-                    <RequireAuth requiredPerm="role.manage">
+                    <RequireAuth requiredPerm={['role.manage', 'rules.manage']}>
                       <AdminPage theme={theme} onToggleTheme={toggleTheme} />
                     </RequireAuth>
                   }

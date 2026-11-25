@@ -25,3 +25,7 @@ For a given user, permission key, and task:
 - **Artists (as well as leads, supervisors, and externals) cannot see `visibility='client'` items.**
 - Clients can only create `visibility='client'` items and cannot see `visibility='internal'` items.
 
+## Admin Console Access Scope (Phase 7E)
+- Users with `role.manage` (`admin`) access Roles & Permissions, Project Settings, Audit Log, Users/Departments links, Default Tasks, Dependency Templates, Rules, and Database (`admin.db`, strictly `admin`-only).
+- Users with `rules.manage` (`producer`) may open `/admin` to manage project Rules, Default Tasks, and Dependency Templates without access to Role Permissions Matrix, Project Lifecycle/Security settings, Audit Log, or Raw Database Viewer.
+

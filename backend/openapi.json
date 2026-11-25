@@ -2325,6 +2325,224 @@
         }
       }
     },
+    "/api/v1/projects/{project_uuid}/admin/db/tables": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Db List Tables",
+        "operationId": "admin_db_list_tables_api_v1_projects__project_uuid__admin_db_tables_get",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DbTableSummaryOut"
+                  },
+                  "title": "Response Admin Db List Tables Api V1 Projects  Project Uuid  Admin Db Tables Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/admin/db/tables/{table_name}": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Db Browse Table",
+        "operationId": "admin_db_browse_table_api_v1_projects__project_uuid__admin_db_tables__table_name__get",
+        "parameters": [
+          {
+            "name": "table_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Table Name"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sort"
+            }
+          },
+          {
+            "name": "sort_dir",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string",
+              "default": "asc",
+              "title": "Sort Dir"
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Filter"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DbTableRowsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/admin/db/query": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin Db Query",
+        "operationId": "admin_db_query_api_v1_projects__project_uuid__admin_db_query_post",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DbQueryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DbQueryResultOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_uuid}/departments": {
       "get": {
         "tags": [
@@ -6125,6 +6343,367 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/rules": {
+      "get": {
+        "tags": [
+          "rules"
+        ],
+        "summary": "List Rules",
+        "operationId": "list_rules_api_v1_projects__project_uuid__rules_get",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RuleOut"
+                  },
+                  "title": "Response List Rules Api V1 Projects  Project Uuid  Rules Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "rules"
+        ],
+        "summary": "Create Rule",
+        "operationId": "create_rule_api_v1_projects__project_uuid__rules_post",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RuleCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/rules/reorder": {
+      "put": {
+        "tags": [
+          "rules"
+        ],
+        "summary": "Reorder Rules",
+        "operationId": "reorder_rules_api_v1_projects__project_uuid__rules_reorder_put",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RuleOut"
+                  },
+                  "title": "Response Reorder Rules Api V1 Projects  Project Uuid  Rules Reorder Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/rules/{rule_id}": {
+      "patch": {
+        "tags": [
+          "rules"
+        ],
+        "summary": "Update Rule",
+        "operationId": "update_rule_api_v1_projects__project_uuid__rules__rule_id__patch",
+        "parameters": [
+          {
+            "name": "rule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Rule Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RuleUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "rules"
+        ],
+        "summary": "Delete Rule",
+        "operationId": "delete_rule_api_v1_projects__project_uuid__rules__rule_id__delete",
+        "parameters": [
+          {
+            "name": "rule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Rule Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/rules/preview": {
+      "post": {
+        "tags": [
+          "rules"
+        ],
+        "summary": "Preview Rule",
+        "operationId": "preview_rule_api_v1_projects__project_uuid__rules_preview_post",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RulePreviewRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RulePreviewOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/rules/apply": {
+      "post": {
+        "tags": [
+          "rules"
+        ],
+        "summary": "Apply Rules",
+        "operationId": "apply_rules_api_v1_projects__project_uuid__rules_apply_post",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RuleApplyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleApplyOut"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -9995,6 +10574,155 @@
         "type": "object",
         "title": "CompanyUpdateRequest"
       },
+      "DbColumnOut": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "pk": {
+            "type": "boolean",
+            "title": "Pk"
+          },
+          "redacted": {
+            "type": "boolean",
+            "title": "Redacted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "type",
+          "pk",
+          "redacted"
+        ],
+        "title": "DbColumnOut"
+      },
+      "DbQueryRequest": {
+        "properties": {
+          "sql": {
+            "type": "string",
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Sql"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sql"
+        ],
+        "title": "DbQueryRequest"
+      },
+      "DbQueryResultOut": {
+        "properties": {
+          "columns": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Columns"
+          },
+          "rows": {
+            "items": {
+              "items": {},
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Rows"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count"
+          },
+          "truncated": {
+            "type": "boolean",
+            "title": "Truncated"
+          },
+          "elapsed_ms": {
+            "type": "number",
+            "title": "Elapsed Ms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "row_count",
+          "truncated",
+          "elapsed_ms"
+        ],
+        "title": "DbQueryResultOut"
+      },
+      "DbTableRowsOut": {
+        "properties": {
+          "table": {
+            "type": "string",
+            "title": "Table"
+          },
+          "columns": {
+            "items": {
+              "$ref": "#/components/schemas/DbColumnOut"
+            },
+            "type": "array",
+            "title": "Columns"
+          },
+          "rows": {
+            "items": {
+              "items": {},
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Rows"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "table",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "DbTableRowsOut"
+      },
+      "DbTableSummaryOut": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count"
+          },
+          "columns": {
+            "items": {
+              "$ref": "#/components/schemas/DbColumnOut"
+            },
+            "type": "array",
+            "title": "Columns"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "row_count"
+        ],
+        "title": "DbTableSummaryOut"
+      },
       "DefaultTaskCreate": {
         "properties": {
           "name": {
@@ -12772,6 +13500,473 @@
         },
         "type": "object",
         "title": "RoleUpdateRequest"
+      },
+      "RuleApplyOut": {
+        "properties": {
+          "matched_tasks": {
+            "type": "integer",
+            "title": "Matched Tasks"
+          },
+          "applied_count": {
+            "type": "integer",
+            "title": "Applied Count"
+          },
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/RuleChangePreviewOut"
+            },
+            "type": "array",
+            "title": "Changes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "matched_tasks",
+          "applied_count"
+        ],
+        "title": "RuleApplyOut"
+      },
+      "RuleApplyRequest": {
+        "properties": {
+          "rule_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Ids"
+          },
+          "entity_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Ids"
+          },
+          "task_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Ids"
+          }
+        },
+        "type": "object",
+        "title": "RuleApplyRequest"
+      },
+      "RuleChangePreviewOut": {
+        "properties": {
+          "rule_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Rule Id"
+          },
+          "rule_name": {
+            "type": "string",
+            "title": "Rule Name"
+          },
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Id"
+          },
+          "task_code": {
+            "type": "string",
+            "title": "Task Code"
+          },
+          "field": {
+            "type": "string",
+            "title": "Field"
+          },
+          "old_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Old Value"
+          },
+          "new_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Value"
+          },
+          "skipped_manual": {
+            "type": "boolean",
+            "title": "Skipped Manual",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "rule_id",
+          "rule_name",
+          "task_id",
+          "task_code",
+          "field"
+        ],
+        "title": "RuleChangePreviewOut"
+      },
+      "RuleCreateRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "default": true
+          },
+          "sort_order": {
+            "type": "integer",
+            "title": "Sort Order",
+            "default": 0
+          },
+          "trigger": {
+            "type": "string",
+            "enum": [
+              "entity_created",
+              "task_created",
+              "link_created",
+              "manual"
+            ],
+            "title": "Trigger",
+            "default": "manual"
+          },
+          "conditions_json": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Conditions Json"
+          },
+          "actions_json": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Actions Json"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "RuleCreateRequest"
+      },
+      "RuleOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "sort_order": {
+            "type": "integer",
+            "title": "Sort Order"
+          },
+          "trigger": {
+            "type": "string",
+            "enum": [
+              "entity_created",
+              "task_created",
+              "link_created",
+              "manual"
+            ],
+            "title": "Trigger"
+          },
+          "conditions_json": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Conditions Json"
+          },
+          "actions_json": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Actions Json"
+          },
+          "sentence": {
+            "type": "string",
+            "title": "Sentence"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "enabled",
+          "sort_order",
+          "trigger",
+          "conditions_json",
+          "actions_json",
+          "sentence",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "RuleOut"
+      },
+      "RulePreviewOut": {
+        "properties": {
+          "matched_tasks": {
+            "type": "integer",
+            "title": "Matched Tasks"
+          },
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/RuleChangePreviewOut"
+            },
+            "type": "array",
+            "title": "Changes"
+          },
+          "sentence": {
+            "type": "string",
+            "title": "Sentence",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "matched_tasks"
+        ],
+        "title": "RulePreviewOut"
+      },
+      "RulePreviewRequest": {
+        "properties": {
+          "rule_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Id"
+          },
+          "trigger": {
+            "type": "string",
+            "enum": [
+              "entity_created",
+              "task_created",
+              "link_created",
+              "manual"
+            ],
+            "title": "Trigger",
+            "default": "manual"
+          },
+          "conditions_json": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conditions Json"
+          },
+          "actions_json": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actions Json"
+          },
+          "entity_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Ids"
+          },
+          "task_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Ids"
+          }
+        },
+        "type": "object",
+        "title": "RulePreviewRequest"
+      },
+      "RuleUpdateRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled"
+          },
+          "sort_order": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sort Order"
+          },
+          "trigger": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "entity_created",
+                  "task_created",
+                  "link_created",
+                  "manual"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trigger"
+          },
+          "conditions_json": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conditions Json"
+          },
+          "actions_json": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actions Json"
+          }
+        },
+        "type": "object",
+        "title": "RuleUpdateRequest"
       },
       "SavedViewCreateRequest": {
         "properties": {

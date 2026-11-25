@@ -98,6 +98,24 @@ export type SuggestedDependencyOut = components['schemas']['SuggestedDependencyO
 export type ApplyDependenciesRequest = components['schemas']['ApplyDependenciesRequest'];
 export type SavedViewOut = components['schemas']['SavedViewOut'];
 export type SavedViewCreateRequest = components['schemas']['SavedViewCreateRequest'];
+export type RuleOut = components['schemas']['RuleOut'];
+export type RuleCreateRequest = components['schemas']['RuleCreateRequest'];
+export type RuleUpdateRequest = components['schemas']['RuleUpdateRequest'];
+export type RulePreviewRequest = components['schemas']['RulePreviewRequest'];
+export type RuleChangePreviewOut = components['schemas']['RuleChangePreviewOut'];
+export type RulePreviewOut = components['schemas']['RulePreviewOut'];
+export type RuleApplyRequest = components['schemas']['RuleApplyRequest'];
+export type RuleApplyOut = components['schemas']['RuleApplyOut'];
+export type DbColumnOut = components['schemas']['DbColumnOut'];
+export type DbTableSummaryOut = components['schemas']['DbTableSummaryOut'];
+export type DbTableRowsOut = components['schemas']['DbTableRowsOut'];
+export type DbQueryRequest = components['schemas']['DbQueryRequest'];
+export type DbQueryResultOut = components['schemas']['DbQueryResultOut'];
+export type DependencyTemplateOut = components['schemas']['DependencyTemplateOut'];
+export type DependencyTemplateCreateRequest = components['schemas']['DependencyTemplateCreateRequest'];
+export type DependencyTemplateUpdateRequest = components['schemas']['DependencyTemplateUpdateRequest'];
+export type DefaultTaskCreate = components['schemas']['DefaultTaskCreate'];
+export type DefaultTaskUpdate = components['schemas']['DefaultTaskUpdate'];
 
 export interface TaskListQuery {
   status?: string;
@@ -209,6 +227,11 @@ function readCsrfCookie(): string | null {
 
 let unauthorizedHandler: ((code?: string) => void) | null = null;
 let passwordChangeRequiredHandler: (() => void) | null = null;
+let authEpoch = 0;
+
+export function bumpAuthEpoch(): void {
+  authEpoch += 1;
+}
 
 export function registerAuthHandlers(handlers: {
   onUnauthorized?: (code?: string) => void;
@@ -230,6 +253,7 @@ export class ApiHttpError extends Error {
 }
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const reqEpoch = authEpoch;
   const method = (init?.method ?? 'GET').toUpperCase();
   const isMutating = method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE';
   const csrfToken = isMutating ? readCsrfCookie() : null;
@@ -253,7 +277,13 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     } catch {
       // ignore non-JSON body
     }
-    if (response.status === 401 && !path.includes('/auth/login') && !path.includes('/auth/me')) {
+    if (
+      response.status === 401 &&
+      reqEpoch === authEpoch &&
+      !path.includes('/auth/login') &&
+      !path.includes('/auth/me') &&
+      !path.includes('/auth/logout')
+    ) {
       unauthorizedHandler?.(code);
     }
     if (response.status === 403 && code === 'password_change_required') {
@@ -416,6 +446,92 @@ export const apiClient = {
     qs.set('limit', String(limit));
     return apiFetch<AuditLogOut[]>(`${getProjBase(projectUuid)}/admin/audit?${qs.toString()}`);
   },
+  listRules: (projectUuid?: string | null) =>
+    apiFetch<RuleOut[]>(`${getProjBase(projectUuid)}/rules`),
+  createRule: (payload: RuleCreateRequest, projectUuid?: string | null) =>
+    apiFetch<RuleOut>(`${getProjBase(projectUuid)}/rules`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  updateRule: (ruleId: string, payload: RuleUpdateRequest, projectUuid?: string | null) =>
+    apiFetch<RuleOut>(`${getProjBase(projectUuid)}/rules/${ruleId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    }),
+  deleteRule: (ruleId: string, projectUuid?: string | null) =>
+    apiFetch<void>(`${getProjBase(projectUuid)}/rules/${ruleId}`, {
+      method: 'DELETE',
+    }),
+  reorderRules: (ids: string[], projectUuid?: string | null) =>
+    apiFetch<RuleOut[]>(`${getProjBase(projectUuid)}/rules/reorder`, {
+      method: 'PUT',
+      body: JSON.stringify({ ids }),
+    }),
+  previewRule: (payload: RulePreviewRequest, projectUuid?: string | null) =>
+    apiFetch<RulePreviewOut>(`${getProjBase(projectUuid)}/rules/preview`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  applyRules: (payload: RuleApplyRequest, projectUuid?: string | null) =>
+    apiFetch<RuleApplyOut>(`${getProjBase(projectUuid)}/rules/apply`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  listDbTables: (projectUuid?: string | null) =>
+    apiFetch<DbTableSummaryOut[]>(`${getProjBase(projectUuid)}/admin/db/tables`),
+  browseDbTable: (
+    tableName: string,
+    opts?: {
+      page?: number;
+      pageSize?: number;
+      sort?: string;
+      sortDir?: 'asc' | 'desc';
+      filter?: string;
+    },
+    projectUuid?: string | null,
+  ) => {
+    const qs = new URLSearchParams();
+    if (opts?.page) qs.set('page', String(opts.page));
+    if (opts?.pageSize) qs.set('page_size', String(opts.pageSize));
+    if (opts?.sort) qs.set('sort', opts.sort);
+    if (opts?.sortDir) qs.set('sort_dir', opts.sortDir);
+    if (opts?.filter) qs.set('filter', opts.filter);
+    const suffix = qs.toString() ? `?${qs.toString()}` : '';
+    return apiFetch<DbTableRowsOut>(
+      `${getProjBase(projectUuid)}/admin/db/tables/${encodeURIComponent(tableName)}${suffix}`,
+    );
+  },
+  runDbQuery: (sql: string, projectUuid?: string | null) =>
+    apiFetch<DbQueryResultOut>(`${getProjBase(projectUuid)}/admin/db/query`, {
+      method: 'POST',
+      body: JSON.stringify({ sql }),
+    }),
+  listDependencyTemplates: (projectUuid?: string | null) =>
+    apiFetch<DependencyTemplateOut[]>(`${getProjBase(projectUuid)}/dependency-templates`),
+  createDependencyTemplate: (
+    payload: DependencyTemplateCreateRequest,
+    projectUuid?: string | null,
+  ) =>
+    apiFetch<DependencyTemplateOut>(`${getProjBase(projectUuid)}/dependency-templates`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  updateDependencyTemplate: (
+    templateId: string,
+    payload: DependencyTemplateUpdateRequest,
+    projectUuid?: string | null,
+  ) =>
+    apiFetch<DependencyTemplateOut>(
+      `${getProjBase(projectUuid)}/dependency-templates/${templateId}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      },
+    ),
+  deleteDependencyTemplate: (templateId: string, projectUuid?: string | null) =>
+    apiFetch<void>(`${getProjBase(projectUuid)}/dependency-templates/${templateId}`, {
+      method: 'DELETE',
+    }),
   putTaskAssignments: (
     taskId: string,
     assignments: TaskAssignmentItemIn[],
@@ -719,17 +835,23 @@ export const apiClient = {
       method: 'PUT',
       body: JSON.stringify({ ids }),
     }),
-  createDefaultTask: (deptId: string, name: string, projectUuid?: string | null) =>
+  createDefaultTask: (
+    deptId: string,
+    nameOrPayload: string | DefaultTaskCreate,
+    projectUuid?: string | null,
+  ) =>
     apiFetch<DefaultTaskOut>(
       `${getProjBase(projectUuid)}/departments/${deptId}/default-tasks`,
       {
         method: 'POST',
-        body: JSON.stringify({ name }),
+        body: JSON.stringify(
+          typeof nameOrPayload === 'string' ? { name: nameOrPayload } : nameOrPayload,
+        ),
       },
     ),
   updateDefaultTask: (
     taskId: string,
-    patch: { name?: string; sort_order?: number },
+    patch: DefaultTaskUpdate,
     projectUuid?: string | null,
   ) =>
     apiFetch<DefaultTaskOut>(
