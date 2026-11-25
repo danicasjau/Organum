@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import type { ThemeMode } from '../../app/App';
-import { getVisiblePanels } from '../../app/panels';
+import { useWorkspacePanels } from '../../app/useWorkspacePanels';
 import { AppShell, StatusBar, StatusBarSegment } from '../../components/ui';
 import { apiClient } from '../../lib/api/client';
 import { hasPerm, useAuthStore } from '../auth/authStore';
@@ -21,7 +21,6 @@ export function AuthenticatedShell({
   children: React.ReactNode;
 }) {
   const navigate = useNavigate();
-  const location = useLocation();
   const auth = useAuthStore((s) => s.auth);
   const logout = useAuthStore((s) => s.logout);
   const activeProjectUuid = useProjectStore((s) => s.activeProjectUuid);
@@ -38,16 +37,7 @@ export function AuthenticatedShell({
     [projectsQuery.data, activeProjectUuid],
   );
 
-  const panels = useMemo(
-    () =>
-      getVisiblePanels(auth?.permissions).map((p) => ({
-        id: p.id,
-        label: p.label,
-        active: location.pathname.startsWith(p.route),
-        onClick: () => navigate(p.route),
-      })),
-    [auth?.permissions, location.pathname, navigate],
-  );
+  const panels = useWorkspacePanels();
 
   const canAdmin = hasPerm(auth?.permissions, 'role.manage');
 
@@ -63,32 +53,29 @@ export function AuthenticatedShell({
               ...(hasPerm(auth?.permissions, 'task.view')
                 ? [{ id: 'ws-tasks', label: 'Tasks Workspace', onSelect: () => navigate('/tasks') }]
                 : []),
-              ...(hasPerm(auth?.permissions, 'user.view')
-                ? [{ id: 'ws-users', label: 'Users Directory', onSelect: () => navigate('/users') }]
+              ...(hasPerm(auth?.permissions, 'user.view') || canAdmin
+                ? [{ id: 'ws-users', label: 'Users & Admin', onSelect: () => navigate('/users') }]
                 : []),
               { id: 'ws-me', label: 'My User', onSelect: () => navigate('/me') },
-              ...(canAdmin
-                ? [{ id: 'ws-admin', label: 'Admin Console', onSelect: () => navigate('/admin') }]
-                : []),
             ],
           },
         ]}
         panels={panels}
         projectName={activeProject?.name ?? null}
-        onOpenSettings={auth?.user.role_name === 'client' ? undefined : () => openSettings('project')}
+        onOpenSettings={
+          auth?.user.role_name === 'client' ? undefined : () => openSettings('project')
+        }
         theme={theme}
         onToggleTheme={onToggleTheme}
         userName={auth?.user.username ?? 'user'}
         userFullName={auth?.user.full_name}
         userRoleLabel={auth?.user.role_label}
         userAvatarUrl={
-          auth?.user.avatar_file
-            ? apiClient.userAvatarUrl(auth.user.id, auth.project_uuid)
-            : null
+          auth?.user.avatar_file ? apiClient.userAvatarUrl(auth.user.id, auth.project_uuid) : null
         }
         canAdmin={canAdmin}
         onOpenMyUser={() => navigate('/me')}
-        onOpenAdmin={canAdmin ? () => navigate('/admin') : undefined}
+        onOpenAdmin={canAdmin ? () => navigate('/users?section=roles') : undefined}
         onLogout={() => {
           void logout().then(() => navigate('/login', { replace: true }));
         }}
@@ -98,9 +85,7 @@ export function AuthenticatedShell({
             <StatusBarSegment>
               {auth ? `${auth.user.username} (${auth.user.role_label})` : 'Signed out'}
             </StatusBarSegment>
-            <StatusBarSegment>
-              Project: {auth?.project_status ?? 'active'}
-            </StatusBarSegment>
+            <StatusBarSegment>Project: {auth?.project_status ?? 'active'}</StatusBarSegment>
           </StatusBar>
         }
       >
@@ -110,4 +95,3 @@ export function AuthenticatedShell({
     </>
   );
 }
-

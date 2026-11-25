@@ -4,7 +4,7 @@ export interface AvatarProps {
   username: string;
   fullName?: string;
   avatarUrl?: string | null;
-  size?: 'sm' | 'md';
+  size?: 'sm' | 'md' | 'lg';
   title?: string;
 }
 

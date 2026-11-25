@@ -125,6 +125,13 @@
     white-space: nowrap;
   }
 
+  .org-tgrid__code {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
   .org-tgrid__mono {
     font-family: var(--font-mono);
     font-size: var(--font-size-sm);
@@ -160,4 +167,3 @@
     overflow: hidden;
   }
 }
-

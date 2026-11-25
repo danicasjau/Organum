@@ -247,6 +247,50 @@ async def _hydrate_task_list_items(
     up_counts = {tid: int(cnt) for tid, cnt in up_counts_rows}
     blocked_map = await compute_blocked_upstream_map(db, t_ids)
 
+    # Latest feedback left by other users (review decisions + comments), used by the UI
+    # to flag tasks with reviews the caller has not opened yet.
+    me = auth.user.id
+    feedback: dict[UUID, tuple[datetime, str | None, str]] = {}
+
+    def _keep_latest(tid: UUID, at: datetime | None, who_id: UUID | None, kind: str) -> None:
+        if at is None:
+            return
+        cur = feedback.get(tid)
+        if cur is None or _as_aware(at) > _as_aware(cur[0]):
+            who = users.get(who_id) if who_id else None
+            feedback[tid] = (at, who.full_name or who.username if who else None, kind)
+
+    for tid, at, rid, decision in (
+        await db.execute(
+            select(
+                TaskReview.task_id,
+                TaskReview.created_at,
+                TaskReview.reviewer_id,
+                TaskReview.decision,
+            ).where(
+                TaskReview.task_id.in_(t_ids),
+                TaskReview.decision != "pending",
+                or_(TaskReview.reviewer_id.is_(None), TaskReview.reviewer_id != me),
+            )
+        )
+    ).all():
+        _keep_latest(tid, at, rid, str(decision))
+
+    comment_q = select(
+        TaskComment.task_id,
+        TaskComment.created_at,
+        TaskComment.author_id,
+        TaskComment.kind,
+    ).where(
+        TaskComment.task_id.in_(t_ids),
+        TaskComment.deleted_at.is_(None),
+        or_(TaskComment.author_id.is_(None), TaskComment.author_id != me),
+    )
+    if auth.role.name == "client":
+        comment_q = comment_q.where(TaskComment.visibility == "client")
+    for tid, at, aid, kind in (await db.execute(comment_q)).all():
+        _keep_latest(tid, at, aid, str(kind))
+
     items: list[TaskListItemOut] = []
     for t in tasks:
         ent = ents.get(t.entity_id)
@@ -296,9 +340,17 @@ async def _hydrate_task_list_items(
                 tags=sorted(tags_by_task.get(t.id, [])),
                 shared_company_ids=shares_by_task.get(t.id, []),
                 updated_at=t.updated_at,
+                last_feedback_at=feedback[t.id][0] if t.id in feedback else None,
+                last_feedback_by=feedback[t.id][1] if t.id in feedback else None,
+                last_feedback_kind=feedback[t.id][2] if t.id in feedback else None,
             )
         )
     return items
+
+
+def _as_aware(dt: datetime) -> datetime:
+    """SQLite returns naive datetimes; normalise to UTC for comparisons."""
+    return dt if dt.tzinfo is not None else dt.replace(tzinfo=UTC)
 
 
 async def _build_task_detail_out(

@@ -2,6 +2,8 @@ export interface RegisteredPanel {
   id: string;
   label: string;
   route: string;
+  /** Path prefixes that mark this panel as active. */
+  matches: ReadonlyArray<string>;
   visibleFor?: (permissions: Record<string, string>) => boolean;
 }
 
@@ -24,16 +26,25 @@ export function getVisiblePanels(
   return registry.filter((p) => (p.visibleFor ? p.visibleFor(permissions) : true));
 }
 
-registerPanel({ id: 'entities', label: 'ENTITIES', route: '/entities' });
+const granted = (perms: Record<string, string>, key: string) => (perms[key] ?? 'none') !== 'none';
+
+registerPanel({
+  id: 'entities',
+  label: 'ENTITIES',
+  route: '/entities',
+  matches: ['/entities', '/viewer'],
+});
 registerPanel({
   id: 'tasks',
   label: 'TASKS',
   route: '/tasks',
-  visibleFor: (perms) => (perms['task.view'] ?? 'none') !== 'none',
+  matches: ['/tasks'],
+  visibleFor: (perms) => granted(perms, 'task.view'),
 });
 registerPanel({
   id: 'users',
   label: 'USERS',
   route: '/users',
-  visibleFor: (perms) => (perms['user.view'] ?? 'none') !== 'none',
+  matches: ['/users', '/admin'],
+  visibleFor: (perms) => granted(perms, 'user.view') || granted(perms, 'role.manage'),
 });

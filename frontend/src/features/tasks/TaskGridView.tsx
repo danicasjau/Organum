@@ -1,8 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import {
-  flexRender,
-  type SortingState,
-} from '@tanstack/react-table';
+import { flexRender, type SortingState } from '@tanstack/react-table';
 import {
   getCoreRowModel,
   getSortedRowModel,
@@ -23,23 +20,17 @@ import {
   StatusChip,
   Text,
   useToast,
+  DatePicker,
 } from '../../components/ui';
 import { useCssVarRef } from '../../components/ui/_internal/useCssVar';
-import {
-  apiClient,
-  type ClientTaskListItemOut,
-  type TaskListItemOut,
-} from '../../lib/api/client';
+import { apiClient, type ClientTaskListItemOut, type TaskListItemOut } from '../../lib/api/client';
 import { useAuthStore } from '../auth/authStore';
 import { useProjectStore } from '../project/projectStore';
-import {
-  canPerformOnTask,
-  isFullTaskItem,
-  isOverdueDate,
-  PRIORITY_OPTIONS,
-} from './taskHelpers';
+import { canPerformOnTask, isFullTaskItem, isOverdueDate, PRIORITY_OPTIONS } from './taskHelpers';
 import { useTasksStore } from './tasksStore';
 import './TaskGridView.css';
+import { DepartmentTag } from '../departments/DepartmentTag';
+import { TaskUnreadDot } from '../reviews/TaskUnreadDot';
 
 type AnyTaskRow = TaskListItemOut | ClientTaskListItemOut;
 
@@ -99,13 +90,7 @@ function ResizableColHeader({
   );
 }
 
-function GridCellSlot({
-  width,
-  children,
-}: {
-  width: number;
-  children: React.ReactNode;
-}) {
+function GridCellSlot({ width, children }: { width: number; children: React.ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   useCssVarRef(ref, '--tg-col-w', `${width}px`);
   return (
@@ -115,13 +100,7 @@ function GridCellSlot({
   );
 }
 
-function VirtualTableBody({
-  height,
-  children,
-}: {
-  height: number;
-  children: React.ReactNode;
-}) {
+function VirtualTableBody({ height, children }: { height: number; children: React.ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   useCssVarRef(ref, '--tg-total-h', `${height}px`);
   return (
@@ -230,7 +209,8 @@ export function TaskGridView({
           id: 'department_name',
           header: 'Department',
           accessorKey: 'department_name',
-          size: 110,
+          size: 120,
+          cell: (ctx) => <DepartmentTag name={String(ctx.getValue() ?? '')} />,
         },
         {
           id: 'status',
@@ -244,9 +224,7 @@ export function TaskGridView({
           header: 'Due Date',
           accessorKey: 'ideal_finish_date',
           size: 105,
-          cell: (ctx) => (
-            <span className="org-tgrid__mono">{String(ctx.getValue() ?? '—')}</span>
-          ),
+          cell: (ctx) => <span className="org-tgrid__mono">{String(ctx.getValue() ?? '—')}</span>,
         },
         {
           id: 'description',
@@ -258,8 +236,7 @@ export function TaskGridView({
           id: 'shared_versions',
           header: 'Shared Versions',
           size: 120,
-          accessorFn: (r) =>
-            !isFullTaskItem(r) ? (r.product?.versions?.length ?? 0) : 0,
+          accessorFn: (r) => (!isFullTaskItem(r) ? (r.product?.versions?.length ?? 0) : 0),
         },
       ];
     }
@@ -269,14 +246,50 @@ export function TaskGridView({
         id: 'task_code',
         header: 'Code',
         accessorKey: 'task_code',
-        size: 145,
-        cell: (ctx) => <span className="org-tgrid__mono">{String(ctx.getValue())}</span>,
+        size: 160,
+        cell: ({ row }) => {
+          const t = row.original;
+          return (
+            <span className="org-tgrid__code">
+              {isFullTaskItem(t) && (
+                <TaskUnreadDot
+                  taskId={t.id}
+                  feedbackAt={t.last_feedback_at}
+                  by={t.last_feedback_by}
+                />
+              )}
+              <span className="org-tgrid__mono">{t.task_code}</span>
+            </span>
+          );
+        },
       },
       { id: 'task_name', header: 'Task Name', accessorKey: 'task_name', size: 170 },
       { id: 'entity_name', header: 'Entity', accessorKey: 'entity_name', size: 130 },
       { id: 'entity_rel_path', header: 'Entity Path', accessorKey: 'entity_rel_path', size: 160 },
-      { id: 'parent_entity_type', header: 'Entity Type', accessorKey: 'parent_entity_type', size: 100 },
-      { id: 'department_name', header: 'Department', accessorKey: 'department_name', size: 115 },
+      {
+        id: 'parent_entity_type',
+        header: 'Entity Type',
+        accessorKey: 'parent_entity_type',
+        size: 100,
+      },
+      {
+        id: 'department_name',
+        header: 'Department',
+        accessorKey: 'department_name',
+        size: 130,
+        cell: ({ row }) => {
+          const t = row.original;
+          return isFullTaskItem(t) ? (
+            <DepartmentTag
+              id={t.department_id}
+              name={t.department_name}
+              color={t.department_color}
+            />
+          ) : (
+            <DepartmentTag name={t.department_name} />
+          );
+        },
+      },
       {
         id: 'status',
         header: 'Status',
@@ -387,14 +400,14 @@ export function TaskGridView({
       },
       {
         id: 'ideal_start_date',
-        header: 'Ideal Start',
+        header: 'Planned Start',
         accessorKey: 'ideal_start_date',
         size: 100,
         cell: (ctx) => <span className="org-tgrid__mono">{String(ctx.getValue() ?? '—')}</span>,
       },
       {
         id: 'ideal_finish_date',
-        header: 'Ideal Finish',
+        header: 'Planned Finish',
         accessorKey: 'ideal_finish_date',
         size: 125,
         cell: ({ row }) => {
@@ -410,15 +423,13 @@ export function TaskGridView({
             );
           }
           return (
-            <input
-              type="date"
-              aria-label={`Due date for ${t.task_code}`}
-              className={`org-tgrid__inline-input${over ? ' org-tgrid__inline-input--overdue' : ''}`}
+            <DatePicker
+              size="sm"
+              ariaLabel={`Planned finish for ${t.task_code}`}
+              placeholder="—"
+              error={over}
               value={t.ideal_finish_date ?? ''}
-              onClick={(e) => e.stopPropagation()}
-              onChange={(e) =>
-                void inlinePatch(t, { ideal_finish_date: e.target.value || null })
-              }
+              onChange={(v) => void inlinePatch(t, { ideal_finish_date: v })}
             />
           );
         },
@@ -486,9 +497,7 @@ export function TaskGridView({
 
   const visibleColumns = useMemo(
     () =>
-      isClient
-        ? allColumns
-        : allColumns.filter((c) => !hiddenCols.includes(String(c.id ?? ''))),
+      isClient ? allColumns : allColumns.filter((c) => !hiddenCols.includes(String(c.id ?? ''))),
     [allColumns, hiddenCols, isClient],
   );
 
@@ -635,4 +644,3 @@ export function TaskGridView({
     </div>
   );
 }
-

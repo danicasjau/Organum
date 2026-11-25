@@ -19,13 +19,12 @@ import {
   type TaskListItemOut,
 } from '../../lib/api/client';
 import { useProjectStore } from '../project/projectStore';
-import {
-  ALL_WORKFLOW_STATUSES,
-  isOverdueDate,
-} from './taskHelpers';
+import { ALL_WORKFLOW_STATUSES, isOverdueDate } from './taskHelpers';
 import { useTasksStore, type KanbanSwimlane } from './tasksStore';
 import { TaskTransitionDialog } from './TaskTransitionDialog';
 import './KanbanView.css';
+import { DepartmentTag } from '../departments/DepartmentTag';
+import { TaskUnreadDot } from '../reviews/TaskUnreadDot';
 
 function KanbanProgressFill({ logged, bid }: { logged: number; bid: number | null | undefined }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -73,11 +72,21 @@ function KanbanCard({
     >
       <div className="org-kanban__card-top">
         <span className="org-kanban__code">{task.task_code}</span>
+        <TaskUnreadDot
+          taskId={task.id}
+          feedbackAt={task.last_feedback_at}
+          by={task.last_feedback_by}
+        />
         <PriorityMarker priority={task.priority ?? 'normal'} />
       </div>
       <div className="org-kanban__card-entity">
         <Text size="sm">{task.entity_name}</Text>
-        <Badge tone="neutral">{task.department_short_code || task.department_name}</Badge>
+        <DepartmentTag
+          id={task.department_id}
+          name={task.department_name}
+          color={task.department_color}
+          label={task.department_short_code || task.department_name}
+        />
       </div>
       <div className="org-kanban__card-meta">
         <CapacityBadgeList capacities={task.my_capacities ?? []} />
@@ -409,7 +418,11 @@ export function KanbanView({
           if (!promptState) return;
           await apiClient.transitionTask(
             promptState.task.id,
-            { to: promptState.targetStatus, version_id: version_id ?? null, comment: comment ?? null },
+            {
+              to: promptState.targetStatus,
+              version_id: version_id ?? null,
+              comment: comment ?? null,
+            },
             activeProjectUuid,
           );
           await invalidateTasks(promptState.task.id);

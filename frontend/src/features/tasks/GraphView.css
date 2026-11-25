@@ -149,8 +149,7 @@
   }
 
   .org-graph__dept-tag {
-    font-size: var(--font-size-2xs);
-    color: var(--text-muted);
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

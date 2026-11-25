@@ -30,8 +30,9 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: var(--space-5);
     height: var(--topbar-h);
-    padding: 0 var(--space-3);
+    padding: 0 var(--space-6);
     border-bottom: 1px solid var(--border-dark);
     background: var(--surface-window);
     flex-shrink: 0;
@@ -41,14 +42,23 @@
   .org-topbar__right {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: var(--space-4);
+    min-width: 0;
+  }
+
+  .org-topbar__left {
+    flex: 1;
+  }
+
+  .org-topbar__right {
+    flex-shrink: 0;
   }
 
   .org-wordmark {
     display: inline-flex;
     align-items: center;
     height: var(--panelswitch-h);
-    padding-right: var(--space-3);
+    padding-right: var(--space-4);
     font-family: var(--font-mono);
     font-size: var(--font-size-logo);
     font-weight: 700;
@@ -60,17 +70,19 @@
   .org-panelswitch {
     display: inline-flex;
     align-items: center;
-    gap: 1px;
+    gap: var(--space-2);
     height: var(--panelswitch-h);
-    padding: 0 var(--space-1);
+    padding: 0 var(--space-4);
     border-left: 1px solid var(--border-dark);
+    border-right: 1px solid var(--border-dark);
   }
 
   .org-panelswitch__tab {
+    position: relative;
     display: inline-flex;
     align-items: center;
     height: var(--panelswitch-h);
-    padding: 0 var(--space-4);
+    padding: 0 var(--space-5);
     border: 1px solid var(--border-control);
     border-radius: var(--radius-1);
     background: var(--bevel-raised-bg);
@@ -79,7 +91,8 @@
     font-family: var(--font-ui);
     font-size: var(--font-size);
     font-weight: 700;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.06em;
+    text-decoration: none;
     cursor: pointer;
     transition: none;
   }
@@ -96,11 +109,17 @@
     box-shadow: var(--bevel-inset-pressed);
   }
 
+  .org-panelswitch__dot {
+    position: absolute;
+    top: calc(-1 * var(--space-1));
+    right: calc(-1 * var(--space-1));
+  }
+
   .org-statusbar {
     display: flex;
     align-items: center;
     height: var(--statusbar-h);
-    padding: 0 var(--space-2);
+    padding: 0 var(--space-4);
     border-top: 1px solid var(--border-dark);
     background: var(--surface-window);
     font-size: var(--font-size);
@@ -131,4 +150,3 @@
     font-variant-numeric: tabular-nums;
   }
 }
-

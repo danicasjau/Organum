@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ORGANUM — One review room for every production asset</title>
+  <meta name="description" content="ORGANUM is a local-first review and production tracking tool for animation and VFX: open any format, publish versions, annotate, and approve — in one place." />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<nav class="nav" aria-label="Main">
+  <div class="wrap">
+    <a class="logo" href="#top">ORGANUM</a>
+    <ul id="navlinks">
+      <li><a href="#how">How it works</a></li>
+      <li><a href="#review">Review</a></li>
+      <li><a href="#production">Production</a></li>
+      <li><a href="#people">People</a></li>
+      <li><a href="#why">Why ORGANUM</a></li>
+      <li><a href="#start">Get started</a></li>
+    </ul>
+    <span class="spacer"></span>
+    <div class="theme-switch" role="group" aria-label="Theme">
+      <button type="button" data-theme-set="dark" aria-pressed="true">Dark</button>
+      <button type="button" data-theme-set="light" aria-pressed="false">Light</button>
+    </div>
+    <button class="btn menu-btn" type="button" aria-controls="navlinks" aria-expanded="false">Menu</button>
+  </div>
+</nav>
+
+<!-- ============ HERO ============ -->
+<header class="hero" id="top">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow">Review · Publish · Approve</span>
+      <h1>One review room for <span class="hl">every frame, file and approval</span> in your production.</h1>
+      <p class="lead">ORGANUM opens the files your team actually makes — EXRs, PSDs, USD, video, audio, PDFs — and tracks every version, note and sign-off next to them. It runs on your own machine, and every project is just a folder on your disk.</p>
+      <div class="cta">
+        <a class="btn primary" href="#intro">▶ Watch the 50-second tour</a>
+        <a class="btn" href="#start">Run it locally</a>
+      </div>
+      <div class="hero-meta">
+        <span>41 file extensions</span>
+        <span>Runs on your machine</span>
+        <span>Projects are portable folders</span>
+      </div>
+    </div>
+
+    <div class="panel" id="intro">
+      <div class="panel-title"><span class="dot"></span>organum-intro.mp4 — presentation</div>
+      <div class="player">
+        <video id="introVideo" src="assets/video/organum-intro.mp4" poster="assets/video/organum-intro-poster.png" preload="metadata" playsinline muted></video>
+      </div>
+      <div class="player-bar">
+        <button type="button" id="introPlay">▶ Play</button>
+        <div class="track" id="introTrack" role="progressbar" aria-label="Video progress"><i></i></div>
+        <span id="introTime">00:00 / 00:50</span>
+        <button type="button" id="introFull">Full screen</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ STATS ============ -->
+<section style="padding:48px 0" aria-label="At a glance">
+  <div class="wrap">
+    <div class="stats">
+      <div class="stat"><b>41<em>+</em></b><span>file extensions opened in the browser — images, 3D, video, audio, documents and data</span></div>
+      <div class="stat"><b>9</b><span>task statuses, from <code>WTG</code> to <code>APP</code>, enforced by the server</span></div>
+      <div class="stat"><b>8</b><span>built-in roles, from Administrator to Client, with editable permissions</span></div>
+      <div class="stat"><b>0</b><span>cloud services required — one folder per project, on your own disk</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PROBLEM / SOLUTION ============ -->
+<section class="alt" id="problem">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">The everyday problem</span>
+      <h2>Reviews shouldn't need five applications and a spreadsheet.</h2>
+      <p class="lead">On most productions the work is in one place, the feedback in another, and the status of each shot lives in someone's head. ORGANUM brings the three together.</p>
+    </div>
+    <div class="two">
+      <div class="panel">
+        <div class="panel-title">Without ORGANUM</div>
+        <div class="panel-body">
+          <ul class="list-x">
+            <li>Opening an EXR, a PSD and a USD means three different applications.</li>
+            <li>Notes arrive by email and chat, with no link to the frame they refer to.</li>
+            <li>Nobody is sure which version is the approved one.</li>
+            <li>Clients see the internal discussion, or receive files by hand.</li>
+            <li>Workload and status are rebuilt manually in a spreadsheet every week.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="panel accent">
+        <div class="panel-title"><span class="dot"></span>With ORGANUM</div>
+        <div class="panel-body">
+          <ul class="list-ok">
+            <li>One browser viewer for images, 3D, video, audio, PDFs and data.</li>
+            <li>Notes are drawn on the frame, the 3D model or the UV tile itself.</li>
+            <li>Every publish is an immutable <code>vNNNN</code>, with one clear <b>MASTER</b>.</li>
+            <li>Clients get a separate view that shows only what has been shared with them.</li>
+            <li>Status, dependencies and artist workload are calculated for you.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HOW IT WORKS ============ -->
+<section id="how">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">How it works</span>
+      <h2>Four steps, from file on disk to final approval.</h2>
+      <p class="lead">ORGANUM follows the way a studio already organises its files. The folder structure <i>is</i> the project, so nothing gets locked away in a proprietary database.</p>
+    </div>
+
+    <div class="two" style="align-items:start">
+      <div class="steps">
+        <div class="step">
+          <h3>Organise</h3>
+          <p>Create <b>entities</b> — a character, a prop, a shot — and give each one departments (Modeling, Lookdev, Lighting…) and tasks. ORGANUM creates the matching folders on disk and keeps them in sync.</p>
+        </div>
+        <div class="step">
+          <h3>Work &amp; publish</h3>
+          <p>Artists keep their working scenes in a free <code>scenefiles/</code> area, opened straight into Houdini, Maya, Blender or Nuke with a double-click. When something is ready, they drag it in to <b>publish</b> an immutable version: <code>v0001</code>, <code>v0002</code>…</p>
+        </div>
+        <div class="step">
+          <h3>Review</h3>
+          <p>Any version opens in the viewer with accurate colour, zoom down to the pixel, layers and AOVs. Reviewers draw notes on the image, on the timeline or in 3D space.</p>
+        </div>
+        <div class="step">
+          <h3>Approve</h3>
+          <p>Submit sends the task through Lead, Supervisor and Client review. Approving it marks the approved version and unlocks the downstream tasks that were waiting on it.</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title"><span class="dot"></span>A project is just a folder</div>
+        <div class="panel-body">
+<pre class="tree"><span class="d">ORGANUM_Demo/</span>
+├─ <span class="d">00_Pipeline/</span>
+│  ├─ project.db        <span class="c"># this project's database</span>
+│  ├─ project.json
+│  ├─ cache/            <span class="c"># previews, proxies, thumbnails</span>
+│  └─ trash/            <span class="c"># nothing is hard-deleted</span>
+└─ <span class="d">01_Production/</span>
+   └─ <span class="a">hero_robot/</span>      <span class="c"># entity</span>
+      └─ <span class="d">Lighting/</span>      <span class="c"># department</span>
+         └─ <span class="d">beauty/</span>    <span class="c"># task</span>
+            ├─ <span class="d">products/</span>
+            │  ├─ <span class="v">v0001/</span>
+            │  ├─ <span class="v">v0002/</span>
+            │  └─ <span class="m">master.json</span>  <span class="c">★ MASTER</span>
+            └─ <span class="d">scenefiles/</span>
+               ├─ lighting_v001.hip
+               └─ comp_slap.nk</pre>
+          <p class="muted" style="margin:16px 0 0;font-size:14px">Copy, archive or back up the folder and the whole project goes with it. If someone moves or renames folders outside ORGANUM, <b>Reconcile</b> finds them again by their ID.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ REVIEW / VIEWER ============ -->
+<section class="alt" id="review">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">The viewer</span>
+      <h2>Every format the pipeline produces, in one window.</h2>
+      <p class="lead">ORGANUM decodes files on its own server and shows them in the browser through one shared colour pipeline, so a render, a video frame and a frozen 3D view all respond to exposure and gamma in the same way.</p>
+    </div>
+
+    <div class="tabs" role="tablist" aria-label="Viewer modules">
+      <button role="tab" aria-selected="true" aria-controls="t-img" id="b-img">Images &amp; colour</button>
+      <button role="tab" aria-selected="false" aria-controls="t-3d" id="b-3d">3D</button>
+      <button role="tab" aria-selected="false" aria-controls="t-time" id="b-time">Video &amp; audio</button>
+      <button role="tab" aria-selected="false" aria-controls="t-layers" id="b-layers">Layers &amp; UDIM</button>
+      <button role="tab" aria-selected="false" aria-controls="t-docs" id="b-docs">Documents &amp; data</button>
+    </div>
+    <div class="tabframe">
+      <div class="tabpanel on" role="tabpanel" id="t-img" aria-labelledby="b-img">
+        <div class="shot"><img src="assets/img/phase5-hdr-dark.png" data-light="assets/img/phase5-hdr-light.png" alt="HDR image open in the ORGANUM viewer with scopes" loading="lazy" /></div>
+        <div class="copy">
+          <h3>See the real pixels.</h3>
+          <ul>
+            <li><b>Float-accurate</b> display of EXR, HDR, DPX, TIFF and TX — not 8-bit previews.</li>
+            <li><b>Exposure, gamma, saturation, hue</b> and single-channel views (R, G, B, A, luma).</li>
+            <li><b>Colour management</b>: sRGB, Rec.709, ACEScg, Display P3 and optional OCIO configs.</li>
+            <li><b>Zoom to 6400%</b>, with a pixel grid and the numeric value of every pixel.</li>
+            <li>Highlights out-of-range values, plus live RGB and luma histograms.</li>
+          </ul>
+          <div class="chips"><span class="chip">EXR</span><span class="chip">PSD/PSB</span><span class="chip">TIFF</span><span class="chip">HDR</span><span class="chip">DPX</span><span class="chip">TX/TEX</span><span class="chip">TGA</span><span class="chip">PNG</span><span class="chip">JPG</span><span class="chip">WebP</span><span class="chip">GIF</span></div>
+        </div>
+      </div>
+      <div class="tabpanel" role="tabpanel" id="t-3d" aria-labelledby="b-3d">
+        <div class="shot"><video src="assets/video/loop-3d.mp4" autoplay muted loop playsinline preload="none"></video></div>
+        <div class="copy">
+          <h3>Turn the model, not the screenshot.</h3>
+          <ul>
+            <li><b>glTF, GLB, OBJ and USD</b> (USDA, USDC, USDZ) open directly in the browser.</li>
+            <li>Shaded, flat, wireframe, normals, depth and unlit views, in perspective or orthographic.</li>
+            <li>Press <kbd>Tab</kbd> to <b>freeze</b> the view and draw notes on it; they're stored in 3D space.</li>
+            <li>Click any material texture to inspect it in the 2D viewer.</li>
+            <li>glTF animation playback for turntables and blocking.</li>
+          </ul>
+          <div class="chips"><span class="chip">GLTF</span><span class="chip">GLB</span><span class="chip">OBJ</span><span class="chip">USD</span><span class="chip">USDA</span><span class="chip">USDC</span><span class="chip">USDZ</span></div>
+        </div>
+      </div>
+      <div class="tabpanel" role="tabpanel" id="t-time" aria-labelledby="b-time">
+        <div class="shot"><video src="assets/video/loop-media.mp4" autoplay muted loop playsinline preload="none"></video></div>
+        <div class="copy">
+          <h3>Step through it frame by frame.</h3>
+          <ul>
+            <li><b>Video and image sequences</b> play with frame-accurate stepping (<kbd>J</kbd> <kbd>K</kbd> <kbd>L</kbd>, arrows).</li>
+            <li>Notes can be pinned to a <b>single frame or a frame range</b> (<kbd>I</kbd> / <kbd>O</kbd>), shown as markers on the timebar.</li>
+            <li><b>Audio</b> shows waveforms, spectrogram and L/R meters.</li>
+            <li><b>Edit lists</b> (EDL and XML) open as a readable timeline.</li>
+          </ul>
+          <div class="chips"><span class="chip">MP4</span><span class="chip">MOV</span><span class="chip">MKV</span><span class="chip">AVI</span><span class="chip">#### sequences</span><span class="chip">WAV</span><span class="chip">FLAC</span><span class="chip">AIFF</span><span class="chip">MP3</span><span class="chip">EDL</span><span class="chip">XML</span></div>
+        </div>
+      </div>
+      <div class="tabpanel" role="tabpanel" id="t-layers" aria-labelledby="b-layers">
+        <div class="shot"><video src="assets/video/loop-layers.mp4" autoplay muted loop playsinline preload="none"></video></div>
+        <div class="copy">
+          <h3>Every pass, every layer, every tile.</h3>
+          <ul>
+            <li>A <b>layer strip</b> lists EXR AOVs, PSD layers and groups, and TIFF pages as thumbnails.</li>
+            <li><b>UDIM texture sets</b> are detected automatically and laid out as a UV mosaic.</li>
+            <li>ORGANUM tells UDIM tiles apart from frame sequences, and one click corrects it if needed.</li>
+            <li>Notes on UDIMs are stored in UV space, so they stay in place if textures change resolution.</li>
+          </ul>
+          <div class="chips"><span class="chip">AOVs</span><span class="chip">PSD groups</span><span class="chip">name.1001.exr</span><span class="chip">&lt;UDIM&gt;</span><span class="chip">u1_v1</span></div>
+        </div>
+      </div>
+      <div class="tabpanel" role="tabpanel" id="t-docs" aria-labelledby="b-docs">
+        <div class="shot"><img src="assets/img/phase5-pdf-dark.png" alt="A PDF brief open in the ORGANUM viewer" loading="lazy" /></div>
+        <div class="copy">
+          <h3>The brief sits next to the art.</h3>
+          <ul>
+            <li><b>PDF</b> briefs and notes with search and page jumps.</li>
+            <li><b>CSV</b> in a spreadsheet-like grid: sort, filter, range statistics, copy.</li>
+            <li><b>JSON and YAML</b> as a collapsible tree or raw text.</li>
+            <li>Every file shows its metadata: size, path, checksum, colourspace and handler.</li>
+          </ul>
+          <div class="chips"><span class="chip">PDF</span><span class="chip">CSV</span><span class="chip">JSON</span><span class="chip">YAML</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:28px">
+      <div class="panel-title"><span class="dot"></span>Annotation tools — press ? in the viewer for the full list</div>
+      <div class="keys">
+        <div>Free draw <kbd>B</kbd></div>
+        <div>Closed shape <kbd>P</kbd></div>
+        <div>Rectangle <kbd>R</kbd></div>
+        <div>Ellipse <kbd>O</kbd></div>
+        <div>Eraser <kbd>E</kbd></div>
+        <div>Laser pointer <kbd>L</kbd></div>
+        <div>Undo / Redo <kbd>Ctrl Z</kbd></div>
+        <div>Play / Pause <kbd>Space</kbd></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PRODUCTION ============ -->
+<section id="production">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Production tracking</span>
+      <h2>Know where every asset stands — without asking.</h2>
+      <p class="lead">The same app that shows the work also tracks it. Status, versions, dependencies and workload all come from the actions people already take: publishing, submitting and approving.</p>
+    </div>
+
+    <div class="feature">
+      <div>
+        <h3>The entities browser</h3>
+        <p>Three columns from left to right: <b>entities</b> (with thumbnails, types and tags), their <b>departments and tasks</b>, and the task's <b>published versions</b> with the scene files below them.</p>
+        <p>Search by name, tag or type. Right-click to rename, promote, set a thumbnail or move to trash. Drag files from your desktop onto a task to publish them. Scene files update live while artists save.</p>
+        <p class="muted">Two layouts: <b>Browse</b> gives the browser more room; <b>Review</b> gives it to the viewer. <kbd>Ctrl</kbd>+<kbd>E</kbd> maximises the browser.</p>
+      </div>
+      <figure class="media" style="margin:0">
+        <img src="assets/img/phase6b-entities-dark.png" data-light="assets/img/phase6b-entities-light.png" alt="Entities browser with departments, tasks, products and scenefiles" loading="lazy" />
+        <figcaption>Entities → Departments &amp; Tasks → Products &amp; Scenefiles</figcaption>
+      </figure>
+    </div>
+
+    <div class="feature flip">
+      <div>
+        <h3>Versions you can trust</h3>
+        <p>Each task has one product. Every publish copies the files into a new, <b>read-only version folder</b> — <code>v0001</code>, <code>v0002</code>… — so earlier work is never overwritten.</p>
+        <p>The first version is automatically starred as <b>MASTER</b>. After that, the star only moves when someone deliberately moves it, so “which one is final?” always has a single answer, also written to <code>master.json</code> on disk.</p>
+        <p class="muted">Deleting moves things to the project's <code>trash/</code> folder instead of erasing them.</p>
+      </div>
+      <figure class="media" style="margin:0">
+        <img src="assets/img/phase6b-entities-max-dark.png" alt="Maximised entities browser showing MASTER and version rows" loading="lazy" />
+        <figcaption>MASTER pinned on top, versions below</figcaption>
+      </figure>
+    </div>
+
+    <!-- Workflow simulator -->
+    <div class="panel" id="workflow">
+      <div class="panel-title"><span class="dot"></span>Try it — the task workflow</div>
+      <div class="panel-body">
+        <h3 style="margin-bottom:6px">Every task follows the same visible path.</h3>
+        <p class="muted">This is the same set of rules the ORGANUM server applies. Turn review stages on or off for the task, then move it through the workflow.</p>
+        <div class="flow" id="flow">
+          <div class="st" data-s="WTG"><b>WTG</b><small>Waiting</small></div>
+          <div class="st" data-s="RDY"><b>RDY</b><small>Ready</small></div>
+          <div class="st" data-s="IP"><b>IP</b><small>In progress</small></div>
+          <div class="st" data-s="P_LEAD"><b>P_LEAD</b><small>Lead review</small></div>
+          <div class="st" data-s="P_SUP"><b>P_SUP</b><small>Supervisor</small></div>
+          <div class="st" data-s="P_CLIENT"><b>P_CLIENT</b><small>Client review</small></div>
+          <div class="st" data-s="APP"><b>APP</b><small>Approved</small></div>
+        </div>
+        <div class="flow-ctl">
+          <label class="toggle"><input type="checkbox" id="needLead" checked /> Lead review</label>
+          <label class="toggle"><input type="checkbox" id="needSup" checked /> Supervisor review</label>
+          <label class="toggle"><input type="checkbox" id="needClient" checked /> Client review</label>
+          <span class="spacer" style="flex:1"></span>
+          <button class="btn" type="button" data-act="next">Next step ▸</button>
+          <button class="btn" type="button" data-act="retake">Retake</button>
+          <button class="btn" type="button" data-act="reset">Reset</button>
+        </div>
+        <div class="flow-log" id="flowLog" aria-live="polite"></div>
+      </div>
+    </div>
+
+    <div class="three" style="margin-top:24px">
+      <div class="panel"><div class="panel-title">Dependencies</div><div class="panel-body">
+        <p style="margin:0" class="muted">Link tasks across entities — for example, Lighting waits for Lookdev. A waiting task becomes <b>Ready</b> automatically once everything upstream is approved or published. Loops are rejected.</p>
+      </div></div>
+      <div class="panel"><div class="panel-title">Entity links</div><div class="panel-body">
+        <p style="margin:0" class="muted">Record that <code>glasses</code> is used in <code>hero_robot</code>, which appears in <code>sh010</code>. ORGANUM then suggests the task dependencies those links imply, for a producer to confirm.</p>
+      </div></div>
+      <div class="panel"><div class="panel-title">Workload</div><div class="panel-body">
+        <p style="margin:0" class="muted">Bid hours, logged time and scheduled dates become a day-by-day load per artist. Tasks without dates or an assigned artist are listed so nothing falls through.</p>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PEOPLE ============ -->
+<section class="alt" id="people">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">People &amp; permissions</span>
+      <h2>The right access for everyone, including the client.</h2>
+      <p class="lead">Permissions work on two levels: a person's <b>role</b> in the project, and their <b>capacity</b> on a specific task. An artist assigned to a task can publish on it without having rights everywhere else.</p>
+    </div>
+
+    <div class="two" style="align-items:start">
+      <div class="panel">
+        <div class="panel-title"><span class="dot"></span>Built-in roles (editable in the Admin console)</div>
+        <table class="grid-table">
+          <thead><tr><th>Role</th><th>Sees</th><th>Can approve</th></tr></thead>
+          <tbody>
+            <tr><td>Administrator</td><td><span class="tag all">everything</span></td><td><span class="tag appr">all stages</span></td></tr>
+            <tr><td>Production</td><td><span class="tag all">everything</span></td><td><span class="tag appr">on behalf of client</span></td></tr>
+            <tr><td>Director</td><td><span class="tag all">all tasks</span></td><td><span class="tag appr">lead · sup · client</span></td></tr>
+            <tr><td>Supervisor</td><td><span class="tag all">all tasks</span></td><td><span class="tag appr">when assigned</span></td></tr>
+            <tr><td>Lead</td><td><span class="tag scope">own tasks</span> + all media</td><td><span class="tag appr">when assigned</span></td></tr>
+            <tr><td>Artist</td><td><span class="tag scope">own tasks</span> + all media</td><td>—</td></tr>
+            <tr><td>External</td><td><span class="tag scope">own company</span></td><td>—</td></tr>
+            <tr><td>Client</td><td><span class="tag scope">shared versions only</span></td><td><span class="tag appr">client stage</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <figure class="media" style="margin:0 0 20px">
+          <img src="assets/img/phase7a-client-dark.png" alt="Client view showing only shared items" loading="lazy" />
+          <figcaption>A client's view: only the shared <code>Lighting/beauty v0001</code> is visible.</figcaption>
+        </figure>
+        <div class="panel accent">
+          <div class="panel-body">
+            <h3 style="font-size:18px;margin-bottom:8px">Two separate conversations.</h3>
+            <p class="muted" style="margin:0">Every note is either <b>internal</b> or <b>client</b>. The team talks freely in internal notes; clients only ever see client notes and the versions shared with them. Anything not shared simply doesn't exist for them.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature" style="margin-top:56px">
+      <div>
+        <h3>Secure by default</h3>
+        <ul class="list-ok">
+          <li>Passwords hashed with Argon2id; strength rules and a common-password blocklist.</li>
+          <li>Five failed logins lock the account for 15 minutes.</li>
+          <li>Sessions expire after 8 idle hours, and every change is protected against cross-site requests.</li>
+          <li>An append-only <b>audit log</b> of logins, role changes, assignments and client shares.</li>
+          <li>Opening files in desktop apps only works on the local machine, never over the network.</li>
+        </ul>
+      </div>
+      <figure class="media" style="margin:0">
+        <img src="assets/img/phase7a-admin-dark.png" data-light="assets/img/phase7a-admin-light.png" alt="Admin console with the role permissions matrix" loading="lazy" />
+        <figcaption>Admin console → Roles &amp; Permissions matrix</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ============ WHY ============ -->
+<section id="why">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Why it's useful for production</span>
+      <h2>Less chasing. More reviewing.</h2>
+      <p class="lead">ORGANUM is built around the people in a production, not around a file format. Here's what changes for each of them.</p>
+    </div>
+    <div class="four">
+      <div class="panel card"><div class="panel-body">
+        <span class="role-ico">PR</span>
+        <h3>Production</h3>
+        <p>Status, retakes and workload are calculated from what actually happened, not reported by hand. Waiting tasks unlock themselves.</p>
+      </div></div>
+      <div class="panel card"><div class="panel-body">
+        <span class="role-ico">SU</span>
+        <h3>Supervisors &amp; Directors</h3>
+        <p>Review any department's output in one viewer with correct colour, then approve or send a retake with notes on the frame.</p>
+      </div></div>
+      <div class="panel card"><div class="panel-body">
+        <span class="role-ico">AR</span>
+        <h3>Artists</h3>
+        <p>Open scene files in Houdini, Maya, Blender or Nuke with a double-click, publish by drag and drop, and read feedback where it was drawn.</p>
+      </div></div>
+      <div class="panel card"><div class="panel-body">
+        <span class="role-ico">CL</span>
+        <h3>Clients</h3>
+        <p>A clean review space with only the versions meant for them, and a clear place to approve or comment.</p>
+      </div></div>
+    </div>
+
+    <div class="three" style="margin-top:20px">
+      <div class="panel"><div class="panel-title">Your data stays yours</div><div class="panel-body"><p class="muted" style="margin:0">No cloud account, no uploads to a third party. Each project carries its own database inside its own folder.</p></div></div>
+      <div class="panel"><div class="panel-title">Fast and dense</div><div class="panel-body"><p class="muted" style="margin:0">A compact interface in the tradition of desktop DCC tools: full keyboard control, no animations slowing things down, dark and light themes.</p></div></div>
+      <div class="panel"><div class="panel-title">Open to new formats</div><div class="panel-body"><p class="muted" style="margin:0">Each format is a self-contained plug-in on the server and a viewer module in the browser, so new formats can be added without touching existing ones.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ UNDER THE HOOD ============ -->
+<section class="alt" id="tech">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Under the hood</span>
+      <h2>A modern, typed stack behind a classic interface.</h2>
+      <p class="lead">A Python server reads and converts the files; a React app shows them. Converted previews are cached by content, so the same file is only processed once.</p>
+    </div>
+
+    <div class="arch">
+      <div class="col">
+        <span class="col-title">Browser</span>
+        <div class="box key"><b>React 19 + TypeScript</b><small>Entities browser, viewer, admin</small></div>
+        <div class="box"><b>WebGL2 colour pipeline</b><small>Shared by images, video and 3D</small></div>
+        <div class="box"><b>Three.js · pdf.js</b><small>Loaded only when needed</small></div>
+      </div>
+      <div class="wire"><span>HTTP</span></div>
+      <div class="col">
+        <span class="col-title">Local server</span>
+        <div class="box key"><b>FastAPI · Python 3.12</b><small>Auth, permissions, workflow, publishing</small></div>
+        <div class="box"><b>Format handlers</b><small>OpenImageIO · OpenEXR · psd-tools · PyAV · usd-core · trimesh · OpenTimelineIO · pypdf</small></div>
+        <div class="box"><b>Background jobs</b><small>Proxies, thumbnails, layer atlases, LUTs</small></div>
+      </div>
+      <div class="wire"><span>disk</span></div>
+      <div class="col">
+        <span class="col-title">Your drive</span>
+        <div class="box key"><b>Project folder</b><small>Entities, versions, scene files</small></div>
+        <div class="box"><b>project.db</b><small>SQLite per project (PostgreSQL ready)</small></div>
+        <div class="box"><b>cache/</b><small>Content-addressed previews</small></div>
+      </div>
+    </div>
+
+    <p class="muted" style="margin-top:28px;font-size:14px">Quality checks in the repository: strict typing on both sides (mypy, TypeScript), Ruff, ESLint and Stylelint rules that enforce the design tokens, colour-contrast checks, unit tests and Playwright end-to-end tests. All third-party libraries were chosen for permissive licences.</p>
+  </div>
+</section>
+
+<!-- ============ GET STARTED ============ -->
+<section id="start">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Get started</span>
+      <h2>Running in a couple of minutes.</h2>
+      <p class="lead">On Windows, one double-click installs what's missing, creates a demo project and starts everything.</p>
+    </div>
+    <div class="two" style="align-items:start">
+      <div class="panel">
+        <div class="panel-title"><span class="dot"></span>Windows</div>
+<pre class="term"><span class="c">:: needs uv and Node.js 22+ on PATH</span>
+<span class="p">&gt;</span> launch.bat
+
+  ORGANUM Frontend : http://127.0.0.1:5173
+  ORGANUM Backend  : http://127.0.0.1:8000/docs</pre>
+        <div class="panel-title" style="border-top:1px solid var(--border-dark)">Manual / other systems</div>
+<pre class="term"><span class="c"># backend</span>
+<span class="p">$</span> cd backend
+<span class="p">$</span> uv sync --python 3.12 --all-extras
+<span class="p">$</span> uv run python scripts/make_demo_data.py
+<span class="p">$</span> uv run uvicorn app.main:app --port 8000
+
+<span class="c"># frontend</span>
+<span class="p">$</span> cd frontend
+<span class="p">$</span> npm install
+<span class="p">$</span> npm run dev</pre>
+      </div>
+      <div>
+        <div class="panel" style="margin-bottom:20px">
+          <div class="panel-title">Demo accounts — project “ORGANUM Demo”</div>
+          <table class="grid-table">
+            <thead><tr><th>User</th><th>Role</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">prod_maya</td><td>Production</td></tr>
+              <tr><td class="mono">dir_alex</td><td>Director</td></tr>
+              <tr><td class="mono">sup_elena</td><td>Supervisor</td></tr>
+              <tr><td class="mono">lead_marco</td><td>Lead</td></tr>
+              <tr><td class="mono">art_sam</td><td>Artist</td></tr>
+              <tr><td class="mono">ext_li</td><td>External (Outsource FX Co)</td></tr>
+              <tr><td class="mono">cli_jordan</td><td>Client (Client Studio)</td></tr>
+            </tbody>
+          </table>
+          <p class="muted" style="padding:12px 14px 0;font-size:14px">Demo password: <code>DemoPass123!</code>. The <code>admin</code> account must change its password on first login.</p>
+        </div>
+        <div class="panel accent"><div class="panel-body">
+          <p style="margin:0;font-size:15px" class="muted"><b style="color:var(--text)">Good to know:</b> keep the active project on a local SSD rather than a network share — the project database doesn't like network file locking. Copy the folder to the network for archiving.</p>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ GALLERY ============ -->
+<section class="alt" id="gallery">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Screens</span>
+      <h2>A closer look.</h2>
+      <p class="lead">Click any screen to open it full size. Use the arrow keys to move between them.</p>
+    </div>
+    <div class="gallery" id="galleryGrid"></div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span class="logo">ORGANUM</span>
+    <span>Multi-format review &amp; production tracking · documentation site</span>
+    <a href="#top">Back to top ↑</a>
+  </div>
+</footer>
+
+<!-- lightbox -->
+<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Screenshot viewer">
+  <div class="lb-bar">
+    <span id="lbCap"></span><span class="grow"></span>
+    <span id="lbIdx"></span>
+    <button type="button" data-lb="prev">◂ Prev</button>
+    <button type="button" data-lb="next">Next ▸</button>
+    <button type="button" data-lb="close">Close ✕</button>
+  </div>
+  <div class="lb-stage"><img id="lbImg" alt="" /></div>
+</div>
+
+<script src="js/main.js"></script>
+</body>
+</html>

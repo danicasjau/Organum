@@ -10,6 +10,7 @@ import {
   Text,
   TextField,
   useToast,
+  DatePicker,
 } from '../../components/ui';
 import {
   apiClient,
@@ -65,18 +66,18 @@ export function TaskFilterBar({
 
   const hasActiveFilters = Boolean(
     filters.q ||
-      filters.status ||
-      filters.priority ||
-      filters.department_id ||
-      filters.company_id ||
-      filters.user_id ||
-      filters.my_capacity ||
-      filters.mine_only ||
-      filters.include_linked_entities ||
-      filters.entity_path_prefix ||
-      filters.tag ||
-      filters.date_from ||
-      filters.date_to,
+    filters.status ||
+    filters.priority ||
+    filters.department_id ||
+    filters.company_id ||
+    filters.user_id ||
+    filters.my_capacity ||
+    filters.mine_only ||
+    filters.include_linked_entities ||
+    filters.entity_path_prefix ||
+    filters.tag ||
+    filters.date_from ||
+    filters.date_to,
   );
 
   const handleSaveView = async () => {
@@ -191,9 +192,7 @@ export function TaskFilterBar({
             value={filters.my_capacity ?? ''}
             onChange={(v) =>
               setFilters({
-                my_capacity: v
-                  ? (v as 'artist' | 'lead' | 'supervisor')
-                  : undefined,
+                my_capacity: v ? (v as 'artist' | 'lead' | 'supervisor') : undefined,
               })
             }
             options={[
@@ -264,19 +263,19 @@ export function TaskFilterBar({
                   Date From / To
                 </Text>
                 <div className="org-tfilter__dates">
-                  <input
-                    type="date"
-                    className="org-tfilter__date"
-                    aria-label="Date from"
+                  <DatePicker
+                    ariaLabel="Date from"
+                    placeholder="From"
                     value={filters.date_from ?? ''}
-                    onChange={(e) => setFilters({ date_from: e.target.value || undefined })}
+                    max={filters.date_to ?? null}
+                    onChange={(v) => setFilters({ date_from: v || undefined })}
                   />
-                  <input
-                    type="date"
-                    className="org-tfilter__date"
-                    aria-label="Date to"
+                  <DatePicker
+                    ariaLabel="Date to"
+                    placeholder="To"
                     value={filters.date_to ?? ''}
-                    onChange={(e) => setFilters({ date_to: e.target.value || undefined })}
+                    min={filters.date_from ?? null}
+                    onChange={(v) => setFilters({ date_to: v || undefined })}
                   />
                 </div>
               </Stack>
@@ -373,4 +372,3 @@ export function TaskFilterBar({
     </div>
   );
 }
-

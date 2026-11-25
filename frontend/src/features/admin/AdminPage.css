@@ -43,7 +43,7 @@
     background: var(--surface-hover);
   }
 
-  .org-admin-nav__item[data-active="true"] {
+  .org-admin-nav__item[data-active='true'] {
     background: var(--accent-soft);
     border-color: var(--accent);
     font-weight: 700;
@@ -109,4 +109,3 @@
     font-weight: 600;
   }
 }
-

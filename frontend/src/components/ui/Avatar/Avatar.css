@@ -18,20 +18,42 @@
     background: var(--avatar-hue-0);
   }
 
-  .org-avatar[data-size="md"] {
+  .org-avatar[data-size='md'] {
     width: var(--avatar-md);
     height: var(--avatar-md);
     font-size: var(--font-size);
   }
 
-  .org-avatar[data-avatar-tone="0"] { background: var(--avatar-hue-0); }
-  .org-avatar[data-avatar-tone="1"] { background: var(--avatar-hue-1); }
-  .org-avatar[data-avatar-tone="2"] { background: var(--avatar-hue-2); }
-  .org-avatar[data-avatar-tone="3"] { background: var(--avatar-hue-3); }
-  .org-avatar[data-avatar-tone="4"] { background: var(--avatar-hue-4); }
-  .org-avatar[data-avatar-tone="5"] { background: var(--avatar-hue-5); }
-  .org-avatar[data-avatar-tone="6"] { background: var(--avatar-hue-6); }
-  .org-avatar[data-avatar-tone="7"] { background: var(--avatar-hue-7); }
+  .org-avatar[data-size='lg'] {
+    width: var(--avatar-lg);
+    height: var(--avatar-lg);
+    font-size: var(--font-size-lg);
+  }
+
+  .org-avatar[data-avatar-tone='0'] {
+    background: var(--avatar-hue-0);
+  }
+  .org-avatar[data-avatar-tone='1'] {
+    background: var(--avatar-hue-1);
+  }
+  .org-avatar[data-avatar-tone='2'] {
+    background: var(--avatar-hue-2);
+  }
+  .org-avatar[data-avatar-tone='3'] {
+    background: var(--avatar-hue-3);
+  }
+  .org-avatar[data-avatar-tone='4'] {
+    background: var(--avatar-hue-4);
+  }
+  .org-avatar[data-avatar-tone='5'] {
+    background: var(--avatar-hue-5);
+  }
+  .org-avatar[data-avatar-tone='6'] {
+    background: var(--avatar-hue-6);
+  }
+  .org-avatar[data-avatar-tone='7'] {
+    background: var(--avatar-hue-7);
+  }
 
   .org-avatar__img {
     width: 100%;
@@ -44,4 +66,3 @@
     letter-spacing: 0.02em;
   }
 }
-

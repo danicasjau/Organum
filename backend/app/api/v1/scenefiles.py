@@ -160,7 +160,16 @@ async def list_scenefiles(
         else target.relative_to(scene_root.resolve()).as_posix()
     )
     parent_rel = None if not cur_rel else ("" if "/" not in cur_rel else cur_rel.rsplit("/", 1)[0])
-    return SceneListResponse(current_path=cur_rel, parent_path=parent_rel, entries=entries)
+    try:
+        cur_proj_rel: str | None = target.resolve().relative_to(ctx.root.resolve()).as_posix()
+    except ValueError:
+        cur_proj_rel = None
+    return SceneListResponse(
+        current_path=cur_rel,
+        parent_path=parent_rel,
+        entries=entries,
+        current_project_rel_path=cur_proj_rel,
+    )
 
 
 @router.get("/tasks/{task_id}/scenefiles/thumbnail")

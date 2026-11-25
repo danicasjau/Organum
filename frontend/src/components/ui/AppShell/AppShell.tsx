@@ -11,7 +11,10 @@ import './AppShell.css';
 export interface PanelTabItem {
   id: string;
   label: string;
+  href?: string;
   active?: boolean;
+  /** Optional indicator rendered on the tab corner (e.g. unread review dot). */
+  indicator?: ReactNode;
   onClick?: () => void;
 }
 
@@ -66,16 +69,24 @@ export function AppShell({
             {panels.length > 0 && (
               <nav className="org-panelswitch" aria-label="Workspace panels">
                 {panels.map((p) => (
-                  <button
+                  <a
                     key={p.id}
-                    type="button"
+                    href={p.href ?? '#'}
                     data-active={p.active ? 'true' : undefined}
-                    aria-pressed={Boolean(p.active)}
+                    aria-current={p.active ? 'page' : undefined}
                     className="org-panelswitch__tab"
-                    onClick={p.onClick}
+                    onClick={(e) => {
+                      // Let the browser handle modified clicks (new tab / window).
+                      if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) {
+                        return;
+                      }
+                      e.preventDefault();
+                      p.onClick?.();
+                    }}
                   >
                     {p.label}
-                  </button>
+                    {p.indicator && <span className="org-panelswitch__dot">{p.indicator}</span>}
+                  </a>
                 ))}
               </nav>
             )}

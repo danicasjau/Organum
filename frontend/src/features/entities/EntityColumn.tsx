@@ -13,6 +13,7 @@ import {
   Stack,
   Text,
   useToast,
+  type MenuEntry,
 } from '../../components/ui';
 import { useCssVarRef } from '../../components/ui/_internal/useCssVar';
 import {
@@ -23,7 +24,7 @@ import {
 } from '../../lib/api/client';
 import { hasPerm, useAuthStore } from '../auth/authStore';
 import { useProjectStore } from '../project/projectStore';
-import { type EntitySortMode, useEntitiesStore } from './entitiesStore';
+import { useEntitiesStore } from './entitiesStore';
 import {
   ConfirmTrashDialog,
   CreateEntityDialog,
@@ -37,22 +38,9 @@ type BrowseItem =
   | { kind: 'folder'; id: string; name: string; relPath: string }
   | { kind: 'entity'; id: string; entity: EntityOut };
 
-const SORT_OPTIONS = [
-  { value: 'name_asc', label: 'Name A→Z' },
-  { value: 'name_desc', label: 'Name Z→A' },
-  { value: 'type_asc', label: 'Type' },
-  { value: 'updated_desc', label: 'Recent' },
-];
-
 const EMPTY_DEPARTMENTS: DepartmentOut[] = [];
 
-function VirtualCardRow({
-  start,
-  children,
-}: {
-  start: number;
-  children: React.ReactNode;
-}) {
+function VirtualCardRow({ start, children }: { start: number; children: React.ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   useCssVarRef(ref, '--ec-offset', `${start}px`);
   return (
@@ -78,6 +66,7 @@ function EntityCard({
   onResetThumb,
   onReveal,
   onDelete,
+  createItems,
 }: {
   entity: EntityOut;
   selected: boolean;
@@ -94,6 +83,7 @@ function EntityCard({
   onResetThumb: () => void;
   onReveal: () => void;
   onDelete: () => void;
+  createItems: ReadonlyArray<MenuEntry>;
 }) {
   const [imgErr, setImgErr] = useState(false);
   const showThumb = Boolean(entity.resolved_thumbnail_file_id) && !imgErr;
@@ -107,18 +97,12 @@ function EntityCard({
           ? [
               {
                 id: 'link-to',
-                label:
-                  multiCount > 1
-                    ? `Link ${multiCount} selected to…`
-                    : 'Link selected to…',
+                label: multiCount > 1 ? `Link ${multiCount} selected to…` : 'Link selected to…',
                 onSelect: onLinkTo,
               },
               {
                 id: 'link-from',
-                label:
-                  multiCount > 1
-                    ? `Link ${multiCount} selected from…`
-                    : 'Link from…',
+                label: multiCount > 1 ? `Link ${multiCount} selected from…` : 'Link from…',
                 onSelect: onLinkFrom,
               },
             ]
@@ -127,6 +111,9 @@ function EntityCard({
           ? [{ id: 'reset-thumb', label: 'Reset Thumbnail to Auto', onSelect: onResetThumb }]
           : []),
         { id: 'reveal', label: 'Reveal in File Manager', onSelect: onReveal },
+        ...(createItems.length > 0
+          ? [{ id: 'sep-create', label: '', separator: true }, ...createItems]
+          : []),
         { id: 'sep', label: '', separator: true },
         { id: 'delete', label: 'Delete Entity...', onSelect: onDelete },
       ]}
@@ -199,12 +186,18 @@ export function EntityColumn({
   selectedEntityId,
   onSelectEntity,
   onRequestAddDepartment,
+  maximized = false,
+  onToggleMaximize,
+  onReconcile,
 }: {
   tree: EntityTreeOut | undefined;
   departments: ReadonlyArray<DepartmentOut>;
   selectedEntityId: string | null;
   onSelectEntity: (entityId: string) => void;
   onRequestAddDepartment: (entityId: string) => void;
+  maximized?: boolean;
+  onToggleMaximize?: () => void;
+  onReconcile?: () => void;
 }) {
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -215,8 +208,7 @@ export function EntityColumn({
   const canViewGraph = !isClientRole && hasPerm(auth?.permissions, 'views.graph');
   const currentFolder = useEntitiesStore((s) => s.currentFolder);
   const setCurrentFolder = useEntitiesStore((s) => s.setCurrentFolder);
-  const sortMode = useEntitiesStore((s) => s.sortMode);
-  const setSortMode = useEntitiesStore((s) => s.setSortMode);
+  const canManageEntities = !isClientRole && hasPerm(auth?.permissions, 'entity.manage');
 
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('');
@@ -277,10 +269,7 @@ export function EntityColumn({
       }
       if (filterType && (e.entity_type ?? '') !== filterType) return false;
       if (filterDept && !e.departments?.some((d) => d.name === filterDept)) return false;
-      if (
-        filterTags.length > 0 &&
-        !filterTags.every((ft) => (e.tags ?? []).includes(ft))
-      ) {
+      if (filterTags.length > 0 && !filterTags.every((ft) => (e.tags ?? []).includes(ft))) {
         return false;
       }
       if (q) {
@@ -293,16 +282,7 @@ export function EntityColumn({
       return true;
     });
 
-    matchingEntities.sort((a, b) => {
-      if (sortMode === 'name_desc') return b.name.localeCompare(a.name);
-      if (sortMode === 'type_asc') {
-        return (a.entity_type ?? '~').localeCompare(b.entity_type ?? '~') || a.name.localeCompare(b.name);
-      }
-      if (sortMode === 'updated_desc') {
-        return String(b.updated_at ?? '').localeCompare(String(a.updated_at ?? ''));
-      }
-      return a.name.localeCompare(b.name);
-    });
+    matchingEntities.sort((a, b) => a.name.localeCompare(b.name));
 
     const folderItems: BrowseItem[] = [];
     if (!isFiltering) {
@@ -318,13 +298,13 @@ export function EntityColumn({
       ...folderItems,
       ...matchingEntities.map((e) => ({ kind: 'entity' as const, id: e.id, entity: e })),
     ];
-  }, [tree, search, filterType, filterDept, filterTags, currentFolder, sortMode]);
+  }, [tree, search, filterType, filterDept, filterTags, currentFolder]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const virtualizer = useVirtualizer({
     count: items.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => 74,
+    estimateSize: () => 88,
     overscan: 6,
     initialRect: { width: 260, height: 500 },
   });
@@ -338,8 +318,46 @@ export function EntityColumn({
     await queryClient.invalidateQueries({ queryKey: ['entities', activeProjectUuid] });
   };
 
-  const activeFilterCount =
-    (filterType ? 1 : 0) + (filterDept ? 1 : 0) + filterTags.length;
+  const activeFilterCount = (filterType ? 1 : 0) + (filterDept ? 1 : 0) + filterTags.length;
+
+  const createItems: MenuEntry[] = canManageEntities
+    ? [
+        { id: 'new-entity', label: 'New Entity...', onSelect: () => setCreateEntityOpen(true) },
+        { id: 'new-folder', label: 'New Folder...', onSelect: () => setCreateFolderOpen(true) },
+      ]
+    : [];
+
+  const backgroundItems: MenuEntry[] = [
+    ...createItems,
+    ...(onToggleMaximize
+      ? [
+          { id: 'sep-view', label: '', separator: true },
+          {
+            id: 'maximize',
+            label: maximized ? 'Restore Entities Browser' : 'Maximize Entities Browser',
+            shortcut: 'Ctrl+E',
+            onSelect: onToggleMaximize,
+          },
+        ]
+      : []),
+    ...(currentFolder
+      ? [
+          {
+            id: 'reveal-folder',
+            label: 'Reveal Folder in File Manager',
+            onSelect: () => {
+              void apiClient.revealPath(currentFolder, activeProjectUuid);
+            },
+          },
+        ]
+      : []),
+    ...(onReconcile && canManageEntities
+      ? [
+          { id: 'sep-sync', label: '', separator: true },
+          { id: 'reconcile', label: 'Reconcile Project Disk & DB', onSelect: onReconcile },
+        ]
+      : []),
+  ];
 
   return (
     <div
@@ -360,13 +378,14 @@ export function EntityColumn({
       }}
     >
       <div className="org-ecol__toolbar">
-        <SearchField
-          aria-label="Filter entities"
-          placeholder="Search name, tag, type..."
-          value={search}
-          onChange={setSearch}
-        />
-        <Inline gap="1" className="org-ecol__actions">
+        <div className="org-ecol__searchrow">
+          <SearchField
+            aria-label="Filter entities"
+            placeholder="Search name, tag, type..."
+            value={search}
+            onChange={setSearch}
+            className="org-ecol__search"
+          />
           <Popover
             trigger={
               <Button size="sm" variant={activeFilterCount > 0 ? 'primary' : 'default'}>
@@ -442,27 +461,7 @@ export function EntityColumn({
               )}
             </Stack>
           </Popover>
-
-          <Select
-            ariaLabel="Sort entities"
-            value={sortMode}
-            onChange={(v) => setSortMode(v as EntitySortMode)}
-            options={SORT_OPTIONS}
-            filterable={false}
-          />
-
-          <Button size="sm" onClick={() => setCreateFolderOpen(true)} title="New grouping folder">
-            <Icon name="folder-plus" size="sm" /> Folder
-          </Button>
-          <Button
-            size="sm"
-            variant="primary"
-            onClick={() => setCreateEntityOpen(true)}
-            title="Create new entity"
-          >
-            <Icon name="plus" size="sm" /> Entity
-          </Button>
-        </Inline>
+        </div>
 
         <div className="org-ecol__crumbs" aria-label="Folder breadcrumbs">
           <Button
@@ -506,163 +505,174 @@ export function EntityColumn({
         </div>
       </div>
 
-      <div
-        ref={scrollRef}
-        role="listbox"
-        aria-label="Entities list"
-        tabIndex={0}
-        className="org-ecol__list"
-      >
-        {items.length === 0 ? (
-          <Stack padding="3" gap="1">
-            <Text size="sm" variant="muted">
-              No entities match the current folder or filter.
-            </Text>
-          </Stack>
-        ) : (
-          <div ref={innerRef} className="org-ecol__vinner">
-            {virtualizer.getVirtualItems().map((vRow) => {
-              const item = items[vRow.index];
-              if (!item) return null;
-              return (
-                <VirtualCardRow key={item.id} start={vRow.start}>
-                  {item.kind === 'folder' ? (
-                    <ContextMenu
-                      items={[
-                        {
-                          id: 'open',
-                          label: 'Open Folder',
-                          onSelect: () => setCurrentFolder(item.relPath),
-                        },
-                        {
-                          id: 'promote',
-                          label: 'Promote to Entity',
-                          onSelect: async () => {
-                            try {
-                              const ent = await apiClient.promoteFolder(
-                                item.relPath,
-                                activeProjectUuid,
-                              );
-                              await refreshTree();
-                              onSelectEntity(ent.id);
-                              toast.push('success', `Promoted '${ent.name}' to entity`);
-                            } catch (err) {
-                              toast.push(
-                                'danger',
-                                err instanceof Error ? err.message : 'Promote failed',
+      <ContextMenu items={backgroundItems}>
+        <div
+          ref={scrollRef}
+          role="listbox"
+          aria-label="Entities list"
+          tabIndex={0}
+          className="org-ecol__list"
+        >
+          {items.length === 0 ? (
+            <div className="org-ecol__empty">
+              <Text size="sm" variant="muted">
+                No entities match the current folder or filter.
+              </Text>
+              {canManageEntities && (
+                <Text size="sm" variant="muted">
+                  Right-click to create an entity or folder.
+                </Text>
+              )}
+            </div>
+          ) : (
+            <div ref={innerRef} className="org-ecol__vinner">
+              {virtualizer.getVirtualItems().map((vRow) => {
+                const item = items[vRow.index];
+                if (!item) return null;
+                return (
+                  <VirtualCardRow key={item.id} start={vRow.start}>
+                    {item.kind === 'folder' ? (
+                      <ContextMenu
+                        items={[
+                          {
+                            id: 'open',
+                            label: 'Open Folder',
+                            onSelect: () => setCurrentFolder(item.relPath),
+                          },
+                          {
+                            id: 'promote',
+                            label: 'Promote to Entity',
+                            onSelect: async () => {
+                              try {
+                                const ent = await apiClient.promoteFolder(
+                                  item.relPath,
+                                  activeProjectUuid,
+                                );
+                                await refreshTree();
+                                onSelectEntity(ent.id);
+                                toast.push('success', `Promoted '${ent.name}' to entity`);
+                              } catch (err) {
+                                toast.push(
+                                  'danger',
+                                  err instanceof Error ? err.message : 'Promote failed',
+                                );
+                              }
+                            },
+                          },
+                          {
+                            id: 'reveal',
+                            label: 'Reveal in File Manager',
+                            onSelect: async () => {
+                              await apiClient.revealPath(item.relPath, activeProjectUuid);
+                            },
+                          },
+                          ...(createItems.length > 0
+                            ? [{ id: 'sep-create', label: '', separator: true }, ...createItems]
+                            : []),
+                        ]}
+                      >
+                        <div
+                          role="option"
+                          tabIndex={0}
+                          aria-selected={false}
+                          className="org-ecol__card org-ecol__card--folder"
+                          onDoubleClick={() => setCurrentFolder(item.relPath)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') setCurrentFolder(item.relPath);
+                          }}
+                        >
+                          <div className="org-ecol__thumb">
+                            <Icon name="folder" size="lg" />
+                          </div>
+                          <div className="org-ecol__body">
+                            <div className="org-ecol__title-row">
+                              <span className="org-ecol__title">{item.name}</span>
+                              <Badge tone="neutral">Folder</Badge>
+                            </div>
+                            <Text size="sm" variant="muted">
+                              Double-click to open
+                            </Text>
+                          </div>
+                        </div>
+                      </ContextMenu>
+                    ) : (
+                      <EntityCard
+                        entity={item.entity}
+                        selected={item.entity.id === selectedEntityId}
+                        multiSelected={multiSelectedIds.includes(item.entity.id)}
+                        multiCount={
+                          multiSelectedIds.includes(item.entity.id) ? multiSelectedIds.length : 1
+                        }
+                        linkCount={linkCounts.get(item.entity.id) ?? 0}
+                        canLink={canLinkEntities}
+                        projectUuid={activeProjectUuid}
+                        onSelect={(e) => {
+                          const eid = item.entity.id;
+                          if (e.ctrlKey || e.metaKey) {
+                            setMultiSelectedIds((prev) =>
+                              prev.includes(eid) ? prev.filter((x) => x !== eid) : [...prev, eid],
+                            );
+                          } else if (e.shiftKey && selectedEntityId) {
+                            const entItems = items.filter(
+                              (it): it is Extract<BrowseItem, { kind: 'entity' }> =>
+                                it.kind === 'entity',
+                            );
+                            const iA = entItems.findIndex(
+                              (it) => it.entity.id === selectedEntityId,
+                            );
+                            const iB = entItems.findIndex((it) => it.entity.id === eid);
+                            if (iA >= 0 && iB >= 0) {
+                              const lo = Math.min(iA, iB);
+                              const hi = Math.max(iA, iB);
+                              setMultiSelectedIds(
+                                entItems.slice(lo, hi + 1).map((it) => it.entity.id),
                               );
                             }
-                          },
-                        },
-                        {
-                          id: 'reveal',
-                          label: 'Reveal in File Manager',
-                          onSelect: async () => {
-                            await apiClient.revealPath(item.relPath, activeProjectUuid);
-                          },
-                        },
-                      ]}
-                    >
-                      <div
-                        role="option"
-                        tabIndex={0}
-                        aria-selected={false}
-                        className="org-ecol__card org-ecol__card--folder"
-                        onDoubleClick={() => setCurrentFolder(item.relPath)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') setCurrentFolder(item.relPath);
-                        }}
-                      >
-                        <div className="org-ecol__thumb">
-                          <Icon name="folder" size="lg" />
-                        </div>
-                        <div className="org-ecol__body">
-                          <div className="org-ecol__title-row">
-                            <span className="org-ecol__title">{item.name}</span>
-                            <Badge tone="neutral">Folder</Badge>
-                          </div>
-                          <Text size="sm" variant="muted">
-                            Double-click to open • Right-click to Promote
-                          </Text>
-                        </div>
-                      </div>
-                    </ContextMenu>
-                  ) : (
-                    <EntityCard
-                      entity={item.entity}
-                      selected={item.entity.id === selectedEntityId}
-                      multiSelected={multiSelectedIds.includes(item.entity.id)}
-                      multiCount={
-                        multiSelectedIds.includes(item.entity.id)
-                          ? multiSelectedIds.length
-                          : 1
-                      }
-                      linkCount={linkCounts.get(item.entity.id) ?? 0}
-                      canLink={canLinkEntities}
-                      projectUuid={activeProjectUuid}
-                      onSelect={(e) => {
-                        const eid = item.entity.id;
-                        if (e.ctrlKey || e.metaKey) {
-                          setMultiSelectedIds((prev) =>
-                            prev.includes(eid) ? prev.filter((x) => x !== eid) : [...prev, eid],
-                          );
-                        } else if (e.shiftKey && selectedEntityId) {
-                          const entItems = items.filter(
-                            (it): it is Extract<BrowseItem, { kind: 'entity' }> =>
-                              it.kind === 'entity',
-                          );
-                          const iA = entItems.findIndex((it) => it.entity.id === selectedEntityId);
-                          const iB = entItems.findIndex((it) => it.entity.id === eid);
-                          if (iA >= 0 && iB >= 0) {
-                            const lo = Math.min(iA, iB);
-                            const hi = Math.max(iA, iB);
-                            setMultiSelectedIds(
-                              entItems.slice(lo, hi + 1).map((it) => it.entity.id),
-                            );
+                          } else {
+                            setMultiSelectedIds([eid]);
                           }
-                        } else {
-                          setMultiSelectedIds([eid]);
-                        }
-                        onSelectEntity(eid);
-                      }}
-                      onEdit={() => setEditingEntity(item.entity)}
-                      onAddDept={() => onRequestAddDepartment(item.entity.id)}
-                      onLinkTo={() => {
-                        const ids =
-                          multiSelectedIds.includes(item.entity.id) && multiSelectedIds.length > 0
-                            ? multiSelectedIds
-                            : [item.entity.id];
-                        const anchors = (tree?.entities ?? []).filter((e) => ids.includes(e.id));
-                        setBulkLinkState({ anchors, direction: 'used_in' });
-                      }}
-                      onLinkFrom={() => {
-                        const ids =
-                          multiSelectedIds.includes(item.entity.id) && multiSelectedIds.length > 0
-                            ? multiSelectedIds
-                            : [item.entity.id];
-                        const anchors = (tree?.entities ?? []).filter((e) => ids.includes(e.id));
-                        setBulkLinkState({ anchors, direction: 'uses' });
-                      }}
-                      onResetThumb={async () => {
-                        await apiClient.putEntityThumbnail(
-                          item.entity.id,
-                          { source: 'auto', file_id: null },
-                          activeProjectUuid,
-                        );
-                        await refreshTree();
-                      }}
-                      onReveal={async () => {
-                        await apiClient.revealPath(item.entity.rel_path, activeProjectUuid);
-                      }}
-                      onDelete={() => setDeletingEntity(item.entity)}
-                    />
-                  )}
-                </VirtualCardRow>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                          onSelectEntity(eid);
+                        }}
+                        onEdit={() => setEditingEntity(item.entity)}
+                        onAddDept={() => onRequestAddDepartment(item.entity.id)}
+                        onLinkTo={() => {
+                          const ids =
+                            multiSelectedIds.includes(item.entity.id) && multiSelectedIds.length > 0
+                              ? multiSelectedIds
+                              : [item.entity.id];
+                          const anchors = (tree?.entities ?? []).filter((e) => ids.includes(e.id));
+                          setBulkLinkState({ anchors, direction: 'used_in' });
+                        }}
+                        onLinkFrom={() => {
+                          const ids =
+                            multiSelectedIds.includes(item.entity.id) && multiSelectedIds.length > 0
+                              ? multiSelectedIds
+                              : [item.entity.id];
+                          const anchors = (tree?.entities ?? []).filter((e) => ids.includes(e.id));
+                          setBulkLinkState({ anchors, direction: 'uses' });
+                        }}
+                        onResetThumb={async () => {
+                          await apiClient.putEntityThumbnail(
+                            item.entity.id,
+                            { source: 'auto', file_id: null },
+                            activeProjectUuid,
+                          );
+                          await refreshTree();
+                        }}
+                        onReveal={async () => {
+                          await apiClient.revealPath(item.entity.rel_path, activeProjectUuid);
+                        }}
+                        onDelete={() => setDeletingEntity(item.entity)}
+                        createItems={createItems}
+                      />
+                    )}
+                  </VirtualCardRow>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </ContextMenu>
 
       <CreateEntityDialog
         open={createEntityOpen}
@@ -759,4 +769,3 @@ export function EntityColumn({
     </div>
   );
 }
-

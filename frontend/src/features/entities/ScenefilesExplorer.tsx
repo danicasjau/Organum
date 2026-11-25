@@ -13,13 +13,10 @@ import {
   Button,
   ContextMenu,
   Icon,
-  Inline,
   SceneFileIcon,
-  SearchField,
-  Select,
-  Stack,
   Text,
   useToast,
+  type MenuEntry,
 } from '../../components/ui';
 import { useCssVarRef } from '../../components/ui/_internal/useCssVar';
 import {
@@ -33,12 +30,6 @@ import { useProjectStore } from '../project/projectStore';
 import { useEntitiesStore } from './entitiesStore';
 import { ConfirmTrashDialog, OpenWithDialog, PromptNameDialog } from './EntityDialogs';
 import './ScenefilesExplorer.css';
-
-const SORT_OPTIONS = [
-  { value: 'name', label: 'Name' },
-  { value: 'ext', label: 'Type' },
-  { value: 'mtime', label: 'Modified' },
-];
 
 const EMPTY_ENTRIES: SceneEntryOut[] = [];
 const EMPTY_LAUNCHERS: LauncherOut[] = [];
@@ -76,8 +67,6 @@ export function ScenefilesExplorer({
   const [subPath, setSubPath] = useState('');
   const [backStack, setBackStack] = useState<string[]>([]);
   const [fwdStack, setFwdStack] = useState<string[]>([]);
-  const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState<'name' | 'ext' | 'mtime'>('name');
   const [selectedRels, setSelectedRels] = useState<string[]>([]);
   const [anchorIdx, setAnchorIdx] = useState<number>(0);
 
@@ -143,15 +132,63 @@ export function ScenefilesExplorer({
 
   const entries = useMemo(() => {
     const raw = sceneData?.entries ?? EMPTY_ENTRIES;
-    const q = search.trim().toLowerCase();
-    const filtered = q ? raw.filter((e) => e.name.toLowerCase().includes(q)) : raw;
-    return [...filtered].sort((a, b) => {
+    return [...raw].sort((a, b) => {
       if (a.is_dir !== b.is_dir) return a.is_dir ? -1 : 1;
-      if (sortBy === 'ext') return a.extension.localeCompare(b.extension) || a.name.localeCompare(b.name);
-      if (sortBy === 'mtime') return b.mtime - a.mtime;
       return a.name.localeCompare(b.name);
     });
-  }, [sceneData?.entries, search, sortBy]);
+  }, [sceneData?.entries]);
+
+  const currentDirProjectRel = useMemo(() => {
+    if (sceneData?.current_project_rel_path) return sceneData.current_project_rel_path;
+    // Fallback: derive from any child entry (project path minus its scenefiles-relative path).
+    const first = sceneData?.entries?.[0];
+    if (!first) return null;
+    const suffix = `/${first.rel_path}`;
+    const base = first.project_rel_path.endsWith(suffix)
+      ? first.project_rel_path.slice(0, -suffix.length)
+      : null;
+    return base === null ? null : subPath ? `${base}/${subPath}` : base;
+  }, [sceneData, subPath]);
+
+  const revealCurrentDir = async () => {
+    if (!currentDirProjectRel) {
+      toast.push('warning', 'Folder location not available yet');
+      return;
+    }
+    try {
+      await apiClient.revealPath(currentDirProjectRel, activeProjectUuid);
+    } catch (err) {
+      toast.push('danger', err instanceof Error ? err.message : 'Unable to open file manager');
+    }
+  };
+
+  const backgroundItems: MenuEntry[] = task
+    ? [
+        { id: 'new-folder', label: 'New Folder...', onSelect: () => setMkdirOpen(true) },
+        {
+          id: 'upload',
+          label: 'Upload Files...',
+          onSelect: () => uploadInputRef.current?.click(),
+        },
+        ...(selectedRels.length > 0
+          ? [
+              {
+                id: 'publish-sel',
+                label: `Publish ${selectedRels.length} Selected to Product...`,
+                onSelect: () => onRequestPublish(selectedRels),
+              },
+            ]
+          : []),
+        { id: 'sep-view', label: '', separator: true },
+        {
+          id: 'view-mode',
+          label: viewMode === 'grid' ? 'View as List' : 'View as Grid',
+          onSelect: () => setViewMode(viewMode === 'grid' ? 'list' : 'grid'),
+        },
+        { id: 'sep-os', label: '', separator: true },
+        { id: 'open-explorer', label: 'Open in Explorer', onSelect: () => void revealCurrentDir() },
+      ]
+    : [];
 
   const refreshScene = async () => {
     if (!task) return;
@@ -230,11 +267,7 @@ export function ScenefilesExplorer({
     } else if (e.key === 'Delete' && selectedRels.length > 0) {
       e.preventDefault();
       setTrashConfirmOpen(true);
-    } else if (
-      e.key === 'Backspace' &&
-      subPath &&
-      document.activeElement?.tagName !== 'INPUT'
-    ) {
+    } else if (e.key === 'Backspace' && subPath && document.activeElement?.tagName !== 'INPUT') {
       e.preventDefault();
       const up = subPath.includes('/') ? subPath.slice(0, subPath.lastIndexOf('/')) : '';
       navigateTo(up);
@@ -265,10 +298,7 @@ export function ScenefilesExplorer({
         const elL = r.left - box.left + container.scrollLeft;
         const elT = r.top - box.top + container.scrollTop;
         const overlaps =
-          elL < left + width &&
-          elL + r.width > left &&
-          elT < top + height &&
-          elT + r.height > top;
+          elL < left + width && elL + r.width > left && elT < top + height && elT + r.height > top;
         if (overlaps && el.dataset.relPath) hits.push(el.dataset.relPath);
       });
       setSelectedRels(hits);
@@ -309,7 +339,11 @@ export function ScenefilesExplorer({
         items={[
           {
             id: 'open',
-            label: entry.is_dir ? 'Open Folder' : entry.is_media ? 'Open in Viewer' : 'Open (Backend Launch)',
+            label: entry.is_dir
+              ? 'Open Folder'
+              : entry.is_media
+                ? 'Open in Viewer'
+                : 'Open (Backend Launch)',
             onSelect: () => void handleOpenEntry(entry),
           },
           ...(!entry.is_dir
@@ -328,10 +362,17 @@ export function ScenefilesExplorer({
             : []),
           {
             id: 'reveal',
-            label: 'Reveal in File Manager',
+            label: 'Open in Explorer',
             onSelect: async () => {
               await apiClient.revealPath(entry.project_rel_path, activeProjectUuid);
             },
+          },
+          { id: 'sep-new', label: '', separator: true },
+          { id: 'new-folder', label: 'New Folder...', onSelect: () => setMkdirOpen(true) },
+          {
+            id: 'upload',
+            label: 'Upload Files...',
+            onSelect: () => uploadInputRef.current?.click(),
           },
           { id: 'sep', label: '', separator: true },
           {
@@ -436,53 +477,32 @@ export function ScenefilesExplorer({
       onKeyDown={handleKeyDown}
     >
       <div className="org-scenefiles__header">
-        <Text size="sm">
+        <Text size="sm" variant="muted">
           Scenefiles
         </Text>
-        <Inline gap="1">
-          <Button
-            size="sm"
-            disabled={!task || selectedRels.length === 0}
-            variant="primary"
-            onClick={() => onRequestPublish(selectedRels)}
-          >
-            Publish ({selectedRels.length})
-          </Button>
-          <Button size="sm" disabled={!task} onClick={() => setMkdirOpen(true)}>
-            <Icon name="folder-plus" size="sm" />
-          </Button>
-          <Button
-            size="sm"
-            disabled={!task}
-            onClick={() => uploadInputRef.current?.click()}
-            title="Upload files into scenefiles/"
-          >
-            Upload
-          </Button>
-          <input
-            ref={uploadInputRef}
-            type="file"
-            multiple
-            hidden
-            onChange={async (e) => {
-              const files = Array.from(e.target.files ?? []);
-              if (files.length > 0 && task) {
-                await apiClient.uploadScenefiles(task.id, subPath, files, activeProjectUuid);
-                await refreshScene();
-              }
-              e.target.value = '';
-            }}
-          />
-          <Button
-            size="sm"
-            variant="toggle"
-            pressed={viewMode === 'grid'}
-            aria-label="Toggle grid or list view"
-            onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-          >
-            <Icon name={viewMode === 'grid' ? 'grid' : 'table'} size="sm" />
-          </Button>
-        </Inline>
+        <Button
+          size="sm"
+          disabled={!task || selectedRels.length === 0}
+          variant="primary"
+          onClick={() => onRequestPublish(selectedRels)}
+        >
+          Publish ({selectedRels.length})
+        </Button>
+        <input
+          ref={uploadInputRef}
+          type="file"
+          multiple
+          hidden
+          onChange={async (e) => {
+            const files = Array.from(e.target.files ?? []);
+            if (files.length > 0 && task) {
+              await apiClient.uploadScenefiles(task.id, subPath, files, activeProjectUuid);
+              await refreshScene();
+              toast.push('success', `Uploaded ${files.length} file(s) to scenefiles`);
+            }
+            e.target.value = '';
+          }}
+        />
       </div>
 
       <div className="org-scenefiles__nav">
@@ -518,11 +538,7 @@ export function ScenefilesExplorer({
         </Button>
 
         <div className="org-scenefiles__crumbs">
-          <button
-            type="button"
-            className="org-scenefiles__crumb"
-            onClick={() => navigateTo('')}
-          >
+          <button type="button" className="org-scenefiles__crumb" onClick={() => navigateTo('')}>
             scenefiles
           </button>
           {crumbs.map((c, i) => {
@@ -541,51 +557,41 @@ export function ScenefilesExplorer({
             );
           })}
         </div>
-
-        <SearchField
-          aria-label="Search scenefiles"
-          placeholder="Filter..."
-          value={search}
-          onChange={setSearch}
-          className="org-scenefiles__search"
-        />
-        <Select
-          ariaLabel="Sort scenefiles"
-          value={sortBy}
-          onChange={(v) => setSortBy(v as 'name' | 'ext' | 'mtime')}
-          options={SORT_OPTIONS}
-          filterable={false}
-          className="org-scenefiles__sort"
-        />
       </div>
 
-      <div
-        ref={surfaceRef}
-        className="org-scenefiles__surface"
-        data-mode={viewMode}
-        onPointerDown={handleMarqueePointerDown}
-        onDragOver={(e) => {
-          if (task && e.dataTransfer.types.includes('Files')) e.preventDefault();
-        }}
-        onDrop={(e) => void handleOsDrop(e)}
-      >
-        {!task ? (
-          <Stack padding="2">
-            <Text size="sm" variant="muted">
-              Select a task to browse its live scenefiles/ directory.
-            </Text>
-          </Stack>
-        ) : entries.length === 0 ? (
-          <Stack padding="2">
-            <Text size="sm" variant="muted">
-              Empty directory — drop files here or click Upload.
-            </Text>
-          </Stack>
-        ) : (
-          entries.map((entry, idx) => renderEntry(entry, idx))
-        )}
-        <MarqueeBox rect={marqueeRect} />
-      </div>
+      <ContextMenu items={backgroundItems}>
+        <div
+          ref={surfaceRef}
+          className="org-scenefiles__surface"
+          data-empty={!task || entries.length === 0 ? 'true' : undefined}
+          data-mode={viewMode}
+          onPointerDown={handleMarqueePointerDown}
+          onDragOver={(e) => {
+            if (task && e.dataTransfer.types.includes('Files')) e.preventDefault();
+          }}
+          onDrop={(e) => void handleOsDrop(e)}
+        >
+          {!task ? (
+            <div className="org-scenefiles__empty">
+              <Text size="sm" variant="muted">
+                Select a task to browse its live scenefiles/ directory.
+              </Text>
+            </div>
+          ) : entries.length === 0 ? (
+            <div className="org-scenefiles__empty">
+              <Text size="sm" variant="muted">
+                Empty directory
+              </Text>
+              <Text size="sm" variant="muted">
+                Drop files here or right-click to upload or create a folder.
+              </Text>
+            </div>
+          ) : (
+            entries.map((entry, idx) => renderEntry(entry, idx))
+          )}
+          <MarqueeBox rect={marqueeRect} />
+        </div>
+      </ContextMenu>
 
       <PromptNameDialog
         open={mkdirOpen}
@@ -612,7 +618,12 @@ export function ScenefilesExplorer({
         confirmLabel="Rename"
         onConfirm={async (newName) => {
           if (!task || !renamingEntry) return;
-          await apiClient.renameScenefile(task.id, renamingEntry.rel_path, newName, activeProjectUuid);
+          await apiClient.renameScenefile(
+            task.id,
+            renamingEntry.rel_path,
+            newName,
+            activeProjectUuid,
+          );
           await refreshScene();
         }}
       />
@@ -651,4 +662,3 @@ export function ScenefilesExplorer({
     </div>
   );
 }
-

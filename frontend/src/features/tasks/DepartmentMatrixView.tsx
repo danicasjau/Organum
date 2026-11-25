@@ -31,6 +31,7 @@ import { useProjectStore } from '../project/projectStore';
 import { computeRollupStatus, parseMatrixTsvPaste } from './taskHelpers';
 import { useTasksStore } from './tasksStore';
 import './DepartmentMatrixView.css';
+import { DepartmentTag } from '../departments/DepartmentTag';
 
 interface MatrixColumnDef {
   id: string;
@@ -44,13 +45,7 @@ type MatrixRowEntry =
   | { kind: 'group'; id: string; label: string; count: number }
   | { kind: 'entity'; id: string; entity: EntityOut };
 
-function VirtualMatrixRows({
-  height,
-  children,
-}: {
-  height: number;
-  children: React.ReactNode;
-}) {
+function VirtualMatrixRows({ height, children }: { height: number; children: React.ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   useCssVarRef(ref, '--mx-total-h', `${height}px`);
   return (
@@ -482,7 +477,12 @@ export function DepartmentMatrixView({
         </div>
       </div>
 
-      <div ref={scrollRef} className="org-matrix__scroll" role="grid" aria-label="Department entity matrix">
+      <div
+        ref={scrollRef}
+        className="org-matrix__scroll"
+        role="grid"
+        aria-label="Department entity matrix"
+      >
         <div className="org-matrix__thead" role="rowgroup">
           <div className="org-matrix__hdr-row" role="row">
             <div className="org-matrix__corner" role="columnheader">
@@ -493,13 +493,17 @@ export function DepartmentMatrixView({
                 key={col.id}
                 role="columnheader"
                 className={
-                  col.isExpandedChild
-                    ? 'org-matrix__dth org-matrix__dth--sub'
-                    : 'org-matrix__dth'
+                  col.isExpandedChild ? 'org-matrix__dth org-matrix__dth--sub' : 'org-matrix__dth'
                 }
               >
                 <span className="org-matrix__dth-label" title={col.label}>
-                  {col.label}
+                  <DepartmentTag
+                    id={col.department.id}
+                    name={col.department.name}
+                    color={col.department.color}
+                    label={col.label}
+                    variant="text"
+                  />
                 </span>
                 {!col.isExpandedChild ? (
                   <Button
@@ -536,9 +540,7 @@ export function DepartmentMatrixView({
                   <button
                     type="button"
                     className="org-matrix__grp-btn"
-                    onClick={() =>
-                      setCollapsedGroups((p) => ({ ...p, [rawGrp]: !p[rawGrp] }))
-                    }
+                    onClick={() => setCollapsedGroups((p) => ({ ...p, [rawGrp]: !p[rawGrp] }))}
                   >
                     <Icon name={isCollapsed ? 'chevron-right' : 'chevron-down'} size="sm" />
                     <span>{entry.label}</span>
@@ -631,13 +633,18 @@ export function DepartmentMatrixView({
             <Button onClick={() => setPasteOpen(false)} disabled={busyBulk}>
               Cancel
             </Button>
-            <Button onClick={() => void runPreview(pasteTsv)} disabled={busyBulk || !pasteTsv.trim()}>
+            <Button
+              onClick={() => void runPreview(pasteTsv)}
+              disabled={busyBulk || !pasteTsv.trim()}
+            >
               Preview Changes
             </Button>
             <Button
               variant="primary"
               onClick={() => void handleApplyPaste()}
-              disabled={busyBulk || !previewResp || previewResp.error_count > 0 || pendingRows.length === 0}
+              disabled={
+                busyBulk || !previewResp || previewResp.error_count > 0 || pendingRows.length === 0
+              }
             >
               Apply ({previewResp?.ok_count ?? 0})
             </Button>
@@ -663,7 +670,8 @@ export function DepartmentMatrixView({
           {previewResp && (
             <Stack gap="1">
               <Banner severity={previewResp.error_count > 0 ? 'danger' : 'success'}>
-                Preview: {previewResp.ok_count} valid, {previewResp.error_count} error(s) (all-or-nothing)
+                Preview: {previewResp.ok_count} valid, {previewResp.error_count} error(s)
+                (all-or-nothing)
               </Banner>
               <div className="org-matrix__preview-list">
                 {(previewResp.results ?? []).map((r) => (

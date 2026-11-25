@@ -11,12 +11,9 @@ import {
   Text,
   TextField,
   useToast,
+  DatePicker,
 } from '../../components/ui';
-import {
-  apiClient,
-  type DepartmentOut,
-  type EntityOut,
-} from '../../lib/api/client';
+import { apiClient, type DepartmentOut, type EntityOut } from '../../lib/api/client';
 import { useProjectStore } from '../project/projectStore';
 import { PRIORITY_OPTIONS } from './taskHelpers';
 import './CreateTaskDialog.css';
@@ -188,22 +185,22 @@ export function CreateTaskDialog({
           />
           <Stack gap="1">
             <Text size="sm" variant="muted">
-              Ideal Start / Finish
+              Planned Start / Finish
             </Text>
             <div className="org-ctdlg__dates">
-              <input
-                type="date"
-                className="org-ctdlg__date"
-                aria-label="Ideal start date"
+              <DatePicker
+                ariaLabel="Planned start date"
+                placeholder="Planned start"
                 value={idealStart}
-                onChange={(e) => setIdealStart(e.target.value)}
+                max={idealFinish || null}
+                onChange={(v) => setIdealStart(v ?? '')}
               />
-              <input
-                type="date"
-                className="org-ctdlg__date"
-                aria-label="Ideal finish date"
+              <DatePicker
+                ariaLabel="Planned finish date"
+                placeholder="Planned finish"
                 value={idealFinish}
-                onChange={(e) => setIdealFinish(e.target.value)}
+                min={idealStart || null}
+                onChange={(v) => setIdealFinish(v ?? '')}
               />
             </div>
           </Stack>

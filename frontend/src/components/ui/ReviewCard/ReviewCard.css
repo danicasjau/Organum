@@ -1,0 +1,131 @@
+@layer components {
+  .org-rcard {
+    display: flex;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--border-dark);
+    border-left: var(--border-double-w) solid var(--border-control);
+    border-radius: var(--radius-1);
+    background: var(--surface-field);
+  }
+
+  .org-rcard[data-tone='success'] {
+    border-left-color: var(--success);
+  }
+
+  .org-rcard[data-tone='danger'] {
+    border-left-color: var(--danger);
+  }
+
+  .org-rcard[data-tone='accent'] {
+    border-left-color: var(--accent);
+  }
+
+  .org-rcard[data-tone='info'] {
+    border-left-color: var(--info);
+  }
+
+  .org-rcard[data-tone='warning'] {
+    border-left-color: var(--warning);
+  }
+
+  .org-rcard__avatar {
+    flex-shrink: 0;
+    padding-top: var(--space-1);
+  }
+
+  .org-rcard__main {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
+  .org-rcard__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
+  .org-rcard__title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 700;
+    font-size: var(--font-size-lg);
+    color: var(--text);
+  }
+
+  .org-rcard__when {
+    margin-left: auto;
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+  }
+
+  .org-rcard__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+  }
+
+  .org-rcard__who {
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .org-rcard__task {
+    padding: 0 var(--space-2);
+    border: 1px solid var(--border-dark);
+    border-radius: var(--radius-1);
+    background: var(--surface-raised);
+    color: var(--accent-text);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+  }
+
+  button.org-rcard__task {
+    cursor: pointer;
+  }
+
+  .org-rcard__image {
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    padding: 0;
+    border: 1px solid var(--border-dark);
+    background: var(--surface-window);
+    cursor: zoom-in;
+  }
+
+  .org-rcard__image:disabled {
+    cursor: default;
+  }
+
+  .org-rcard__image img {
+    display: block;
+    max-width: 100%;
+    max-height: var(--thumb-preview-size);
+    object-fit: contain;
+  }
+
+  .org-rcard__body {
+    font-size: var(--font-size);
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .org-rcard__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+}

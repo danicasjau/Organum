@@ -1,11 +1,12 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ThemeMode } from '../../app/App';
 import {
   Badge,
   Banner,
   Button,
   Checkbox,
+  ColorPicker,
   Dialog,
   Icon,
   Inline,
@@ -16,18 +17,15 @@ import {
   TextField,
   useToast,
 } from '../../components/ui';
-import {
-  apiClient,
-  type DepartmentOut,
-  type LauncherItemIn,
-} from '../../lib/api/client';
+import { apiClient, type DepartmentOut, type LauncherItemIn } from '../../lib/api/client';
 import { useAuthStore } from '../auth/authStore';
+import { DepartmentTag } from '../departments/DepartmentTag';
+import { deptColorHex } from '../departments/deptColors';
 import { useProjectStore, type SettingsPageId } from '../project/projectStore';
 import { FolderBrowserDialog } from './FolderBrowserDialog';
 import './SettingsDialog.css';
 
-const DEFAULT_STARTER_CSV =
-  'Modeling, Rigging, Animation, FX, Lighting, Lookdev, Compositing';
+const DEFAULT_STARTER_CSV = 'Modeling, Rigging, Animation, FX, Lighting, Lookdev, Compositing';
 
 function sanitizePreview(raw: string): string {
   return raw
@@ -57,6 +55,32 @@ export function SettingsDialog({
 }) {
   const queryClient = useQueryClient();
   const toast = useToast();
+  const [deptColorDrafts, setDeptColorDrafts] = useState<Record<string, string>>({});
+  const deptColorTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  const saveDeptColor = (deptId: string, hex: string) => {
+    setDeptColorDrafts((prev) => ({ ...prev, [deptId]: hex }));
+    const timers = deptColorTimers.current;
+    if (timers[deptId]) clearTimeout(timers[deptId]);
+    timers[deptId] = setTimeout(async () => {
+      delete timers[deptId];
+      try {
+        await apiClient.updateDepartment(deptId, { color: hex }, activeProjectUuid);
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['departments', activeProjectUuid] }),
+          queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectUuid] }),
+        ]);
+      } catch (err) {
+        toast.push('danger', err instanceof Error ? err.message : 'Color update failed');
+      } finally {
+        setDeptColorDrafts((prev) => {
+          const next = { ...prev };
+          delete next[deptId];
+          return next;
+        });
+      }
+    }, 300);
+  };
   const activeProjectUuid = useProjectStore((s) => s.activeProjectUuid);
   const setActiveProject = useProjectStore((s) => s.setActiveProject);
   const settingsOpen = useProjectStore((s) => s.settingsOpen);
@@ -162,10 +186,7 @@ export function SettingsDialog({
         starter_departments: starterList,
       });
       await refetchProjects();
-      toast.push(
-        'success',
-        `Created project '${created.name}'. Click Switch to sign in to it.`,
-      );
+      toast.push('success', `Created project '${created.name}'. Click Switch to sign in to it.`);
       setCreateName('');
       setCreatePath('');
     } catch (err) {
@@ -344,11 +365,7 @@ export function SettingsDialog({
                     <Button size="sm" onClick={() => setBrowserTarget('open')}>
                       Browse...
                     </Button>
-                    <Button
-                      size="sm"
-                      disabled={!openPath.trim()}
-                      onClick={handleOpenProject}
-                    >
+                    <Button size="sm" disabled={!openPath.trim()} onClick={handleOpenProject}>
                       Open
                     </Button>
                   </div>
@@ -454,11 +471,25 @@ export function SettingsDialog({
                               data-selected={d.id === selectedDeptId ? 'true' : undefined}
                               onClick={() => setSelectedDeptId(d.id)}
                             >
-                              <span>
-                                {d.name}{' '}
+                              <span className="org-settings__dept-name">
+                                <DepartmentTag
+                                  name={d.name}
+                                  color={deptColorDrafts[d.id] ?? d.color}
+                                  variant="text"
+                                />
                                 {!d.is_active && <Badge tone="neutral">Inactive</Badge>}
                               </span>
                               <Inline gap="1">
+                                <span
+                                  className="org-settings__dept-color"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <ColorPicker
+                                    ariaLabel={`${d.name} color`}
+                                    value={deptColorDrafts[d.id] ?? deptColorHex(d.color)}
+                                    onChange={(hex) => saveDeptColor(d.id, hex)}
+                                  />
+                                </span>
                                 <Button
                                   size="sm"
                                   disabled={idx === 0}
@@ -658,7 +689,9 @@ export function SettingsDialog({
                         value={item.extension}
                         onChange={(e) =>
                           setLauncherDrafts((prev) =>
-                            prev.map((x, i) => (i === idx ? { ...x, extension: e.target.value } : x)),
+                            prev.map((x, i) =>
+                              i === idx ? { ...x, extension: e.target.value } : x,
+                            ),
                           )
                         }
                       />

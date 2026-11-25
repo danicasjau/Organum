@@ -360,6 +360,8 @@ class SceneListResponse(BaseModel):
     current_path: str
     parent_path: str | None = None
     entries: list[SceneEntryOut] = Field(default_factory=list)
+    # Project-relative path of the listed directory (for "Open in Explorer").
+    current_project_rel_path: str | None = None
 
 
 class SceneMkdirRequest(BaseModel):
@@ -943,6 +945,10 @@ class TaskListItemOut(BaseModel):
     tags: list[str] = Field(default_factory=list)
     shared_company_ids: list[UUID] = Field(default_factory=list)
     updated_at: datetime
+    # Latest review feedback (decision or comment) left by someone other than the caller.
+    last_feedback_at: datetime | None = None
+    last_feedback_by: str | None = None
+    last_feedback_kind: str | None = None
 
 
 class TaskListOut(BaseModel):

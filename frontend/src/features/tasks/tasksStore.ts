@@ -2,23 +2,11 @@ import { create } from 'zustand';
 import type { TaskBulkRowIn, TaskListQuery } from '../../lib/api/client';
 
 export type TasksWorkspaceView =
-  | 'gantt'
-  | 'matrix'
-  | 'grid'
-  | 'workload'
-  | 'kanban'
-  | 'graph'
-  | 'review';
+  'gantt' | 'matrix' | 'grid' | 'workload' | 'kanban' | 'graph' | 'review';
 export type MatrixGroupBy = 'path' | 'type';
 export type KanbanSwimlane = 'none' | 'department' | 'assignee';
 export type GanttGroupBy =
-  | 'entity_path'
-  | 'department'
-  | 'user'
-  | 'company'
-  | 'status'
-  | 'priority'
-  | 'none';
+  'entity_path' | 'department' | 'user' | 'company' | 'status' | 'priority' | 'none';
 export type GanttZoom = 'day' | 'week' | 'month';
 export type WorkloadZoom = 'days' | 'weeks';
 export type WorkloadGroupBy = 'none' | 'department' | 'company';
@@ -42,9 +30,9 @@ export interface GanttUndoAction {
 const DOCK_WIDTH_KEY = 'organum.taskDockWidth';
 
 function readInitialDockWidth(): number {
-  if (typeof localStorage === 'undefined') return 380;
+  if (typeof localStorage === 'undefined') return 460;
   const parsed = Number(localStorage.getItem(DOCK_WIDTH_KEY));
-  return Number.isFinite(parsed) && parsed >= 300 && parsed <= 640 ? parsed : 380;
+  return Number.isFinite(parsed) && parsed >= 360 && parsed <= 760 ? parsed : 460;
 }
 
 export interface TasksStoreState {
@@ -150,7 +138,7 @@ export const useTasksStore = create<TasksStoreState>((set, get) => ({
     })),
   setDockOpen: (dockOpen) => set({ dockOpen }),
   setDockWidth: (width) => {
-    const clamped = Math.max(300, Math.min(640, Math.round(width)));
+    const clamped = Math.max(360, Math.min(760, Math.round(width)));
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(DOCK_WIDTH_KEY, String(clamped));
     }
@@ -252,4 +240,3 @@ export const useTasksStore = create<TasksStoreState>((set, get) => ({
   setGraphFocusTaskId: (graphFocusTaskId) => set({ graphFocusTaskId }),
   setGraphFocusEntityId: (graphFocusEntityId) => set({ graphFocusEntityId }),
 }));
-

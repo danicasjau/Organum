@@ -13,6 +13,7 @@ import {
   StatusChip,
   Text,
   useToast,
+  type MenuEntry,
 } from '../../components/ui';
 import {
   apiClient,
@@ -21,7 +22,9 @@ import {
   type EntityOut,
   type TaskOut,
 } from '../../lib/api/client';
+import { DepartmentTag } from '../departments/DepartmentTag';
 import { useProjectStore } from '../project/projectStore';
+import { TaskUnreadDot } from '../reviews/TaskUnreadDot';
 import { ConfirmTrashDialog, PromptNameDialog } from './EntityDialogs';
 import './DeptTaskColumn.css';
 
@@ -48,7 +51,10 @@ export function DeptTaskColumn({
   const [collapsedDepts, setCollapsedDepts] = useState<Record<string, boolean>>({});
   const [newTaskForEd, setNewTaskForEd] = useState<EntityDepartmentOut | null>(null);
   const [renamingTask, setRenamingTask] = useState<TaskOut | null>(null);
-  const [deletingTask, setDeletingTask] = useState<{ dept: EntityDepartmentOut; task: TaskOut } | null>(null);
+  const [deletingTask, setDeletingTask] = useState<{
+    dept: EntityDepartmentOut;
+    task: TaskOut;
+  } | null>(null);
   const [pickDeptId, setPickDeptId] = useState('');
 
   const refreshTree = async () => {
@@ -73,165 +79,181 @@ export function DeptTaskColumn({
   const attachedIds = new Set((entity.departments ?? []).map((d) => d.department_id));
   const availableToAdd = catalogDepartments.filter((d) => d.is_active && !attachedIds.has(d.id));
 
+  const openAddDept = () => {
+    setPickDeptId(availableToAdd[0]?.id ?? '');
+    onAddDeptDialogOpenChange(true);
+  };
+
+  const addDeptItems: MenuEntry[] = [
+    {
+      id: 'add-dept',
+      label: 'Add Department...',
+      disabled: availableToAdd.length === 0,
+      onSelect: openAddDept,
+    },
+    {
+      id: 'edit-catalog',
+      label: 'Edit Department Catalog...',
+      onSelect: () => openSettings('departments'),
+    },
+  ];
+
   return (
     <div className="org-dtcol" aria-label="Departments and tasks">
       <div className="org-dtcol__header">
-        <Text size="sm">
-          Depts / Tasks — {entity.name}
+        <Text size="sm" variant="muted">
+          Departments &amp; Tasks
         </Text>
-        <Button
-          size="sm"
-          disabled={availableToAdd.length === 0}
-          title="Add department to entity"
-          onClick={() => {
-            setPickDeptId(availableToAdd[0]?.id ?? '');
-            onAddDeptDialogOpenChange(true);
-          }}
-        >
-          <Icon name="plus" size="sm" /> Dept
-        </Button>
+        <span className="org-dtcol__entity-name" title={entity.name}>
+          {entity.name}
+        </span>
       </div>
 
-      <div className="org-dtcol__list" role="tree" aria-label="Entity departments and tasks">
-        {(entity.departments ?? []).map((ed) => {
-          const isCollapsed = Boolean(collapsedDepts[ed.id]);
-          return (
-            <div key={ed.id} className="org-dtcol__dept-block">
-              <ContextMenu
-                items={[
-                  {
-                    id: 'new-task',
-                    label: 'New Task...',
-                    onSelect: () => setNewTaskForEd(ed),
-                  },
-                  {
-                    id: 'manage-defaults',
-                    label: 'Manage Default Tasks...',
-                    onSelect: () => openSettings('departments'),
-                  },
-                  {
-                    id: 'reveal-dept',
-                    label: 'Reveal in File Manager',
-                    onSelect: async () => {
-                      await apiClient.revealPath(
-                        `${entity.rel_path}/${ed.folder_name}`,
-                        activeProjectUuid,
-                      );
+      <ContextMenu items={addDeptItems}>
+        <div className="org-dtcol__list" role="tree" aria-label="Entity departments and tasks">
+          {(entity.departments ?? []).map((ed) => {
+            const isCollapsed = Boolean(collapsedDepts[ed.id]);
+            return (
+              <div key={ed.id} className="org-dtcol__dept-block">
+                <ContextMenu
+                  items={[
+                    {
+                      id: 'new-task',
+                      label: 'New Task...',
+                      onSelect: () => setNewTaskForEd(ed),
                     },
-                  },
-                  { id: 'sep', label: '', separator: true },
-                  {
-                    id: 'remove-dept',
-                    label: 'Remove Department (keep files)',
-                    onSelect: async () => {
-                      await apiClient.removeEntityDepartment(ed.id, activeProjectUuid);
-                      await refreshTree();
-                      toast.push('info', `Detached '${ed.name}' (disk files kept)`);
+                    {
+                      id: 'manage-defaults',
+                      label: 'Manage Default Tasks...',
+                      onSelect: () => openSettings('departments'),
                     },
-                  },
-                ]}
-              >
-                <div
-                  role="treeitem"
-                  aria-expanded={!isCollapsed}
-                  className="org-dtcol__dept-row"
-                  onClick={() =>
-                    setCollapsedDepts((prev) => ({ ...prev, [ed.id]: !prev[ed.id] }))
-                  }
+                    ...addDeptItems,
+                    {
+                      id: 'reveal-dept',
+                      label: 'Reveal in File Manager',
+                      onSelect: async () => {
+                        await apiClient.revealPath(
+                          `${entity.rel_path}/${ed.folder_name}`,
+                          activeProjectUuid,
+                        );
+                      },
+                    },
+                    { id: 'sep', label: '', separator: true },
+                    {
+                      id: 'remove-dept',
+                      label: 'Remove Department (keep files)',
+                      onSelect: async () => {
+                        await apiClient.removeEntityDepartment(ed.id, activeProjectUuid);
+                        await refreshTree();
+                        toast.push('info', `Detached '${ed.name}' (disk files kept)`);
+                      },
+                    },
+                  ]}
                 >
-                  <Icon name={isCollapsed ? 'chevron-right' : 'chevron-down'} size="sm" />
-                  <Icon name="folder" size="sm" />
-                  <span className="org-dtcol__label">{ed.name}</span>
-                  <Button
-                    variant="icon"
-                    size="sm"
-                    aria-label={`New task in ${ed.name}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setNewTaskForEd(ed);
-                    }}
+                  <div
+                    role="treeitem"
+                    aria-expanded={!isCollapsed}
+                    className="org-dtcol__dept-row"
+                    onClick={() =>
+                      setCollapsedDepts((prev) => ({ ...prev, [ed.id]: !prev[ed.id] }))
+                    }
                   >
-                    <Icon name="plus" size="sm" />
-                  </Button>
-                </div>
-              </ContextMenu>
-
-              {!isCollapsed &&
-                (ed.tasks ?? []).map((task) => {
-                  const selected = task.id === selectedTaskId;
-                  return (
-                    <ContextMenu
-                      key={task.id}
-                      items={[
-                        {
-                          id: 'rename',
-                          label: 'Rename Task...',
-                          onSelect: () => setRenamingTask(task),
-                        },
-                        {
-                          id: 'reveal',
-                          label: 'Reveal in File Manager',
-                          onSelect: async () => {
-                            await apiClient.revealPath(
-                              `${entity.rel_path}/${ed.folder_name}/${task.folder_name}`,
-                              activeProjectUuid,
-                            );
-                          },
-                        },
-                        { id: 'sep', label: '', separator: true },
-                        {
-                          id: 'delete',
-                          label: 'Delete Task...',
-                          onSelect: () => setDeletingTask({ dept: ed, task }),
-                        },
-                      ]}
+                    <Icon name={isCollapsed ? 'chevron-right' : 'chevron-down'} size="sm" />
+                    <span className="org-dtcol__label">
+                      <DepartmentTag id={ed.department_id} name={ed.name} variant="text" />
+                    </span>
+                    <Text size="sm" variant="muted">
+                      {(ed.tasks ?? []).length}
+                    </Text>
+                    <Button
+                      variant="icon"
+                      size="sm"
+                      aria-label={`New task in ${ed.name}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setNewTaskForEd(ed);
+                      }}
                     >
-                      <button
-                        type="button"
-                        role="treeitem"
-                        aria-selected={selected}
-                        data-task-id={task.id}
-                        data-selected={selected ? 'true' : undefined}
-                        className="org-dtcol__task-row"
-                        onClick={() => onSelectTask(ed.id, task.id)}
-                      >
-                        <Icon name="layers" size="sm" />
-                        <span className="org-dtcol__label">{task.name}</span>
-                        <StatusChip status={task.status ?? 'RDY'} compact />
-                        <CapacityBadgeList capacities={task.my_capacities ?? []} />
-                        {(task.assignments ?? []).slice(0, 2).map((a) => (
-                          <Avatar
-                            key={`${a.user_id}-${a.assignment_role}`}
-                            username={a.username}
-                            fullName={`${a.full_name} (${a.assignment_role})`}
-                            size="sm"
-                          />
-                        ))}
-                        <Text size="sm" variant="muted">
-                          {task.product?.versions?.length ?? 0}v
-                        </Text>
-                      </button>
-                    </ContextMenu>
-                  );
-                })}
-            </div>
-          );
-        })}
+                      <Icon name="plus" size="sm" />
+                    </Button>
+                  </div>
+                </ContextMenu>
 
-        {availableToAdd.length > 0 && (
-          <button
-            type="button"
-            className="org-dtcol__add-row"
-            onClick={() => {
-              setPickDeptId(availableToAdd[0]?.id ?? '');
-              onAddDeptDialogOpenChange(true);
-            }}
-          >
-            <Icon name="plus" size="sm" />
-            <span>Add Department...</span>
-          </button>
-        )}
-      </div>
+                {!isCollapsed &&
+                  (ed.tasks ?? []).map((task) => {
+                    const selected = task.id === selectedTaskId;
+                    return (
+                      <ContextMenu
+                        key={task.id}
+                        items={[
+                          {
+                            id: 'rename',
+                            label: 'Rename Task...',
+                            onSelect: () => setRenamingTask(task),
+                          },
+                          {
+                            id: 'reveal',
+                            label: 'Reveal in File Manager',
+                            onSelect: async () => {
+                              await apiClient.revealPath(
+                                `${entity.rel_path}/${ed.folder_name}/${task.folder_name}`,
+                                activeProjectUuid,
+                              );
+                            },
+                          },
+                          { id: 'sep', label: '', separator: true },
+                          {
+                            id: 'delete',
+                            label: 'Delete Task...',
+                            onSelect: () => setDeletingTask({ dept: ed, task }),
+                          },
+                        ]}
+                      >
+                        <button
+                          type="button"
+                          role="treeitem"
+                          aria-selected={selected}
+                          data-task-id={task.id}
+                          data-selected={selected ? 'true' : undefined}
+                          className="org-dtcol__task-row"
+                          onClick={() => onSelectTask(ed.id, task.id)}
+                        >
+                          <Icon name="layers" size="sm" />
+                          <span className="org-dtcol__label">{task.name}</span>
+                          <TaskUnreadDot taskId={task.id} />
+                          <StatusChip status={task.status ?? 'RDY'} compact />
+                          <CapacityBadgeList capacities={task.my_capacities ?? []} />
+                          {(task.assignments ?? []).slice(0, 2).map((a) => (
+                            <Avatar
+                              key={`${a.user_id}-${a.assignment_role}`}
+                              username={a.username}
+                              fullName={`${a.full_name} (${a.assignment_role})`}
+                              size="sm"
+                            />
+                          ))}
+                          <Text size="sm" variant="muted">
+                            {task.product?.versions?.length ?? 0}v
+                          </Text>
+                        </button>
+                      </ContextMenu>
+                    );
+                  })}
+              </div>
+            );
+          })}
+
+          {(entity.departments ?? []).length === 0 && (
+            <div className="org-dtcol__empty">
+              <Text size="sm" variant="muted">
+                No departments yet.
+              </Text>
+              <Text size="sm" variant="muted">
+                Right-click to add a department.
+              </Text>
+            </div>
+          )}
+        </div>
+      </ContextMenu>
 
       <Dialog
         open={addDeptDialogOpen}
@@ -337,4 +359,3 @@ export function DeptTaskColumn({
     </div>
   );
 }
-

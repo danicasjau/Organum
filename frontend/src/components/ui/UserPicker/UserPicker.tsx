@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Avatar } from '../Avatar/Avatar';
 import { Button } from '../Button/Button';
 import { Checkbox } from '../Checkbox/Checkbox';
@@ -27,6 +27,8 @@ export interface UserPickerProps {
   placeholder?: string;
   disabled?: boolean;
   ariaLabel?: string;
+  /** Custom trigger element (defaults to a button listing the selected names). */
+  trigger?: ReactNode;
 }
 
 export function UserPicker({
@@ -39,6 +41,7 @@ export function UserPicker({
   placeholder = 'Select user...',
   disabled = false,
   ariaLabel = 'Pick users',
+  trigger,
 }: UserPickerProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -80,23 +83,23 @@ export function UserPicker({
   };
 
   const triggerLabel =
-    selectedUsers.length === 0
-      ? placeholder
-      : selectedUsers.map((u) => u.fullName).join(', ');
+    selectedUsers.length === 0 ? placeholder : selectedUsers.map((u) => u.fullName).join(', ');
 
   return (
     <Popover
       open={open}
       onOpenChange={setOpen}
       trigger={
-        <Button
-          size="sm"
-          disabled={disabled}
-          aria-label={ariaLabel}
-          className="org-userpicker__trigger"
-        >
-          <span className="org-userpicker__trigger-text">{triggerLabel}</span>
-        </Button>
+        trigger ?? (
+          <Button
+            size="sm"
+            disabled={disabled}
+            aria-label={ariaLabel}
+            className="org-userpicker__trigger"
+          >
+            <span className="org-userpicker__trigger-text">{triggerLabel}</span>
+          </Button>
+        )
       }
     >
       <div className="org-userpicker" data-ui="user-picker">
@@ -108,11 +111,7 @@ export function UserPicker({
             ariaLabel="Search users"
           />
           {departmentId && canShowAll && (
-            <Checkbox
-              label="Show all depts"
-              checked={showAllDepts}
-              onChange={setShowAllDepts}
-            />
+            <Checkbox label="Show all depts" checked={showAllDepts} onChange={setShowAllDepts} />
           )}
         </div>
         <div className="org-userpicker__list" role="listbox" aria-multiselectable={multi}>

@@ -1,14 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import {
-  Badge,
-  Button,
-  Icon,
-  Spinner,
-  StatusChip,
-  Text,
-  useToast,
-} from '../../components/ui';
+import { Badge, Button, Icon, Spinner, StatusChip, Text, useToast } from '../../components/ui';
 import {
   apiClient,
   type ClientProductOut,
@@ -20,6 +12,8 @@ import { useProjectStore } from '../project/projectStore';
 import { formatActedAsLabel, formatWaitHours } from './taskHelpers';
 import { TaskTransitionDialog } from './TaskTransitionDialog';
 import './ReviewQueueView.css';
+import { DepartmentTag } from '../departments/DepartmentTag';
+import { TaskUnreadDot } from '../reviews/TaskUnreadDot';
 
 type QueueEntry = ReviewQueueItemOut | ClientReviewQueueItemOut;
 
@@ -158,6 +152,7 @@ export function ReviewQueueView({
                 <div className="org-rqueue__info">
                   <div className="org-rqueue__top">
                     <span className="org-rqueue__code">{item.task_code}</span>
+                    <TaskUnreadDot taskId={item.task_id} />
                     <StatusChip status={item.status} compact />
                     {item.submitted_version_label && (
                       <Badge tone="neutral">{item.submitted_version_label}</Badge>
@@ -166,9 +161,12 @@ export function ReviewQueueView({
                     {actedLabel && <Badge tone="accent">{actedLabel}</Badge>}
                   </div>
                   <div className="org-rqueue__sub">
-                    <Text size="sm">
-                      {item.entity_name} · {item.department_name} — {item.task_name}
-                    </Text>
+                    <span className="org-rqueue__line">
+                      <DepartmentTag name={item.department_name} />
+                      <Text size="sm">
+                        {item.entity_name} — {item.task_name}
+                      </Text>
+                    </span>
                     {fullItem && item.submitter_name && (
                       <Text size="sm" variant="muted">
                         Submitted by {item.submitter_name}
@@ -176,10 +174,7 @@ export function ReviewQueueView({
                     )}
                   </div>
                 </div>
-                <div
-                  className="org-rqueue__actions"
-                  onClick={(e) => e.stopPropagation()}
-                >
+                <div className="org-rqueue__actions" onClick={(e) => e.stopPropagation()}>
                   <Button
                     size="sm"
                     onClick={() =>

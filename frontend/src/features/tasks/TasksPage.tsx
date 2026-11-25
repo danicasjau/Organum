@@ -61,8 +61,6 @@ export function TasksPage({
   const setActiveView = useTasksStore((s) => s.setActiveView);
   const selectedTaskId = useTasksStore((s) => s.selectedTaskId);
   const setSelectedTaskId = useTasksStore((s) => s.setSelectedTaskId);
-  const dockOpen = useTasksStore((s) => s.dockOpen);
-  const setDockOpen = useTasksStore((s) => s.setDockOpen);
   const dockWidth = useTasksStore((s) => s.dockWidth);
   const setDockWidth = useTasksStore((s) => s.setDockWidth);
   const filters = useTasksStore((s) => s.filters);
@@ -158,7 +156,7 @@ export function TasksPage({
     [items],
   );
 
-  const nextCursor = extraCursor !== undefined ? extraCursor : tasksResp?.next_cursor ?? null;
+  const nextCursor = extraCursor !== undefined ? extraCursor : (tasksResp?.next_cursor ?? null);
 
   const handleLoadMore = async () => {
     if (!nextCursor || loadingMore) return;
@@ -210,15 +208,6 @@ export function TasksPage({
                 <Icon name="plus" size="sm" /> New Task
               </Button>
             )}
-            <Button
-              size="sm"
-              variant="toggle"
-              pressed={dockOpen}
-              disabled={!selectedTaskId}
-              onClick={() => setDockOpen(!dockOpen)}
-            >
-              Detail Dock
-            </Button>
           </div>
         </div>
 
@@ -300,7 +289,8 @@ export function TasksPage({
             )}
           </div>
 
-          {dockOpen && selectedTaskId && (
+          {/* The task panel always docks on the right for any selected task, in every view. */}
+          {selectedTaskId && (
             <div ref={dockRef} className="org-tpage__dock" data-ui="task-detail-dock">
               <div
                 role="separator"
@@ -312,7 +302,7 @@ export function TasksPage({
               <div className="org-tpage__dock-inner">
                 <TaskDetail
                   taskId={selectedTaskId}
-                  onClose={() => setDockOpen(false)}
+                  onClose={() => setSelectedTaskId(null)}
                   onSelectTask={(id) => setSelectedTaskId(id, true)}
                   onOpenInViewer={({ taskId, fileId, frame }) => {
                     const qs = new URLSearchParams({ task: taskId });

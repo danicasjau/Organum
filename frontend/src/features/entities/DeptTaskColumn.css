@@ -11,33 +11,54 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--space-1);
+    gap: var(--space-3);
     height: var(--toolbar-h);
-    padding: 0 var(--space-2);
+    padding: 0 var(--space-4);
     border-bottom: 1px solid var(--border-dark);
     background: var(--surface-window);
+  }
+
+  .org-dtcol__entity-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 700;
+    font-size: var(--font-size-lg);
+    color: var(--text);
   }
 
   .org-dtcol__list {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    padding: var(--space-1);
+    padding: var(--space-3);
     background: var(--surface-field);
+  }
+
+  .org-dtcol__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    height: 100%;
+    min-height: var(--grid-min-h);
+    text-align: center;
   }
 
   .org-dtcol__dept-block {
     display: flex;
     flex-direction: column;
-    margin-bottom: var(--space-1);
+    margin-bottom: var(--space-3);
   }
 
   .org-dtcol__dept-row {
     display: flex;
     align-items: center;
-    gap: var(--space-1);
+    gap: var(--space-2);
     height: var(--row-h);
-    padding: 0 var(--space-1);
+    padding: 0 var(--space-3);
     background: var(--surface-window);
     border: 1px solid var(--border-dark);
     color: var(--text);
@@ -54,10 +75,10 @@
   .org-dtcol__task-row {
     display: flex;
     align-items: center;
-    gap: var(--space-1);
+    gap: var(--space-2);
     width: 100%;
     height: var(--row-h);
-    padding: 0 var(--space-2) 0 var(--space-5);
+    padding: 0 var(--space-3) 0 var(--space-6);
     border: 0;
     border-left: var(--dirty-bar-w) solid transparent;
     border-bottom: 1px solid var(--border-dark);
@@ -86,25 +107,4 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-
-  .org-dtcol__add-row {
-    display: flex;
-    align-items: center;
-    gap: var(--space-1);
-    width: 100%;
-    height: var(--ctl-h);
-    padding: 0 var(--space-2);
-    border: 1px dashed var(--border-control);
-    background: transparent;
-    color: var(--text-muted);
-    font-family: var(--font-ui);
-    font-size: var(--font-size);
-    cursor: pointer;
-  }
-
-  .org-dtcol__add-row:hover {
-    color: var(--text);
-    background: var(--surface-hover);
-  }
 }
-

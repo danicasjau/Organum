@@ -1,0 +1,12 @@
+@layer components {
+  .org-unread-dot {
+    display: inline-block;
+    flex-shrink: 0;
+    width: var(--unread-dot);
+    height: var(--unread-dot);
+    border: 1px solid var(--surface-window);
+    border-radius: 50%;
+    background: var(--danger);
+    vertical-align: middle;
+  }
+}

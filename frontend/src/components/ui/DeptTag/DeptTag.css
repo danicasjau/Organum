@@ -1,0 +1,50 @@
+@layer components {
+  .org-dept-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+    max-width: 100%;
+    height: var(--badge-cap-h);
+    padding: 0 var(--space-2) 0 var(--space-1);
+    border: 1px solid var(--dept-color, var(--border-dark));
+    border-left-width: var(--dirty-bar-w);
+    border-radius: var(--radius-1);
+    background: var(--surface-raised);
+    color: var(--text);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .org-dept-tag__swatch {
+    display: inline-block;
+    flex-shrink: 0;
+    width: var(--dept-swatch);
+    height: var(--dept-swatch);
+    border: 1px solid var(--border-dark);
+    border-radius: 50%;
+    background: var(--dept-color, var(--series-1));
+  }
+
+  .org-dept-tag__label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .org-dept-tag[data-variant='text'] {
+    height: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--dept-color, var(--text));
+  }
+
+  .org-dept-tag[data-variant='swatch'] {
+    height: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+}

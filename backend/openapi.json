@@ -12935,6 +12935,17 @@
             },
             "type": "array",
             "title": "Entries"
+          },
+          "current_project_rel_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Project Rel Path"
           }
         },
         "type": "object",
@@ -14136,6 +14147,40 @@
             "format": "date-time",
             "title": "Updated At"
           },
+          "last_feedback_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Feedback At"
+          },
+          "last_feedback_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Feedback By"
+          },
+          "last_feedback_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Feedback Kind"
+          },
           "acted_as": {
             "anyOf": [
               {
@@ -14802,6 +14847,40 @@
             "type": "string",
             "format": "date-time",
             "title": "Updated At"
+          },
+          "last_feedback_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Feedback At"
+          },
+          "last_feedback_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Feedback By"
+          },
+          "last_feedback_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Feedback Kind"
           }
         },
         "type": "object",
