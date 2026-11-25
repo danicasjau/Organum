@@ -39,7 +39,8 @@ export function AuthenticatedShell({
 
   const panels = useWorkspacePanels();
 
-  const canAdmin = hasPerm(auth?.permissions, 'role.manage');
+  const canAdmin =
+    hasPerm(auth?.permissions, 'role.manage') || hasPerm(auth?.permissions, 'rules.manage');
 
   return (
     <>

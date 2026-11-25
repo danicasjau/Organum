@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import {
   apiClient,
+  bumpAuthEpoch,
   registerAuthHandlers,
   type AuthMeOut,
   type BootstrapInfoOut,
@@ -8,6 +9,12 @@ import {
 import { useEntitiesStore } from '../entities/entitiesStore';
 import { useProjectStore } from '../project/projectStore';
 import { useTasksStore } from '../tasks/tasksStore';
+
+let queryClearer: ((mode: 'cancel' | 'clear') => void) | null = null;
+
+export function registerQueryClearer(fn: (mode: 'cancel' | 'clear') => void): void {
+  queryClearer = fn;
+}
 
 function clearWorkspaceSelections(): void {
   useEntitiesStore.getState().setSelectedEntity(null);
@@ -61,11 +68,13 @@ export const useAuthStore = create<AuthStoreState>((set, get) => {
     autoLogoutNotice: null,
 
     setAuth: (auth) => {
+      bumpAuthEpoch();
       const prevUserId = get().auth?.user.id ?? null;
       if (auth) {
         useProjectStore.getState().setActiveProject(auth.project_uuid);
-        if (prevUserId && prevUserId !== auth.user.id) {
+        if (prevUserId !== auth.user.id) {
           clearWorkspaceSelections();
+          queryClearer?.('clear');
         }
       } else if (prevUserId) {
         clearWorkspaceSelections();
@@ -105,22 +114,13 @@ export const useAuthStore = create<AuthStoreState>((set, get) => {
     },
 
     logout: async () => {
-      const cur = get().auth;
-      try {
-        if (cur) {
-          await apiClient.logout(cur.project_uuid);
-        }
-      } catch {
-        // ignore network failures on logout
-      }
-      clearWorkspaceSelections();
-      set({ auth: null, autoLogoutNotice: null });
+      await get().switchProjectSession(undefined);
     },
 
     switchProjectSession: async (notice) => {
+      bumpAuthEpoch();
       const cur = get().auth;
-      clearWorkspaceSelections();
-      set({ auth: null, autoLogoutNotice: notice ?? null });
+      queryClearer?.('cancel');
       try {
         if (cur) {
           await apiClient.logout(cur.project_uuid);
@@ -128,6 +128,8 @@ export const useAuthStore = create<AuthStoreState>((set, get) => {
       } catch {
         // ignore network failures on logout
       }
+      set({ auth: null, autoLogoutNotice: notice ?? null });
+      clearWorkspaceSelections();
     },
   };
 });

@@ -4,9 +4,9 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { Spinner, ToastProvider, TooltipProvider } from '../components/ui';
 import { ForcePasswordChangeDialog } from '../features/auth/ForcePasswordChangeDialog';
 import { LoginPage } from '../features/auth/LoginPage';
-import { hasPerm, useAuthStore } from '../features/auth/authStore';
 import { DepartmentColorSync } from '../features/departments/DepartmentColorSync';
 import { ReviewFeedbackSync } from '../features/reviews/ReviewFeedbackSync';
+import { hasPerm, registerQueryClearer, useAuthStore } from '../features/auth/authStore';
 import './App.css';
 
 const ViewerPage = lazy(() =>
@@ -25,7 +25,21 @@ const MyUserPage = lazy(() =>
   import('../features/me/MyUserPage').then((m) => ({ default: m.MyUserPage })),
 );
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: false,
+    },
+  },
+});
+
+registerQueryClearer((mode) => {
+  void queryClient.cancelQueries();
+  if (mode === 'clear') {
+    queryClient.clear();
+  }
+});
 
 export type ThemeMode = 'dark' | 'light';
 export type DensityMode = 'compact' | 'comfortable';
@@ -34,8 +48,7 @@ function RequireAuth({
   requiredPerm,
   children,
 }: {
-  /** One permission key, or a list where any granted key is enough. */
-  requiredPerm?: string | ReadonlyArray<string>;
+  requiredPerm?: string | string[];
   children: ReactNode;
 }) {
   const initialized = useAuthStore((s) => s.initialized);
@@ -47,9 +60,11 @@ function RequireAuth({
   if (!auth) {
     return <Navigate to="/login" replace />;
   }
-  const needed = typeof requiredPerm === 'string' ? [requiredPerm] : requiredPerm;
-  if (needed && needed.length > 0 && !needed.some((k) => hasPerm(auth.permissions, k))) {
-    return <Navigate to="/entities" replace />;
+  if (requiredPerm) {
+    const perms = Array.isArray(requiredPerm) ? requiredPerm : [requiredPerm];
+    if (!perms.some((p) => hasPerm(auth.permissions, p))) {
+      return <Navigate to="/entities" replace />;
+    }
   }
   return <>{children}</>;
 }
@@ -141,7 +156,14 @@ export function App() {
                     </RequireAuth>
                   }
                 />
-                <Route path="/admin" element={<Navigate to="/users?section=roles" replace />} />
+                <Route
+                  path="/admin"
+                  element={
+                    <RequireAuth requiredPerm={['role.manage', 'rules.manage']}>
+                      <AdminPage theme={theme} onToggleTheme={toggleTheme} />
+                    </RequireAuth>
+                  }
+                />
                 <Route
                   path="/gallery"
                   element={

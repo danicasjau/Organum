@@ -393,9 +393,9 @@ export function SettingsDialog({
                           {p.uuid !== activeProjectUuid && (
                             <Button
                               size="sm"
-                              onClick={() => {
+                              onClick={async () => {
                                 closeSettings();
-                                void switchProjectSession(
+                                await switchProjectSession(
                                   `Switched to '${p.name}' — sign in to continue.`,
                                 );
                                 setActiveProject(p.uuid, queryClient);

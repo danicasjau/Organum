@@ -17,5 +17,11 @@
 - **Local Launch & Reveal:** `/launch`, `/reveal`, and `/fs/browse` remain strictly disabled on non-loopback bindings and rejected on non-loopback client IPs or cross-origin requests.
 
 ## Append-Only Audit Log
-`audit_log` records logins, login failures, logouts, password changes/resets, user/role/capacity/company changes, project lifecycle/status changes, task assignments, and client share changes.
+`audit_log` records logins, login failures, logouts, password changes/resets, user/role/capacity/company changes, project lifecycle/status changes, task assignments, client share changes, rule CRUD/apply operations, and every Admin Database Viewer / SQL Console inspection.
+
+## Raw Read-Only Database Viewer & Optional SQL Console (Phase 7E)
+- **Strict Admin Isolation:** All `/admin/db/*` endpoints require `admin` role and `admin.db` permission (`403` for Producer and all other roles).
+- **Read-Only Connection & Engine Guard:** Opens `<project>/00_Pipeline/project.db` with SQLite `mode=ro` URI, `PRAGMA query_only = ON`, and an active `conn.set_authorizer(...)` allowing only `SQLITE_SELECT`, `SQLITE_READ`, `SQLITE_FUNCTION`, and `SQLITE_RECURSIVE` while denying all writes, DDL, `PRAGMA`, `ATTACH`, and transactions.
+- **Authorizer-Level Redaction:** Sensitive columns (`users.password_hash`, `sessions.token_hash`, `sessions.csrf_token`) return `SQLITE_IGNORE` inside the authorizer (preventing alias or `WHERE` exfiltration) and serialize as `[REDACTED]` in both the Table Browser and SQL Console.
+- **SQL Console Safety Caps:** Disabled by default (`project_meta.admin_sql_console_enabled = false`); single `SELECT`/`WITH` statements only, 5-second progress-handler timeout, and 1,000-row cap.
 

@@ -173,7 +173,7 @@ def _browse_table_sync(
 
         quoted_tbl = '"' + table_name.replace('"', '""') + '"'
         col_info = conn.execute(f"PRAGMA table_info({quoted_tbl})").fetchall()
-        cols = [
+        cols: list[dict[str, Any]] = [
             {
                 "name": str(c["name"]),
                 "type": str(c["type"] or "TEXT"),
@@ -182,14 +182,14 @@ def _browse_table_sync(
             }
             for c in col_info
         ]
-        col_names = [c["name"] for c in cols]
-        redacted_map = {c["name"]: bool(c["redacted"]) for c in cols}
+        col_names: list[str] = [str(c["name"]) for c in cols]
+        redacted_map: dict[str, bool] = {str(c["name"]): bool(c["redacted"]) for c in cols}
 
         where_sql = ""
         params: list[Any] = []
         if filter_text and filter_text.strip():
             needle = f"%{filter_text.strip()}%"
-            searchable = [c["name"] for c in cols if not c["redacted"]]
+            searchable: list[str] = [str(c["name"]) for c in cols if not c["redacted"]]
             if searchable:
                 clauses = [
                     f'CAST("{cname.replace(chr(34), chr(34) * 2)}" AS TEXT) LIKE ?'
