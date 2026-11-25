@@ -34,4 +34,9 @@ Entity Links model non-filesystem production relationships between entities (for
 - **Column 1 Badges & Bulk Linking (`EntityColumn`):** Entity cards display direct link counts (`N links`) and support `Ctrl/Meta+Click` or `Shift+Click` multi-selection with context menu actions (**Link selected to…** / **Link from…**) when `entity.link` is permitted.
 - **Inspector Links Section (`EntityInspectorTab`):** Displays direct **Uses** and **Used in** cards (with entity type and free-text `link_type` badges), plus lighter indented **indirect links** (`indirect, via ...`, up to depth 3), **+ Uses… / + Used in…** searchable multi-select pickers, and **Suggest Deps…** preview modal (`POST /entities/{id}/suggest-dependencies` -> confirm -> `POST /entities/{id}/apply-dependencies`).
 
+---
+
+## 4. Dual-Mode Entity & Task Graph (Phase 7D)
+- **Entity Mode (`GraphView`):** Fetches `GET /api/v1/projects/{project_uuid}/entity-links/graph` (up to 500 nodes with truncation banner), lays out the entity DAG left-to-right, draws direct `source -> target` links (`link_type` labels) plus subtle dashed 2-hop indirect paths (`via <entity>`), supports port-to-port link creation (`POST /entity-links`, showing `409 Conflict` cycle rejection banners) and edge deletion (`DELETE /entity-links/{id}`), and double-clicking any entity node transitions directly to **Task Mode** scoped to that entity's task dependency graph.
+
 

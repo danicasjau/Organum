@@ -5,7 +5,16 @@ import {
   type AuthMeOut,
   type BootstrapInfoOut,
 } from '../../lib/api/client';
+import { useEntitiesStore } from '../entities/entitiesStore';
 import { useProjectStore } from '../project/projectStore';
+import { useTasksStore } from '../tasks/tasksStore';
+
+function clearWorkspaceSelections(): void {
+  useEntitiesStore.getState().setSelectedEntity(null);
+  useEntitiesStore.getState().setSelectedDept(null);
+  useEntitiesStore.getState().setSelectedTask(null);
+  useTasksStore.getState().setSelectedTaskId(null, false);
+}
 
 interface AuthStoreState {
   auth: AuthMeOut | null;
@@ -52,8 +61,14 @@ export const useAuthStore = create<AuthStoreState>((set, get) => {
     autoLogoutNotice: null,
 
     setAuth: (auth) => {
+      const prevUserId = get().auth?.user.id ?? null;
       if (auth) {
         useProjectStore.getState().setActiveProject(auth.project_uuid);
+        if (prevUserId && prevUserId !== auth.user.id) {
+          clearWorkspaceSelections();
+        }
+      } else if (prevUserId) {
+        clearWorkspaceSelections();
       }
       set({ auth, initialized: true, autoLogoutNotice: null });
     },
@@ -98,11 +113,13 @@ export const useAuthStore = create<AuthStoreState>((set, get) => {
       } catch {
         // ignore network failures on logout
       }
+      clearWorkspaceSelections();
       set({ auth: null, autoLogoutNotice: null });
     },
 
     switchProjectSession: async (notice) => {
       const cur = get().auth;
+      clearWorkspaceSelections();
       set({ auth: null, autoLogoutNotice: notice ?? null });
       try {
         if (cur) {

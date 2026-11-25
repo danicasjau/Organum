@@ -1,9 +1,43 @@
 import { create } from 'zustand';
 import type { TaskBulkRowIn, TaskListQuery } from '../../lib/api/client';
 
-export type TasksWorkspaceView = 'grid' | 'matrix' | 'kanban' | 'review';
+export type TasksWorkspaceView =
+  | 'gantt'
+  | 'matrix'
+  | 'grid'
+  | 'workload'
+  | 'kanban'
+  | 'graph'
+  | 'review';
 export type MatrixGroupBy = 'path' | 'type';
 export type KanbanSwimlane = 'none' | 'department' | 'assignee';
+export type GanttGroupBy =
+  | 'entity_path'
+  | 'department'
+  | 'user'
+  | 'company'
+  | 'status'
+  | 'priority'
+  | 'none';
+export type GanttZoom = 'day' | 'week' | 'month';
+export type WorkloadZoom = 'days' | 'weeks';
+export type WorkloadGroupBy = 'none' | 'department' | 'company';
+export type GraphMode = 'task' | 'entity';
+export type GraphScope = 'all' | 'entity' | 'department';
+
+export interface GanttPatchItem {
+  taskId: string;
+  prevStart: string | null;
+  prevFinish: string | null;
+  nextStart: string | null;
+  nextFinish: string | null;
+  updatedAt?: string;
+}
+
+export interface GanttUndoAction {
+  label: string;
+  patches: GanttPatchItem[];
+}
 
 const DOCK_WIDTH_KEY = 'organum.taskDockWidth';
 
@@ -26,6 +60,21 @@ export interface TasksStoreState {
   matrixGroupBy: MatrixGroupBy;
   kanbanSwimlane: KanbanSwimlane;
   matrixUndoStack: TaskBulkRowIn[][];
+  ganttGroupBy: GanttGroupBy;
+  ganttZoom: GanttZoom;
+  ganttShowLinks: boolean;
+  ganttPushDependents: boolean;
+  ganttCollapsedGroups: string[];
+  ganttUndoStack: GanttUndoAction[];
+  ganttRedoStack: GanttUndoAction[];
+  workloadGroupBy: WorkloadGroupBy;
+  workloadZoom: WorkloadZoom;
+  graphMode: GraphMode;
+  graphHops: number;
+  graphScope: GraphScope;
+  graphScopeId: string;
+  graphFocusTaskId: string | null;
+  graphFocusEntityId: string | null;
 
   setActiveView: (view: TasksWorkspaceView) => void;
   setSelectedTaskId: (taskId: string | null, openDock?: boolean) => void;
@@ -42,6 +91,22 @@ export interface TasksStoreState {
   setKanbanSwimlane: (swimlane: KanbanSwimlane) => void;
   pushMatrixUndo: (rows: TaskBulkRowIn[]) => void;
   popMatrixUndo: () => TaskBulkRowIn[] | undefined;
+  setGanttGroupBy: (groupBy: GanttGroupBy) => void;
+  setGanttZoom: (zoom: GanttZoom) => void;
+  setGanttShowLinks: (show: boolean) => void;
+  setGanttPushDependents: (push: boolean) => void;
+  toggleGanttGroupCollapsed: (key: string) => void;
+  pushGanttUndo: (action: GanttUndoAction) => void;
+  popGanttUndo: () => GanttUndoAction | undefined;
+  pushGanttRedo: (action: GanttUndoAction) => void;
+  popGanttRedo: () => GanttUndoAction | undefined;
+  setWorkloadGroupBy: (groupBy: WorkloadGroupBy) => void;
+  setWorkloadZoom: (zoom: WorkloadZoom) => void;
+  setGraphMode: (mode: GraphMode) => void;
+  setGraphHops: (hops: number) => void;
+  setGraphScope: (scope: GraphScope, scopeId?: string) => void;
+  setGraphFocusTaskId: (taskId: string | null) => void;
+  setGraphFocusEntityId: (entityId: string | null) => void;
 }
 
 const DEFAULT_FILTERS: TaskListQuery = {
@@ -61,6 +126,21 @@ export const useTasksStore = create<TasksStoreState>((set, get) => ({
   matrixGroupBy: 'path',
   kanbanSwimlane: 'none',
   matrixUndoStack: [],
+  ganttGroupBy: 'entity_path',
+  ganttZoom: 'day',
+  ganttShowLinks: true,
+  ganttPushDependents: false,
+  ganttCollapsedGroups: [],
+  ganttUndoStack: [],
+  ganttRedoStack: [],
+  workloadGroupBy: 'none',
+  workloadZoom: 'days',
+  graphMode: 'task',
+  graphHops: 2,
+  graphScope: 'all',
+  graphScopeId: '',
+  graphFocusTaskId: null,
+  graphFocusEntityId: null,
 
   setActiveView: (activeView) => set({ activeView }),
   setSelectedTaskId: (selectedTaskId, openDock = true) =>
@@ -127,5 +207,49 @@ export const useTasksStore = create<TasksStoreState>((set, get) => ({
     set({ matrixUndoStack: stack.slice(0, -1) });
     return top;
   },
+  setGanttGroupBy: (ganttGroupBy) => set({ ganttGroupBy }),
+  setGanttZoom: (ganttZoom) => set({ ganttZoom }),
+  setGanttShowLinks: (ganttShowLinks) => set({ ganttShowLinks }),
+  setGanttPushDependents: (ganttPushDependents) => set({ ganttPushDependents }),
+  toggleGanttGroupCollapsed: (key) =>
+    set((s) => ({
+      ganttCollapsedGroups: s.ganttCollapsedGroups.includes(key)
+        ? s.ganttCollapsedGroups.filter((k) => k !== key)
+        : [...s.ganttCollapsedGroups, key],
+    })),
+  pushGanttUndo: (action) =>
+    set((s) => ({
+      ganttUndoStack: [...s.ganttUndoStack.slice(-24), action],
+      ganttRedoStack: [],
+    })),
+  popGanttUndo: () => {
+    const stack = get().ganttUndoStack;
+    if (stack.length === 0) return undefined;
+    const top = stack[stack.length - 1];
+    set({ ganttUndoStack: stack.slice(0, -1) });
+    return top;
+  },
+  pushGanttRedo: (action) =>
+    set((s) => ({
+      ganttRedoStack: [...s.ganttRedoStack.slice(-24), action],
+    })),
+  popGanttRedo: () => {
+    const stack = get().ganttRedoStack;
+    if (stack.length === 0) return undefined;
+    const top = stack[stack.length - 1];
+    set({ ganttRedoStack: stack.slice(0, -1) });
+    return top;
+  },
+  setWorkloadGroupBy: (workloadGroupBy) => set({ workloadGroupBy }),
+  setWorkloadZoom: (workloadZoom) => set({ workloadZoom }),
+  setGraphMode: (graphMode) => set({ graphMode }),
+  setGraphHops: (graphHops) => set({ graphHops: Math.max(1, Math.min(3, graphHops)) }),
+  setGraphScope: (graphScope, scopeId) =>
+    set((s) => ({
+      graphScope,
+      graphScopeId: scopeId !== undefined ? scopeId : s.graphScopeId,
+    })),
+  setGraphFocusTaskId: (graphFocusTaskId) => set({ graphFocusTaskId }),
+  setGraphFocusEntityId: (graphFocusEntityId) => set({ graphFocusEntityId }),
 }));
 

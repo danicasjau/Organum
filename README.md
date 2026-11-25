@@ -156,10 +156,10 @@ npm run test:e2e
 - **DO NOT** use inline JSX `style={}`, Tailwind, CSS-in-JS, blur, or CSS transitions.
 - **DO NOT** integrate or stub any excluded format listed in `docs/DEPENDENCIES.md` / project spec §6.3.
 
-## Phase 7B/7C Task & Production Modules
+## Phase 7B/7C/7D Task & Planning Modules
 
 - **Workflow & Links Backend:** See [`docs/WORKFLOW.md`](docs/WORKFLOW.md) and [`docs/ENTITY_LINKS.md`](docs/ENTITY_LINKS.md).
-- **Tasks Workspace (`/tasks`):** Permission-gated `Grid`, `Matrix` (path/type grouping + TSV paste preview + undo), `Kanban`, and `Review Queue`, plus the shared `TaskDetail` inspector dock.
+- **Tasks Workspace (`/tasks`):** Permission-gated `Gantt` (virtualized 7-group timeline, orthogonal dependency arrows, drag/push-dependents/undo), `Matrix` (path/type grouping + TSV paste preview + undo), `Grid`, `Workload` (daily/weekly artist capacity heatmap + drilldown), `Kanban`, `Graph` (dual-mode Task DAG & Entity DAG), and `Review Queue`, plus the shared `TaskDetail` inspector dock.
 - **Focus Inbox (`/me` > `My Tasks`):** Capacity-separated inbox (`All | I DO | I LEAD | I SUPERVISE`) and inline review queue.
 
 

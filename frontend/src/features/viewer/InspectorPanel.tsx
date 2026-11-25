@@ -202,8 +202,8 @@ export function InspectorPanel({
       return (
         <Panel title="Inspector" className="org-inspector-panel">
           <Tabs
-            activeId={selectedEntity ? 'entity' : 'task'}
-            onChange={() => { }}
+            activeId={activeTab === 'task' && selectedTaskId ? 'task' : 'entity'}
+            onChange={setActiveTab}
             items={[
               ...(selectedEntity
                 ? [

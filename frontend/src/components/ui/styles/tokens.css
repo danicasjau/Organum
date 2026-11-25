@@ -289,6 +289,14 @@
     --dialog-wide-w: 680px;
     --badge-dot-w: 6px;
     --progress-thin-h: 6px;
+    --gantt-tree-w: 240px;
+    --gantt-actual-h: 4px;
+    --gantt-group-bar-h: 6px;
+    --gantt-day-w: 28px;
+    --heat-user-w: 180px;
+    --graph-port-size: 8px;
+    --minimap-w: 156px;
+    --minimap-h: 96px;
 
     --capacity-do: #38BDF8;
     --capacity-do-bg: #132C42;

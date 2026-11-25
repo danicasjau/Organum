@@ -597,6 +597,18 @@ export function ViewerPage({
   const canAdmin = hasPerm(auth?.permissions, 'role.manage');
   const isClientRole = auth?.user.role_name === 'client';
 
+  const visibleEntityTaskId = useMemo(() => {
+    if (!selectedEntityTaskId || !tree) return null;
+    for (const ent of tree.entities ?? []) {
+      for (const dept of ent.departments ?? []) {
+        for (const t of dept.tasks ?? []) {
+          if (t.id === selectedEntityTaskId) return selectedEntityTaskId;
+        }
+      }
+    }
+    return null;
+  }, [selectedEntityTaskId, tree]);
+
   return (
     <AppShell
       menus={menus}
@@ -837,7 +849,7 @@ export function ViewerPage({
                 file={selectedFile}
                 inspection={inspection ?? null}
                 selectedEntity={selectedEntity}
-                selectedTaskId={selectedEntityTaskId}
+                selectedTaskId={visibleEntityTaskId}
                 viewerState={viewerState}
                 onUpdateState={(patch) => {
                   if (currentFileId) updateFileState(currentFileId, patch);

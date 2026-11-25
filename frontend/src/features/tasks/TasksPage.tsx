@@ -25,6 +25,8 @@ import { hasPerm, useAuthStore } from '../auth/authStore';
 import { useProjectStore } from '../project/projectStore';
 import { CreateTaskDialog } from './CreateTaskDialog';
 import { DepartmentMatrixView } from './DepartmentMatrixView';
+import { GanttView } from './GanttView';
+import { GraphView } from './GraphView';
 import { KanbanView } from './KanbanView';
 import { ReviewQueueView } from './ReviewQueueView';
 import { isFullTaskItem } from './taskHelpers';
@@ -32,6 +34,7 @@ import { TaskDetail } from './TaskDetail';
 import { TaskFilterBar } from './TaskFilterBar';
 import { TaskGridView } from './TaskGridView';
 import { useTasksStore, type TasksWorkspaceView } from './tasksStore';
+import { WorkloadView } from './WorkloadView';
 import './TasksPage.css';
 
 const EMPTY_DEPTS: DepartmentOut[] = [];
@@ -72,7 +75,10 @@ export function TasksPage({
   const dockRef = useRef<HTMLDivElement>(null);
   useCssVarRef(dockRef, '--tdock-w', `${dockWidth}px`);
 
+  const canGantt = !isClient && hasPerm(auth?.permissions, 'views.gantt');
+  const canWorkload = !isClient && hasPerm(auth?.permissions, 'views.workload');
   const canKanban = !isClient && hasPerm(auth?.permissions, 'views.kanban');
+  const canGraph = !isClient && hasPerm(auth?.permissions, 'views.graph');
   const canReviewQueue =
     isClient ||
     hasPerm(auth?.permissions, 'task.approve.lead') ||
@@ -84,10 +90,13 @@ export function TasksPage({
   const viewItems: ViewSwitcherItem[] = useMemo(() => {
     const list: ViewSwitcherItem[] = [{ id: 'grid', label: 'Grid' }];
     if (!isClient) list.push({ id: 'matrix', label: 'Matrix' });
+    if (canGantt) list.push({ id: 'gantt', label: 'Gantt' });
+    if (canWorkload) list.push({ id: 'workload', label: 'Workload' });
     if (canKanban) list.push({ id: 'kanban', label: 'Kanban' });
+    if (canGraph) list.push({ id: 'graph', label: 'Graph' });
     if (canReviewQueue) list.push({ id: 'review', label: 'Review Queue' });
     return list;
-  }, [isClient, canKanban, canReviewQueue]);
+  }, [isClient, canGantt, canWorkload, canKanban, canGraph, canReviewQueue]);
 
   useEffect(() => {
     if (!viewItems.some((v) => v.id === activeView)) {
@@ -247,9 +256,33 @@ export function TasksPage({
                 selectedTaskId={selectedTaskId}
                 onSelectTask={(id) => setSelectedTaskId(id, true)}
               />
+            ) : activeView === 'gantt' && canGantt ? (
+              <GanttView
+                tasks={fullItems}
+                users={users}
+                companies={companies}
+                selectedTaskId={selectedTaskId}
+                onSelectTask={(id) => setSelectedTaskId(id, true)}
+              />
+            ) : activeView === 'workload' && canWorkload ? (
+              <WorkloadView
+                tasks={fullItems}
+                users={users}
+                companies={companies}
+                departments={departments}
+                selectedTaskId={selectedTaskId}
+                onSelectTask={(id) => setSelectedTaskId(id, true)}
+              />
             ) : activeView === 'kanban' && canKanban ? (
               <KanbanView
                 tasks={fullItems}
+                selectedTaskId={selectedTaskId}
+                onSelectTask={(id) => setSelectedTaskId(id, true)}
+              />
+            ) : activeView === 'graph' && canGraph ? (
+              <GraphView
+                entities={entities}
+                departments={departments}
                 selectedTaskId={selectedTaskId}
                 onSelectTask={(id) => setSelectedTaskId(id, true)}
               />

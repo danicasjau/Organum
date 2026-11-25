@@ -70,7 +70,8 @@ All packages below were verified against PyPI and the npm registry for current a
 | `react-router-dom` | 7.18.6 | MIT | Client routing (`/viewer`, `/gallery`) |
 | `@tanstack/react-query` | 5.108.4 | MIT | Server state, prefetching, mutations |
 | `@tanstack/react-table` | 9.3.1 | MIT | Headless DataGrid engine |
-| `@tanstack/react-virtual` | 3.14.28 | MIT | 100k-node tree & grid virtualization |
+| `@tanstack/react-virtual` | 3.14.28 | MIT | 100k-node tree, grid, and Gantt virtualization |
+| *(Custom TypeScript + SVG)* | — | Internal | Phase 7D Gantt bars/arrows, Workload heatmap grid, and Task/Entity DAG node graph (zero commercial/GPL Gantt or graph libraries used) |
 | `zustand` | 5.1.0 | MIT | Per-file LRU viewer state & tool state |
 | `react-resizable-panels` | 4.24.1 | MIT | Resizable 10/60/30 layout splitters |
 | `@radix-ui/react-dialog` | 1.3.1 | MIT | Accessible modal dialogs |

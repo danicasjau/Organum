@@ -69,7 +69,7 @@ test.describe('Phase 7C — Tasks Panel Core, Matrix, Kanban, Review Queue, Link
     await page.getByRole('button', { name: 'Toggle theme' }).click();
     await page.screenshot({ path: path.join(SCREENSHOTS_DIR, 'phase7c-matrix-light.png') });
     await page.getByRole('button', { name: 'Toggle theme' }).click();
-    await page.getByRole('button', { name: 'Collapse Modeling' }).click();
+    await page.getByRole('button', { name: 'Collapse Modeling' }).first().click();
 
     // Open Paste TSV preview dialog
     await page.getByRole('button', { name: 'Paste TSV…' }).click();
@@ -150,11 +150,11 @@ test.describe('Phase 7C — Tasks Panel Core, Matrix, Kanban, Review Queue, Link
     await expect(page.getByRole('tab', { name: 'Kanban' })).toHaveCount(0);
 
     const cliGrid = page.getByRole('table', { name: 'Tasks table' });
-    await expect(cliGrid.getByText('hero_robot_LGT_beauty')).toBeVisible({ timeout: 10000 });
+    await expect(cliGrid.getByText('hero_robot_LIG_beauty')).toBeVisible({ timeout: 10000 });
     await expect(cliGrid.getByText('hero_robot_MOD_main')).toHaveCount(0);
     await expect(page.getByRole('columnheader', { name: /Bid/i })).toHaveCount(0);
 
-    await cliGrid.getByRole('row', { name: /hero_robot_LGT_beauty/i }).click();
+    await cliGrid.getByRole('row', { name: /hero_robot_LIG_beauty/i }).click();
     const cliDock = page.locator('[data-ui="task-detail-dock"]');
     await expect(cliDock).toBeVisible({ timeout: 10000 });
     await expect(cliDock.getByText('Client review ready for beauty v0001 look check.')).toBeVisible();

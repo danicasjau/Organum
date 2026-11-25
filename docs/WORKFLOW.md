@@ -66,4 +66,11 @@ All status changes write append-only `task_events` recording `acted_as` (`role:<
 - **Review Queue (`ReviewQueueView`) & My Tasks (`/me`):** Oldest-first review queue and capacity-separated Focus Inbox (`All | I DO | I LEAD | I SUPERVISE`) with `Start`, `Log hours`, `Submit for review`, `Approve`, `Retake`, `Open in viewer`, and `Open task folder`.
 - **ENTITIES Integration:** Right inspector appends the shared `Task` tab (`TaskDetail`), and saved viewer annotations offer **Post to task** (`kind="media"` with thumbnail and frame deep-link).
 
+---
+
+## 6. Planning Views (Phase 7D)
+- **Virtualized Gantt (`GanttView`):** Custom TypeScript + SVG synchronized tree/timeline using `@tanstack/react-virtual` (zero commercial/GPL libraries). Supports 7 row groupings (`Entity path`, `Department`, `User`, `Company`, `Status`, `Priority`, `None`), Day/Week/Month zoom, non-working calendar shading, planned vs actual progress bars, orthogonal SVG dependency/link arrows (red violation highlights, entity-link origin dots), dependency-chain focus dimming, drag move/resize (`enforce_dependencies_in_gantt` blocking check), `Push dependents` cascade, User/Company group drop reassignment confirmation, and `Ctrl+Z` / `Ctrl+Shift+Z` undo/redo.
+- **Workload Capacity Heatmap (`WorkloadView`):** Renders daily or weekly artist utilization (`hours / capacity_hours`, `--heat-0..--heat-4` + numeric `%`), filters by date range, department, and company, groups by Department or Company, surfaces collapsible `Unscheduled tasks`, and opens a Contributing Tasks drilldown drawer on cell click.
+- **Dual-Mode Node Graph (`GraphView`):** Toggles between **Task Mode** (`GET /tasks/graph`) and **Entity Mode** (`GET /entity-links/graph`) with topological layered DAG layout + barycenter crossing reduction, pan/zoom/marquee select, interactive minimap, search jump, Scope & Hops filtering (500-node truncation banner), drag port-to-port edge creation (cycle rejection banner on `409`), `Delete` edge removal, and double-click entity node to focus that entity in Task Mode.
+
 

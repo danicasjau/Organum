@@ -81,6 +81,14 @@ export type ClientTaskCommentOut = components['schemas']['ClientTaskCommentOut']
 export type ClientTaskReviewOut = components['schemas']['ClientTaskReviewOut'];
 export type ClientProductOut = components['schemas']['ClientProductOut'];
 export type EntityLinkOut = components['schemas']['EntityLinkOut'];
+export type TaskGraphNodeOut = components['schemas']['TaskGraphNodeOut'];
+export type TaskGraphEdgeOut = components['schemas']['TaskGraphEdgeOut'];
+export type TaskGraphOut = components['schemas']['TaskGraphOut'];
+export type WorkloadCellSchema = components['schemas']['WorkloadCellSchema'];
+export type WorkloadRowSchema = components['schemas']['WorkloadRowSchema'];
+export type WorkloadResponse = components['schemas']['WorkloadResponse'];
+export type EntityGraphNodeOut = components['schemas']['EntityGraphNodeOut'];
+export type EntityGraphEdgeOut = components['schemas']['EntityGraphEdgeOut'];
 export type IndirectEntityLinkOut = components['schemas']['IndirectEntityLinkOut'];
 export type EntityLinksResponse = components['schemas']['EntityLinksResponse'];
 export type EntityLinkCreateRequest = components['schemas']['EntityLinkCreateRequest'];
@@ -562,8 +570,65 @@ export const apiClient = {
     apiFetch<void>(`${getProjBase(projectUuid)}/entity-links/${linkId}`, {
       method: 'DELETE',
     }),
-  getEntityLinksGraph: (projectUuid?: string | null) =>
-    apiFetch<EntityLinksGraphOut>(`${getProjBase(projectUuid)}/entity-links/graph`),
+  getEntityLinksGraph: (
+    queryOrProjectUuid?:
+      | string
+      | null
+      | { entity_id?: string; hops?: number; limit?: number },
+    maybeProjectUuid?: string | null,
+  ) => {
+    const isQueryObj =
+      queryOrProjectUuid !== null &&
+      typeof queryOrProjectUuid === 'object';
+    const query = isQueryObj ? queryOrProjectUuid : undefined;
+    const projectUuid = isQueryObj ? maybeProjectUuid : queryOrProjectUuid;
+    const params = new URLSearchParams();
+    if (query?.entity_id) params.set('entity_id', query.entity_id);
+    if (query?.hops !== undefined) params.set('hops', String(query.hops));
+    if (query?.limit !== undefined) params.set('limit', String(query.limit));
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return apiFetch<EntityLinksGraphOut>(
+      `${getProjBase(projectUuid)}/entity-links/graph${qs}`,
+    );
+  },
+
+  getTaskGraph: (
+    query?: {
+      task_id?: string;
+      entity_id?: string;
+      department_id?: string;
+      hops?: number;
+      limit?: number;
+    },
+    projectUuid?: string | null,
+  ) => {
+    const params = new URLSearchParams();
+    if (query?.task_id) params.set('task_id', query.task_id);
+    if (query?.entity_id) params.set('entity_id', query.entity_id);
+    if (query?.department_id) params.set('department_id', query.department_id);
+    if (query?.hops !== undefined) params.set('hops', String(query.hops));
+    if (query?.limit !== undefined) params.set('limit', String(query.limit));
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return apiFetch<TaskGraphOut>(`${getProjBase(projectUuid)}/tasks/graph${qs}`);
+  },
+
+  getWorkload: (
+    query?: {
+      date_from?: string;
+      date_to?: string;
+      department_id?: string;
+      company_id?: string;
+    },
+    projectUuid?: string | null,
+  ) => {
+    const params = new URLSearchParams();
+    if (query?.date_from) params.set('date_from', query.date_from);
+    if (query?.date_to) params.set('date_to', query.date_to);
+    if (query?.department_id) params.set('department_id', query.department_id);
+    if (query?.company_id) params.set('company_id', query.company_id);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return apiFetch<WorkloadResponse>(`${getProjBase(projectUuid)}/workload${qs}`);
+  },
   suggestEntityDependencies: (
     entityId: string,
     payload: { link_ids?: string[] | null; depth?: number | null } = {},
