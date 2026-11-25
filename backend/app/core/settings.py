@@ -29,9 +29,7 @@ class Settings(BaseSettings):
         )
     )
     app_db_url: str = Field(
-        default_factory=lambda: (
-            f"sqlite+aiosqlite:///{(_REPO_ROOT / 'data' / 'app.db').as_posix()}"
-        )
+        default_factory=lambda: f"sqlite+aiosqlite:///{(_REPO_ROOT / 'data' / 'app.db').as_posix()}"
     )
     bind_host: str = "127.0.0.1"
     demo_project_path: Path = Field(default_factory=lambda: _REPO_ROOT / "data" / "demo_project")

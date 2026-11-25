@@ -121,4 +121,3 @@ class PdfHandler(FormatHandler):
 
     def capabilities(self) -> dict[str, bool]:
         return {"document": True, "pdf": True, "annotations_2d": False}
-

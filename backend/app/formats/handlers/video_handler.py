@@ -199,16 +199,12 @@ def _encode_proxy(path: Path, out_dir: Path) -> tuple[Path, str]:
         for packet in in_c.demux(demux_targets):
             for frame in packet.decode():
                 if isinstance(frame, av.VideoFrame):
-                    vf = frame.reformat(
-                        width=out_v.width, height=out_v.height, format="yuv420p"
-                    )
+                    vf = frame.reformat(width=out_v.width, height=out_v.height, format="yuv420p")
                     vf.pict_type = 0
                     for out_pkt in out_v.encode(vf):
                         out_c.mux(out_pkt)
                 elif (
-                    isinstance(frame, av.AudioFrame)
-                    and out_a is not None
-                    and resampler is not None
+                    isinstance(frame, av.AudioFrame) and out_a is not None and resampler is not None
                 ):
                     for rf in resampler.resample(frame):
                         for out_pkt in out_a.encode(rf):

@@ -43,4 +43,3 @@ def create_engine_and_sessionmaker(
         expire_on_commit=False,
     )
     return engine, session_factory
-

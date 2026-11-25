@@ -164,6 +164,11 @@ async def _allocate_and_register_version(
         product.master_version_id = version.id
         await asyncio.to_thread(write_master_json, products_dir, version.label)
 
+    task.latest_version_id = version.id
+    from app.services.task_service import reevaluate_downstream_wtg
+
+    await db.flush()
+    await reevaluate_downstream_wtg(db, task.id)
     await db.commit()
     return version
 
@@ -206,6 +211,7 @@ async def publish_from_scenefiles(
         products_dir.mkdir(parents=True, exist_ok=True)
         stage_dir = Path(tempfile.mkdtemp(prefix=".stage_pub_", dir=str(products_dir)))
         try:
+
             def _copy_all() -> None:
                 for _, src in resolved_sources:
                     dst = stage_dir / src.name

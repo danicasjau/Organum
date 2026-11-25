@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 
 from sqlalchemy import (
     JSON,
     BigInteger,
     Boolean,
+    Date,
     DateTime,
     Float,
     ForeignKey,
@@ -29,7 +30,7 @@ class ProjectMeta(TimestampMixin, Base):
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     uuid: Mapped[str] = mapped_column(String(36), unique=True, nullable=False)
     name: Mapped[str] = mapped_column(String(128), nullable=False)
-    schema_version: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
+    schema_version: Mapped[int] = mapped_column(Integer, default=4, nullable=False)
     status: Mapped[str] = mapped_column(
         String(16), default="active", server_default="active", nullable=False
     )  # 'active' | 'on_hold' | 'completed' | 'archived'
@@ -40,15 +41,11 @@ class ProjectMeta(TimestampMixin, Base):
     task_code_pattern: Mapped[str] = mapped_column(
         String(128), default="{entity_folder}_{dept_short}_{task_folder}", nullable=False
     )
-    require_version_to_submit: Mapped[bool] = mapped_column(
-        Boolean, default=True, nullable=False
-    )
+    require_version_to_submit: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     enforce_dependencies_in_gantt: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False
     )
-    admin_sql_console_enabled: Mapped[bool] = mapped_column(
-        Boolean, default=False, nullable=False
-    )
+    admin_sql_console_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     link_dependency_depth: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
 
 
@@ -72,9 +69,7 @@ class Department(TimestampMixin, Base):
 
 class DepartmentDefaultTask(TimestampMixin, Base):
     __tablename__ = "department_default_tasks"
-    __table_args__ = (
-        UniqueConstraint("department_id", "name", name="uq_dept_default_task_name"),
-    )
+    __table_args__ = (UniqueConstraint("department_id", "name", name="uq_dept_default_task_name"),)
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     department_id: Mapped[uuid.UUID] = mapped_column(
@@ -83,6 +78,14 @@ class DepartmentDefaultTask(TimestampMixin, Base):
     name: Mapped[str] = mapped_column(String(128), nullable=False)
     folder_name: Mapped[str] = mapped_column(String(128), nullable=False)
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    needs_lead_review: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    needs_sup_review: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    needs_client_review: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    default_priority: Mapped[str] = mapped_column(
+        String(16), default="normal", nullable=False
+    )  # 'normal' | 'high' | 'stopper'
+    default_bid_hours: Mapped[float | None] = mapped_column(Float, nullable=True)
+    default_complexity: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     department: Mapped[Department] = relationship(back_populates="default_tasks")
 
@@ -141,9 +144,7 @@ class EntityData(TimestampMixin, Base):
 
 class EntityDepartment(TimestampMixin, Base):
     __tablename__ = "entity_departments"
-    __table_args__ = (
-        UniqueConstraint("entity_id", "department_id", name="uq_entity_department"),
-    )
+    __table_args__ = (UniqueConstraint("entity_id", "department_id", name="uq_entity_department"),)
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     entity_id: Mapped[uuid.UUID] = mapped_column(
@@ -165,26 +166,61 @@ class EntityDepartment(TimestampMixin, Base):
 
 class Task(TimestampMixin, Base):
     __tablename__ = "tasks"
-    __table_args__ = (UniqueConstraint("entity_department_id", "name", name="uq_ent_dept_task"),)
+    __table_args__ = (
+        UniqueConstraint("entity_department_id", "name", name="uq_ent_dept_task"),
+        Index("ix_tasks_dept_status", "department_id", "status"),
+        Index("ix_tasks_entity_dept", "entity_id", "department_id"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    task_code: Mapped[str] = mapped_column(String(128), unique=True, index=True, nullable=False)
+    task_name: Mapped[str] = mapped_column(String(256), default="", nullable=False)
     entity_department_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("entity_departments.id", ondelete="CASCADE"), index=True, nullable=False
     )
     entity_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("entities.id", ondelete="CASCADE"), index=True, nullable=False
     )
+    parent_entity_type: Mapped[str | None] = mapped_column(String(64), index=True, nullable=True)
     department_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("departments.id", ondelete="CASCADE"), index=True, nullable=False
     )
     name: Mapped[str] = mapped_column(String(128), nullable=False)
     folder_name: Mapped[str] = mapped_column(String(128), nullable=False)
+    description: Mapped[str] = mapped_column(Text, default="", nullable=False)
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    status: Mapped[str | None] = mapped_column(String(32), nullable=True)
-    assigned_to_user_id: Mapped[uuid.UUID | None] = mapped_column(
-        Uuid, ForeignKey("users.id", ondelete="SET NULL"), index=True, nullable=True
+    status: Mapped[str] = mapped_column(
+        String(32), default="RDY", server_default="RDY", index=True, nullable=False
     )
-    due_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    status_before_hold: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    priority: Mapped[str] = mapped_column(
+        String(16), default="normal", server_default="normal", index=True, nullable=False
+    )
+    needs_lead_review: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    needs_sup_review: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    needs_client_review: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    complexity_rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    ideal_start_date: Mapped[date | None] = mapped_column(Date, index=True, nullable=True)
+    actual_start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    ideal_finish_date: Mapped[date | None] = mapped_column(Date, index=True, nullable=True)
+    actual_finish_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    bid_hours: Mapped[float | None] = mapped_column(Float, nullable=True)
+    logged_hours: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    retake_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    latest_version_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey(
+            "product_versions.id", ondelete="SET NULL", use_alter=True, name="fk_tasks_latest_ver"
+        ),
+        nullable=True,
+    )
+    approved_version_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey(
+            "product_versions.id", ondelete="SET NULL", use_alter=True, name="fk_tasks_approved_ver"
+        ),
+        nullable=True,
+    )
 
     entity_department: Mapped[EntityDepartment] = relationship(back_populates="tasks")
     product: Mapped[Product | None] = relationship(
@@ -282,4 +318,3 @@ class FileEntry(TimestampMixin, Base):
 
 def _keep_utc_now_used() -> datetime:
     return utc_now()
-

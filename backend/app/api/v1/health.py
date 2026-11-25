@@ -37,4 +37,3 @@ async def api_health(settings: Annotated[Settings, Depends(get_settings_dep)]) -
         version=settings.app_version,
         environment=settings.environment,
     )
-

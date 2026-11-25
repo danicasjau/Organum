@@ -78,4 +78,3 @@ def build_ranged_file_response(
             "Content-Range": f"bytes {start}-{end}/{total}",
         },
     )
-

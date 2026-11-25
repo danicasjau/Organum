@@ -68,4 +68,3 @@ def check_case_insensitive_collision(
 def format_version_label(version_number: int) -> str:
     """Format canonical version directory name v0001, v0002, ..."""
     return f"v{version_number:04d}"
-

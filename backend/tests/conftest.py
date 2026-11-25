@@ -84,9 +84,7 @@ def make_entity_product_dir(
     return ver_dir
 
 
-async def reconcile_files_map(
-    client: AsyncClient, project_uuid: str
-) -> dict[str, dict[str, Any]]:
+async def reconcile_files_map(client: AsyncClient, project_uuid: str) -> dict[str, dict[str, Any]]:
     rec = await client.post(f"/api/v1/projects/{project_uuid}/reconcile")
     assert rec.status_code == 200
     tree = (await client.get(f"/api/v1/projects/{project_uuid}/entities")).json()

@@ -45,4 +45,3 @@ class StorageBackend(ABC):
     @abstractmethod
     async def delete(self, key: str) -> None:
         """Delete an object if it exists."""
-

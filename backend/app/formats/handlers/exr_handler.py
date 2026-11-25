@@ -177,4 +177,3 @@ class ExrHandler(FormatHandler):
             "aovs": True,
             "float_buffer": True,
         }
-

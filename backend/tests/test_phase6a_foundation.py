@@ -24,9 +24,9 @@ def test_folder_name_sanitization_and_collision(tmp_path: Path) -> None:
 
     (tmp_path / "Hero_Robot").mkdir()
     assert check_case_insensitive_collision(tmp_path, "hero_robot") is True
-    assert check_case_insensitive_collision(
-        tmp_path, "hero_robot", ignore_name="Hero_Robot"
-    ) is False
+    assert (
+        check_case_insensitive_collision(tmp_path, "hero_robot", ignore_name="Hero_Robot") is False
+    )
     assert check_case_insensitive_collision(tmp_path, "Prop_Crate") is False
 
 

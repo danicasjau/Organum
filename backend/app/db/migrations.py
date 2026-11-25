@@ -14,4 +14,3 @@ def upgrade_project_db(db_url: str) -> None:
     cfg = Config(str(_ALEMBIC_INI))
     cfg.set_main_option("sqlalchemy.url", db_url)
     command.upgrade(cfg, "head")
-

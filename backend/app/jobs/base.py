@@ -55,4 +55,3 @@ class JobRunner(ABC):
     @abstractmethod
     async def shutdown(self) -> None:
         """Gracefully stop running jobs and executors."""
-

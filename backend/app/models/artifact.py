@@ -26,4 +26,3 @@ class Artifact(TimestampMixin, Base):
     mime_type: Mapped[str] = mapped_column(String(128), default="application/octet-stream")
     size: Mapped[int] = mapped_column(BigInteger, default=0, nullable=False)
     status: Mapped[str] = mapped_column(String(32), default="ready", nullable=False)
-

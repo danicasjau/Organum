@@ -59,7 +59,6 @@ from app.schemas.api import (
     TaskAssignmentOut,
     TaskCreateRequest,
     TaskOut,
-    TaskUpdateRequest,
 )
 from app.services.artifact_service import get_or_create_artifact
 from app.services.entity_service import (
@@ -69,7 +68,6 @@ from app.services.entity_service import (
     create_task_for_ed,
     detach_entity_department,
     promote_folder_to_entity,
-    rename_task,
     replace_entity_data,
     resolve_entity_thumbnail_file_id,
     set_entity_tags,
@@ -79,7 +77,6 @@ from app.services.entity_service import (
 )
 from app.services.permissions import (
     AuthContext,
-    assert_can,
     can_access_file,
     client_shared_version_ids,
     visible_task_ids,
@@ -222,10 +219,16 @@ def _task_out(
 ) -> TaskOut:
     return TaskOut(
         id=t.id,
+        task_code=t.task_code,
+        task_name=t.task_name,
         name=t.name,
         folder_name=t.folder_name,
         sort_order=t.sort_order,
         status=t.status,
+        priority=t.priority,
+        ideal_finish_date=t.ideal_finish_date,
+        bid_hours=t.bid_hours,
+        logged_hours=t.logged_hours,
         acted_as=acted_as,
         assignments=(assignments_by_task or {}).get(t.id, []),
         my_capacities=(my_caps_by_task or {}).get(t.id, []),
@@ -829,39 +832,6 @@ async def create_task_endpoint(
         )
     )
     return _task_out(t_res.scalar_one())
-
-
-@router.patch("/tasks/{task_id}", response_model=TaskOut)
-async def update_task_endpoint(
-    task_id: UUID,
-    payload: TaskUpdateRequest,
-    auth: Annotated[AuthContext, Depends(get_project_auth)],
-    ctx: Annotated[ProjectContext, Depends(get_project_context)],
-    db: Annotated[AsyncSession, Depends(get_db)],
-) -> TaskOut:
-    t_pre = await db.get(Task, task_id)
-    if t_pre is None:
-        raise NotFoundError("task", str(task_id))
-    via = await assert_can(db, auth, "task.edit_fields", t_pre)
-
-    if payload.name is not None:
-        await rename_task(db, ctx, task_id, payload.name)
-    t_res = await db.execute(
-        select(Task)
-        .where(Task.id == task_id)
-        .options(
-            selectinload(Task.product)
-            .selectinload(Product.versions)
-            .selectinload(ProductVersion.files)
-        )
-    )
-    task = t_res.scalar_one_or_none()
-    if task is None:
-        raise NotFoundError("task", str(task_id))
-    if payload.sort_order is not None:
-        task.sort_order = payload.sort_order
-        await db.commit()
-    return _task_out(task, acted_as=via)
 
 
 @router.delete("/tasks/{task_id}", status_code=204)

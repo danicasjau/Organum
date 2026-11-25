@@ -120,8 +120,7 @@ def _inspect_sync(path: Path, probe: ProbeResult) -> InspectionDocument:
     tris, verts, _ = _scene_stats(path)
     textures = _extract_gltf_textures(gltf, path.parent)
     materials = [
-        {"index": i, "name": m.name or f"material_{i}"}
-        for i, m in enumerate(gltf.materials or [])
+        {"index": i, "name": m.name or f"material_{i}"} for i, m in enumerate(gltf.materials or [])
     ]
     animations = [
         {"index": i, "name": a.name or f"anim_{i}", "channels": len(a.channels or [])}

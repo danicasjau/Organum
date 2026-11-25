@@ -74,9 +74,7 @@ async def test_phase5_handlers_and_ocio_lut(
         assert doc["kind"] == "image2d"
         assert doc["capabilities"]["float_buffer"] is True
 
-        art = await client.post(
-            f"{base}/files/{fid}/artifacts/float_rgba", json={"params": {}}
-        )
+        art = await client.post(f"{base}/files/{fid}/artifacts/float_rgba", json={"params": {}})
         assert art.status_code == 200
         buf_resp = await client.get(art.json()["content_url"])
         assert buf_resp.status_code == 200

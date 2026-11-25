@@ -24,4 +24,3 @@ class Job(TimestampMixin, Base):
     message: Mapped[str] = mapped_column(String(256), default="", nullable=False)
     result_json: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
-

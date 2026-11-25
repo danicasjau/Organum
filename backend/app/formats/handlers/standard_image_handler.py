@@ -125,4 +125,3 @@ class StandardImageHandler(FormatHandler):
             "pixel_zoom": True,
             "annotations_2d": True,
         }
-

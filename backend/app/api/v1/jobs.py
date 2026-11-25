@@ -53,4 +53,3 @@ async def cancel_job(
 ) -> dict[str, bool]:
     cancelled = await runner.cancel(job_id)
     return {"cancelled": cancelled}
-

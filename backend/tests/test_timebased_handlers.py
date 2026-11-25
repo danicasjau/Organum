@@ -87,9 +87,7 @@ async def test_timebased_video_audio_edl_and_sequence(
         )
     ).json()
     assert f_art["mime_type"] == "image/png"
-    v_peaks = (
-        await client.post(f"{base}/files/{vid_id}/artifacts/waveform_peaks", json={})
-    ).json()
+    v_peaks = (await client.post(f"{base}/files/{vid_id}/artifacts/waveform_peaks", json={})).json()
     peaks_json = (await client.get(v_peaks["content_url"])).json()
     assert len(peaks_json["peaks"]) > 0
 
@@ -99,9 +97,7 @@ async def test_timebased_video_audio_edl_and_sequence(
     assert a_doc["summary"]["channels"] == 2
     assert a_doc["capabilities"]["waveform"] is True
 
-    a_peaks = (
-        await client.post(f"{base}/files/{aud_id}/artifacts/waveform_peaks", json={})
-    ).json()
+    a_peaks = (await client.post(f"{base}/files/{aud_id}/artifacts/waveform_peaks", json={})).json()
     ap_json = (await client.get(a_peaks["content_url"])).json()
     assert len(ap_json["channelPeaks"]) == 2
     assert len(ap_json["spectrogram"]) >= 8

@@ -90,9 +90,7 @@ def _discover_production_tree(production_root: Path) -> _DiskDiscovery:
 
 
 async def _ensure_department(db: AsyncSession, folder_name: str) -> Department:
-    res = await db.execute(
-        select(Department).where(Department.folder_name == folder_name)
-    )
+    res = await db.execute(select(Department).where(Department.folder_name == folder_name))
     dept = res.scalar_one_or_none()
     if dept is not None:
         return dept
@@ -141,16 +139,44 @@ async def _ensure_task_product(
     )
     task = t_res.scalar_one_or_none()
     if task is None:
+        from app.models.project_db import ProjectMeta
+        from app.models.tasks import TaskEvent
+        from app.services.task_service import generate_unique_task_code
+
+        meta = (await db.execute(select(ProjectMeta).limit(1))).scalar_one_or_none()
+        pattern = meta.task_code_pattern if meta else "{entity_folder}_{dept_short}_{task_folder}"
+        t_code = await generate_unique_task_code(
+            db,
+            entity_folder=entity.folder_name,
+            dept_short=dept.short_code,
+            dept_folder=dept.folder_name,
+            task_folder=task_folder,
+            pattern=pattern,
+        )
         task = Task(
+            task_code=t_code,
+            task_name=f"{dept.name} - {task_folder}",
             entity_department_id=ed.id,
             entity_id=entity.id,
+            parent_entity_type=entity.entity_type,
             department_id=dept.id,
             name=task_folder,
             folder_name=task_folder,
             sort_order=0,
+            status="RDY",
         )
         db.add(task)
         await db.flush()
+        db.add(
+            TaskEvent(
+                task_id=task.id,
+                user_id=None,
+                acted_as="system",
+                source="system",
+                field="created",
+                new_value=f"{t_code} (RDY)",
+            )
+        )
 
     p_res = await db.execute(select(Product).where(Product.task_id == task.id))
     prod = p_res.scalar_one_or_none()
@@ -333,6 +359,20 @@ async def reconcile_project(
                     for existing_file in f_res.scalars().all():
                         if existing_file.relative_path not in seen_rel_paths:
                             existing_file.is_missing = True
+
+                # Sync task.latest_version_id from highest reconciled ProductVersion
+                latest_pv = (
+                    await db.execute(
+                        select(ProductVersion)
+                        .where(ProductVersion.product_id == product.id)
+                        .order_by(ProductVersion.version_number.desc())
+                        .limit(1)
+                    )
+                ).scalar_one_or_none()
+                if latest_pv is not None:
+                    parent_task = await db.get(Task, product.task_id)
+                    if parent_task is not None:
+                        parent_task.latest_version_id = latest_pv.id
 
     all_entities = (await db.execute(select(Entity))).scalars().all()
     for ent in all_entities:

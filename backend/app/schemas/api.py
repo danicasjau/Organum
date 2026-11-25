@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Literal
 from uuid import UUID
 
@@ -103,15 +103,33 @@ class DefaultTaskOut(BaseModel):
     name: str
     folder_name: str
     sort_order: int
+    needs_lead_review: bool = True
+    needs_sup_review: bool = False
+    needs_client_review: bool = False
+    default_priority: Literal["normal", "high", "stopper"] = "normal"
+    default_bid_hours: float | None = None
+    default_complexity: int | None = None
 
 
 class DefaultTaskCreate(BaseModel):
     name: str
+    needs_lead_review: bool = True
+    needs_sup_review: bool = False
+    needs_client_review: bool = False
+    default_priority: Literal["normal", "high", "stopper"] = "normal"
+    default_bid_hours: float | None = None
+    default_complexity: int | None = Field(default=None, ge=1, le=5)
 
 
 class DefaultTaskUpdate(BaseModel):
     name: str | None = None
     sort_order: int | None = None
+    needs_lead_review: bool | None = None
+    needs_sup_review: bool | None = None
+    needs_client_review: bool | None = None
+    default_priority: Literal["normal", "high", "stopper"] | None = None
+    default_bid_hours: float | None = None
+    default_complexity: int | None = Field(default=None, ge=1, le=5)
 
 
 class DepartmentOut(BaseModel):
@@ -203,10 +221,17 @@ class TaskAssignmentOut(BaseModel):
 
 class TaskOut(BaseModel):
     id: UUID
+    task_code: str = ""
+    task_name: str = ""
     name: str
     folder_name: str
     sort_order: int
     status: str | None = None
+    priority: str = "normal"
+    ideal_finish_date: date | None = None
+    bid_hours: float | None = None
+    logged_hours: float = 0.0
+    blocked_upstream: bool = False
     acted_as: str | None = None
     assignments: list[TaskAssignmentOut] = Field(default_factory=list)
     my_capacities: list[str] = Field(default_factory=list)
@@ -686,6 +711,8 @@ class TaskAssignmentsPutRequest(BaseModel):
 
 class TaskSharesPutRequest(BaseModel):
     company_ids: list[UUID] = Field(default_factory=list)
+    version_ids: list[UUID] | None = None
+    comment: str | None = None
 
 
 class VersionSharesPutRequest(BaseModel):
@@ -755,3 +782,541 @@ class ClientEntityTreeOut(BaseModel):
     entities: list[ClientEntityOut] = Field(default_factory=list)
     total: int = 0
 
+
+# Phase 7B: Tasks, Workflow, Time Logs, Comments, Reviews, Events, Graph, Workload, Entity Links
+class TransitionOptionOut(BaseModel):
+    to: str
+    action: str
+    acted_as: str
+    on_behalf: bool = False
+    requires_comment: bool = False
+    requires_version: bool = False
+
+
+class TaskDependencyIn(BaseModel):
+    upstream_task_id: UUID
+    threshold: Literal["APP", "PUBLISHED", "ANY_STATUS"] = "APP"
+    from_entity_link: bool = False
+
+
+class TaskDependencyOut(BaseModel):
+    task_id: UUID
+    upstream_task_id: UUID
+    upstream_task_code: str = ""
+    upstream_task_name: str = ""
+    upstream_entity_name: str = ""
+    upstream_department: str = ""
+    upstream_status: str = "WTG"
+    threshold: str = "APP"
+    from_entity_link: bool = False
+    satisfied: bool = False
+
+
+class TaskLinkIn(BaseModel):
+    linked_task_id: UUID
+    link_type: str | None = None
+
+
+class TaskLinkOut(BaseModel):
+    id: UUID
+    task_id: UUID
+    linked_task_id: UUID
+    linked_task_code: str = ""
+    linked_task_status: str = ""
+    link_type: str | None = None
+
+
+class TimeLogCreateRequest(BaseModel):
+    work_date: date | None = None
+    hours: float = Field(gt=0.0, le=24.0)
+    note: str = ""
+
+
+class TimeLogOut(BaseModel):
+    id: UUID
+    task_id: UUID
+    user_id: UUID | None = None
+    username: str | None = None
+    full_name: str | None = None
+    work_date: date
+    hours: float
+    note: str
+    created_at: datetime
+
+
+class TaskCommentCreateRequest(BaseModel):
+    body: str = Field(min_length=1)
+    parent_id: UUID | None = None
+    kind: Literal["note", "review", "media"] = "note"
+    visibility: Literal["internal", "client"] = "internal"
+    version_id: UUID | None = None
+    file_id: UUID | None = None
+    annotation_id: UUID | None = None
+    frame: int | None = None
+
+
+class TaskCommentOut(BaseModel):
+    id: UUID
+    task_id: UUID
+    author_id: UUID | None = None
+    author_username: str | None = None
+    author_full_name: str | None = None
+    parent_id: UUID | None = None
+    kind: str
+    visibility: Literal["internal", "client"]
+    body: str
+    version_id: UUID | None = None
+    file_id: UUID | None = None
+    annotation_id: UUID | None = None
+    frame: int | None = None
+    review_decision: str | None = None
+    created_at: datetime
+    edited_at: datetime | None = None
+
+
+class TaskReviewOut(BaseModel):
+    id: UUID
+    task_id: UUID
+    round_no: int
+    version_id: UUID | None = None
+    version_label: str | None = None
+    stage: Literal["lead", "sup", "client"]
+    decision: Literal["pending", "approved", "retake"]
+    reviewer_id: UUID | None = None
+    reviewer_name: str | None = None
+    acted_as: str
+    on_behalf_of: str | None = None
+    comment_id: UUID | None = None
+    created_at: datetime
+
+
+class TaskEventOut(BaseModel):
+    id: UUID
+    task_id: UUID
+    at: datetime
+    user_id: UUID | None = None
+    username: str | None = None
+    acted_as: str
+    source: Literal["user", "rule", "system"]
+    field: str
+    old_value: str | None = None
+    new_value: str | None = None
+
+
+class TaskListItemOut(BaseModel):
+    id: UUID
+    task_code: str
+    task_name: str
+    name: str
+    folder_name: str
+    entity_id: UUID
+    entity_name: str
+    entity_rel_path: str
+    parent_entity_type: str | None = None
+    department_id: UUID
+    department_name: str
+    department_short_code: str = ""
+    department_color: str = "--series-1"
+    description: str = ""
+    status: str
+    status_before_hold: str | None = None
+    priority: Literal["normal", "high", "stopper"] = "normal"
+    needs_lead_review: bool = True
+    needs_sup_review: bool = False
+    needs_client_review: bool = False
+    complexity_rating: int | None = None
+    ideal_start_date: date | None = None
+    actual_start_date: date | None = None
+    ideal_finish_date: date | None = None
+    actual_finish_date: date | None = None
+    bid_hours: float | None = None
+    bid_days: float | None = None
+    logged_hours: float = 0.0
+    retake_count: int = 0
+    latest_version_id: UUID | None = None
+    approved_version_id: UUID | None = None
+    version_count: int = 0
+    upstream_count: int = 0
+    blocked_upstream: bool = False
+    assignments: list[TaskAssignmentOut] = Field(default_factory=list)
+    my_capacities: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
+    shared_company_ids: list[UUID] = Field(default_factory=list)
+    updated_at: datetime
+
+
+class TaskListOut(BaseModel):
+    items: list[TaskListItemOut] = Field(default_factory=list)
+    total: int = 0
+    next_cursor: str | None = None
+
+
+class TaskDetailOut(TaskListItemOut):
+    acted_as: str | None = None
+    allowed_transitions: list[TransitionOptionOut] = Field(default_factory=list)
+    dependencies: list[TaskDependencyOut] = Field(default_factory=list)
+    downstream: list[TaskDependencyOut] = Field(default_factory=list)
+    links: list[TaskLinkOut] = Field(default_factory=list)
+    product: ProductOut | None = None
+    reviews: list[TaskReviewOut] = Field(default_factory=list)
+    comments: list[TaskCommentOut] = Field(default_factory=list)
+    events: list[TaskEventOut] = Field(default_factory=list)
+    time_logs: list[TimeLogOut] = Field(default_factory=list)
+
+
+class TaskCreateFullRequest(BaseModel):
+    entity_id: UUID
+    department_id: UUID
+    name: str = Field(min_length=1)
+    description: str = ""
+    priority: Literal["normal", "high", "stopper"] | None = None
+    needs_lead_review: bool | None = None
+    needs_sup_review: bool | None = None
+    needs_client_review: bool | None = None
+    bid_hours: float | None = Field(default=None, ge=0.0)
+    complexity_rating: int | None = Field(default=None, ge=1, le=5)
+    ideal_start_date: date | None = None
+    ideal_finish_date: date | None = None
+
+
+class TaskPatchRequest(BaseModel):
+    name: str | None = None
+    sort_order: int | None = None
+    task_code: str | None = None
+    task_name: str | None = None
+    description: str | None = None
+    priority: Literal["normal", "high", "stopper"] | None = None
+    needs_lead_review: bool | None = None
+    needs_sup_review: bool | None = None
+    needs_client_review: bool | None = None
+    complexity_rating: int | None = Field(default=None, ge=1, le=5)
+    bid_hours: float | None = Field(default=None, ge=0.0)
+    ideal_start_date: date | None = None
+    ideal_finish_date: date | None = None
+    status: str | None = None  # rejected with 400 guiding callers to POST /transition
+    expected_updated_at: datetime | None = None
+
+
+class TaskTransitionRequest(BaseModel):
+    to: str
+    version_id: UUID | None = None
+    comment: str | None = None
+
+
+class TaskDependenciesPutRequest(BaseModel):
+    dependencies: list[TaskDependencyIn] = Field(default_factory=list)
+
+
+class TaskLinksPutRequest(BaseModel):
+    links: list[TaskLinkIn] = Field(default_factory=list)
+
+
+class TaskTagsPutRequest(BaseModel):
+    tags: list[str] = Field(default_factory=list)
+
+
+class TaskBulkRowIn(BaseModel):
+    task_id: UUID
+    status: str | None = None
+    comment: str | None = None
+    priority: Literal["normal", "high", "stopper"] | None = None
+    assignee_user_ids: list[UUID] | None = None
+    assignee_role: Literal["artist", "lead", "supervisor"] = "artist"
+
+
+class TaskBulkRequest(BaseModel):
+    dry_run: bool = True
+    rows: list[TaskBulkRowIn] = Field(default_factory=list)
+
+
+class TaskBulkRowResult(BaseModel):
+    task_id: UUID
+    task_code: str = ""
+    ok: bool
+    changes: list[str] = Field(default_factory=list)
+    error: str | None = None
+
+
+class TaskBulkResponse(BaseModel):
+    dry_run: bool
+    applied: bool
+    ok_count: int
+    error_count: int
+    results: list[TaskBulkRowResult] = Field(default_factory=list)
+
+
+class TaskGraphNodeOut(BaseModel):
+    id: UUID
+    task_code: str
+    task_name: str
+    status: str
+    entity_name: str
+    department_name: str
+    department_color: str
+    assignees: list[TaskAssignmentOut] = Field(default_factory=list)
+
+
+class TaskGraphEdgeOut(BaseModel):
+    source_task_id: UUID
+    target_task_id: UUID
+    kind: Literal["dependency", "link"]
+    threshold: str | None = None
+    from_entity_link: bool = False
+
+
+class TaskGraphOut(BaseModel):
+    nodes: list[TaskGraphNodeOut] = Field(default_factory=list)
+    edges: list[TaskGraphEdgeOut] = Field(default_factory=list)
+    truncated: bool = False
+
+
+class WorkloadCellSchema(BaseModel):
+    day: date
+    hours: float
+    capacity_hours: float
+    utilization_pct: float
+    contributing_task_ids: list[UUID] = Field(default_factory=list)
+
+
+class WorkloadRowSchema(BaseModel):
+    user_id: UUID
+    username: str
+    full_name: str
+    daily_capacity_hours: float
+    cells: list[WorkloadCellSchema] = Field(default_factory=list)
+
+
+class WorkloadResponse(BaseModel):
+    days: list[date] = Field(default_factory=list)
+    rows: list[WorkloadRowSchema] = Field(default_factory=list)
+    unscheduled_tasks: list[TaskListItemOut] = Field(default_factory=list)
+
+
+class ReviewQueueItemOut(BaseModel):
+    task_id: UUID
+    task_code: str
+    task_name: str
+    entity_id: UUID
+    entity_name: str
+    department_name: str
+    status: str
+    submitted_version_id: UUID | None = None
+    submitted_version_label: str | None = None
+    thumbnail_file_id: UUID | None = None
+    submitter_name: str | None = None
+    submitted_at: datetime
+    wait_hours: float
+    can_act_as: str
+    on_behalf: bool = False
+
+
+class MyTasksResponse(BaseModel):
+    tasks: list[TaskListItemOut] = Field(default_factory=list)
+    to_review: list[ReviewQueueItemOut] = Field(default_factory=list)
+
+
+# Client-safe Task allowlist serializers (§15)
+class ClientTaskCommentOut(BaseModel):
+    id: UUID
+    task_id: UUID
+    author_full_name: str | None = None
+    kind: str
+    visibility: Literal["client"] = "client"
+    body: str
+    version_id: UUID | None = None
+    file_id: UUID | None = None
+    frame: int | None = None
+    review_decision: str | None = None
+    created_at: datetime
+
+
+class ClientTaskReviewOut(BaseModel):
+    id: UUID
+    round_no: int
+    version_id: UUID | None = None
+    stage: Literal["lead", "sup", "client"]
+    decision: Literal["pending", "approved", "retake"]
+    created_at: datetime
+
+
+class ClientTaskListItemOut(BaseModel):
+    id: UUID
+    task_code: str
+    task_name: str
+    entity_id: UUID
+    entity_name: str
+    department_name: str
+    status: str
+    ideal_finish_date: date | None = None
+    description: str = ""
+    product: ClientProductOut | None = None
+
+
+class ClientTaskListOut(BaseModel):
+    items: list[ClientTaskListItemOut] = Field(default_factory=list)
+    total: int = 0
+    next_cursor: str | None = None
+
+
+class ClientTaskDetailOut(ClientTaskListItemOut):
+    allowed_transitions: list[TransitionOptionOut] = Field(default_factory=list)
+    comments: list[ClientTaskCommentOut] = Field(default_factory=list)
+    reviews: list[ClientTaskReviewOut] = Field(default_factory=list)
+
+
+class ClientReviewQueueItemOut(BaseModel):
+    task_id: UUID
+    task_code: str
+    task_name: str
+    entity_id: UUID
+    entity_name: str
+    department_name: str
+    status: str
+    submitted_version_id: UUID | None = None
+    submitted_version_label: str | None = None
+    thumbnail_file_id: UUID | None = None
+    submitted_at: datetime
+    wait_hours: float
+    can_act_as: str = "role:client"
+
+
+# Entity links & Dependency templates (§4.2)
+class EntityLinkCreateRequest(BaseModel):
+    source_entity_id: UUID
+    target_entity_id: UUID
+    link_type: str | None = None
+    note: str | None = None
+
+
+class EntityLinkBulkCreateRequest(BaseModel):
+    source_ids: list[UUID] = Field(default_factory=list)
+    target_ids: list[UUID] = Field(default_factory=list)
+    link_type: str | None = None
+    note: str | None = None
+
+
+class EntityLinkOut(BaseModel):
+    id: UUID
+    source_entity_id: UUID
+    source_name: str
+    source_type: str | None = None
+    source_archived: bool = False
+    target_entity_id: UUID
+    target_name: str
+    target_type: str | None = None
+    target_archived: bool = False
+    link_type: str | None = None
+    note: str | None = None
+    created_at: datetime
+
+
+class IndirectEntityLinkOut(BaseModel):
+    entity_id: UUID
+    entity_name: str
+    entity_type: str | None = None
+    is_archived: bool = False
+    depth: int
+    via_entity_names: list[str] = Field(default_factory=list)
+
+
+class EntityLinksResponse(BaseModel):
+    entity_id: UUID
+    uses: list[EntityLinkOut] = Field(default_factory=list)
+    used_in: list[EntityLinkOut] = Field(default_factory=list)
+    uses_indirect: list[IndirectEntityLinkOut] = Field(default_factory=list)
+    used_in_indirect: list[IndirectEntityLinkOut] = Field(default_factory=list)
+    link_types: list[str] = Field(default_factory=list)
+
+
+class EntityGraphNodeOut(BaseModel):
+    id: UUID
+    name: str
+    entity_type: str | None = None
+    is_archived: bool = False
+
+
+class EntityGraphEdgeOut(BaseModel):
+    id: UUID
+    source_entity_id: UUID
+    target_entity_id: UUID
+    link_type: str | None = None
+
+
+class EntityLinksGraphOut(BaseModel):
+    nodes: list[EntityGraphNodeOut] = Field(default_factory=list)
+    edges: list[EntityGraphEdgeOut] = Field(default_factory=list)
+    truncated: bool = False
+
+
+class DependencyTemplateCreateRequest(BaseModel):
+    upstream_department_id: UUID
+    upstream_task_name: str | None = None
+    downstream_department_id: UUID
+    downstream_task_name: str | None = None
+    threshold: Literal["APP", "PUBLISHED", "ANY_STATUS"] = "APP"
+    enabled: bool = True
+
+
+class DependencyTemplateUpdateRequest(BaseModel):
+    upstream_department_id: UUID | None = None
+    upstream_task_name: str | None = None
+    downstream_department_id: UUID | None = None
+    downstream_task_name: str | None = None
+    threshold: Literal["APP", "PUBLISHED", "ANY_STATUS"] | None = None
+    enabled: bool | None = None
+
+
+class DependencyTemplateOut(BaseModel):
+    id: UUID
+    upstream_department_id: UUID
+    upstream_department_name: str = ""
+    upstream_task_name: str | None = None
+    downstream_department_id: UUID
+    downstream_department_name: str = ""
+    downstream_task_name: str | None = None
+    threshold: Literal["APP", "PUBLISHED", "ANY_STATUS"]
+    enabled: bool
+
+
+class SuggestDependenciesRequest(BaseModel):
+    link_ids: list[UUID] | None = None
+    depth: int | None = Field(default=None, ge=1, le=2)
+
+
+class SuggestedDependencyOut(BaseModel):
+    upstream_task_id: UUID
+    upstream_task_code: str
+    upstream_entity_name: str
+    upstream_department: str
+    downstream_task_id: UUID
+    downstream_task_code: str
+    downstream_entity_name: str
+    downstream_department: str
+    threshold: str
+    already_exists: bool
+    would_cycle: bool
+    template_id: UUID
+
+
+class ApplyDependencyPairIn(BaseModel):
+    downstream_task_id: UUID
+    upstream_task_id: UUID
+    threshold: Literal["APP", "PUBLISHED", "ANY_STATUS"] = "APP"
+
+
+class ApplyDependenciesRequest(BaseModel):
+    pairs: list[ApplyDependencyPairIn] = Field(default_factory=list)
+
+
+class SavedViewCreateRequest(BaseModel):
+    view_kind: str
+    name: str
+    config_json: dict[str, Any] = Field(default_factory=dict)
+
+
+class SavedViewOut(BaseModel):
+    id: UUID
+    view_kind: str
+    name: str
+    config_json: dict[str, Any]
+    updated_at: datetime

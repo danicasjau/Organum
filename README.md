@@ -24,6 +24,8 @@ Double-click `launch.bat` at the repository root (or run `launch.bat` in Command
 cd backend
 uv sync --python 3.12 --all-extras
 uv run python scripts/make_demo_data.py
+# Optional 300-entity / 3,000-task scale dataset:
+# uv run python scripts/make_demo_tasks.py --output ../data/demo_scale_project
 uv run python -m app.cli export-openapi --out openapi.json
 
 # 2. Run backend API (http://127.0.0.1:8000, loopback required for folder browser & launching)
@@ -38,7 +40,7 @@ npm run generate:api
 npm run dev
 ```
 
-Visit `http://localhost:5173/login` (redirects automatically from `/entities`), sign in to a project, or visit `http://localhost:5173/gallery` for the Widget Gallery. See [docs/SECURITY.md](docs/SECURITY.md) and [docs/PERMISSIONS.md](docs/PERMISSIONS.md) for authentication, Argon2id/CSRF/Origin security, role permissions, capacity rules, and client isolation.
+Visit `http://localhost:5173/login` (redirects automatically from `/entities`), sign in to a project, or visit `http://localhost:5173/gallery` for the Widget Gallery. See [docs/SECURITY.md](docs/SECURITY.md), [docs/PERMISSIONS.md](docs/PERMISSIONS.md), [docs/WORKFLOW.md](docs/WORKFLOW.md), and [docs/ENTITY_LINKS.md](docs/ENTITY_LINKS.md) for authentication, RBAC/capacities, task state machine/workload math, and entity links.
 
 #### Seeded Demo Accounts (Project: `ORGANUM Demo`)
 - **Initial Admin (first-login forced password change):** `admin` / initial password `magicadmin**` (or `ORGANUM_INITIAL_ADMIN_PASSWORD`)

@@ -90,9 +90,7 @@ def _parse_xml_to_otio(path: Path, fps: float = 24.0) -> otio.schema.Timeline:
             tag = elem.tag.split("}")[-1].lower()
             if tag in ("clipitem", "asset-clip", "clip"):
                 name = (
-                    elem.get("name")
-                    or (elem.findtext("name") or "").strip()
-                    or f"Clip_{idx + 1}"
+                    elem.get("name") or (elem.findtext("name") or "").strip() or f"Clip_{idx + 1}"
                 )
                 dur_txt = elem.get("duration") or elem.findtext("duration") or "24"
                 dur_frames = 24

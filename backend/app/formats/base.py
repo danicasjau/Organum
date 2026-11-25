@@ -105,4 +105,3 @@ class FormatRegistry:
         if self._fallback is None:
             raise RuntimeError("No fallback format handler registered")
         return self._fallback
-

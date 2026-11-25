@@ -166,4 +166,3 @@ class PsdHandler(FormatHandler):
             "annotations_2d": True,
             "layers": True,
         }
-

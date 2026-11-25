@@ -113,4 +113,3 @@ async def delete_annotation(db: AsyncSession, file_id: UUID, annotation_id: UUID
         raise NotFoundError("annotation", str(annotation_id))
     await db.delete(ann)
     await db.commit()
-

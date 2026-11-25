@@ -225,13 +225,7 @@ async def test_publish_concurrency_master_star_scenefiles_and_sequence_override(
     prod_after_v1 = (await client.get(f"{base}/tasks/{task_id}/product")).json()
     assert prod_after_v1["master_version_id"] == v1["id"]
     master_json = (
-        proj_root
-        / "01_Production"
-        / "Shot010"
-        / "Lighting"
-        / "beauty"
-        / "products"
-        / "master.json"
+        proj_root / "01_Production" / "Shot010" / "Lighting" / "beauty" / "products" / "master.json"
     )
     assert json.loads(master_json.read_text(encoding="utf-8"))["version"] == "v0001"
 
@@ -329,14 +323,7 @@ async def test_launcher_security_traversal_argv_and_non_loopback_disabled(
         settings.bind_host = old_host
 
     # 5. Valid loopback launch using configured harmless executable (python -V style)
-    sample_file = (
-        prod_root
-        / "hero_robot"
-        / "Modeling"
-        / "main"
-        / "scenefiles"
-        / "test_arg.py"
-    )
+    sample_file = prod_root / "hero_robot" / "Modeling" / "main" / "scenefiles" / "test_arg.py"
     sample_file.parent.mkdir(parents=True, exist_ok=True)
     sample_file.write_text("print('ok')\n", encoding="utf-8")
     lid = str(uuid.uuid4())

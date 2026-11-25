@@ -191,4 +191,3 @@ async def get_or_create_artifact(
         raise
     await db.refresh(artifact)
     return artifact
-

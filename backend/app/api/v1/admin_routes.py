@@ -528,6 +528,48 @@ async def put_task_shares(
         db.add(TaskShare(task_id=task_id, company_id=cid, shared_by=auth.user.id, shared_at=now))
         seen.add(cid)
 
+    if payload.version_ids is not None:
+        prod = (
+            await db.execute(select(Product).where(Product.task_id == task_id))
+        ).scalar_one_or_none()
+        if prod is not None:
+            valid_vers = {
+                v.id
+                for v in (
+                    await db.execute(
+                        select(ProductVersion).where(ProductVersion.product_id == prod.id)
+                    )
+                )
+                .scalars()
+                .all()
+            }
+            for vid in payload.version_ids:
+                if vid not in valid_vers:
+                    raise NotFoundError("product_version", str(vid))
+                await db.execute(delete(VersionShare).where(VersionShare.version_id == vid))
+                for cid in seen:
+                    db.add(
+                        VersionShare(
+                            version_id=vid,
+                            company_id=cid,
+                            shared_by=auth.user.id,
+                            shared_at=now,
+                        )
+                    )
+
+    if payload.comment and payload.comment.strip():
+        from app.models.tasks import TaskComment
+
+        db.add(
+            TaskComment(
+                task_id=task_id,
+                author_id=auth.user.id,
+                kind="note",
+                visibility="client",
+                body=payload.comment.strip(),
+            )
+        )
+
     await write_audit(
         db,
         user_id=auth.user.id,

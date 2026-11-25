@@ -107,4 +107,3 @@ class InProcessRunner(JobRunner):
         if self._tasks:
             await asyncio.gather(*self._tasks.values(), return_exceptions=True)
         self._pool.shutdown(wait=False, cancel_futures=True)
-

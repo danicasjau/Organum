@@ -142,9 +142,7 @@ async def set_entity_tags(db: AsyncSession, entity_id: UUID, tag_names: list[str
 
     await db.execute(delete(EntityTag).where(EntityTag.entity_id == entity_id))
     for name in cleaned:
-        existing = (
-            await db.execute(select(Tag).where(Tag.name == name))
-        ).scalar_one_or_none()
+        existing = (await db.execute(select(Tag).where(Tag.name == name))).scalar_one_or_none()
         if existing is None:
             existing = Tag(name=name)
             db.add(existing)
@@ -231,18 +229,20 @@ async def create_entity_atomic(
             )
             db.add(ed)
             await db.flush()
+            from app.services.task_service import create_task_unified
+
             for td in sorted(dept.default_tasks, key=lambda x: x.sort_order):
-                task = Task(
-                    entity_department_id=ed.id,
-                    entity_id=entity.id,
-                    department_id=dept.id,
+                await create_task_unified(
+                    db,
+                    ctx,
+                    entity=entity,
+                    ed=ed,
+                    dept=dept,
                     name=td.name,
-                    folder_name=td.folder_name,
-                    sort_order=td.sort_order,
+                    default_task=td,
+                    create_dirs=False,
+                    commit=False,
                 )
-                db.add(task)
-                await db.flush()
-                db.add(Product(task_id=task.id, name=f"{dept.folder_name}/{td.folder_name}"))
 
         if tags:
             await set_entity_tags(db, entity.id, tags)
@@ -272,9 +272,7 @@ async def _rewrite_entity_rel_prefixes(
     prod_ids = [row[0] for row in p_res.all()]
     if not prod_ids:
         return
-    v_res = await db.execute(
-        select(ProductVersion).where(ProductVersion.product_id.in_(prod_ids))
-    )
+    v_res = await db.execute(select(ProductVersion).where(ProductVersion.product_id.in_(prod_ids)))
     versions = v_res.scalars().all()
     ver_ids = [v.id for v in versions]
     old_slash = f"{old_prefix}/"
@@ -336,10 +334,13 @@ async def update_entity(
 
     if update_type:
         entity.entity_type = entity_type.strip() if entity_type and entity_type.strip() else None
-    if update_description:
-        entity.description = (
-            description.strip() if description and description.strip() else None
+        ent_tasks = (
+            (await db.execute(select(Task).where(Task.entity_id == entity.id))).scalars().all()
         )
+        for t in ent_tasks:
+            t.parent_entity_type = entity.entity_type
+    if update_description:
+        entity.description = description.strip() if description and description.strip() else None
 
     await db.commit()
     return entity
@@ -460,18 +461,20 @@ async def attach_department_to_entity(
     ed = EntityDepartment(entity_id=entity.id, department_id=dept.id, sort_order=dept.sort_order)
     db.add(ed)
     await db.flush()
+    from app.services.task_service import create_task_unified
+
     for td in sorted(dept.default_tasks, key=lambda x: x.sort_order):
-        t = Task(
-            entity_department_id=ed.id,
-            entity_id=entity.id,
-            department_id=dept.id,
+        await create_task_unified(
+            db,
+            ctx,
+            entity=entity,
+            ed=ed,
+            dept=dept,
             name=td.name,
-            folder_name=td.folder_name,
-            sort_order=td.sort_order,
+            default_task=td,
+            create_dirs=False,
+            commit=False,
         )
-        db.add(t)
-        await db.flush()
-        db.add(Product(task_id=t.id, name=f"{dept.folder_name}/{td.folder_name}"))
     await db.commit()
     return ed
 
@@ -500,51 +503,18 @@ async def create_task_for_ed(
     if ed is None:
         raise NotFoundError("entity_department", str(ed_id))
 
-    folder_name = sanitize_folder_name(name)
-    dup = (
-        await db.execute(
-            select(Task).where(
-                Task.entity_department_id == ed.id,
-                Task.folder_name == folder_name,
-            )
-        )
-    ).scalar_one_or_none()
-    if dup is not None:
-        raise ConflictError(f"Task '{folder_name}' already exists")
+    from app.services.task_service import create_task_unified
 
-    ent_dir = resolve_production_rel(ctx.production_dir, ed.entity.rel_path)
-    dept_dir = ent_dir / ed.department.folder_name
-    task_dir = dept_dir / folder_name
-    if await asyncio.to_thread(check_case_insensitive_collision, dept_dir, folder_name):
-        raise ConflictError(f"Task folder '{folder_name}' already exists on disk")
-
-    def _mk() -> None:
-        (task_dir / "products").mkdir(parents=True, exist_ok=True)
-        (task_dir / "scenefiles").mkdir(parents=True, exist_ok=True)
-
-    await asyncio.to_thread(_mk)
-    max_order = max(
-        [
-            t.sort_order
-            for t in (
-                await db.execute(select(Task).where(Task.entity_department_id == ed.id))
-            ).scalars()
-        ],
-        default=-1,
+    return await create_task_unified(
+        db,
+        ctx,
+        entity=ed.entity,
+        ed=ed,
+        dept=ed.department,
+        name=name,
+        create_dirs=True,
+        commit=True,
     )
-    task = Task(
-        entity_department_id=ed.id,
-        entity_id=ed.entity_id,
-        department_id=ed.department_id,
-        name=folder_name,
-        folder_name=folder_name,
-        sort_order=max_order + 1,
-    )
-    db.add(task)
-    await db.flush()
-    db.add(Product(task_id=task.id, name=f"{ed.department.folder_name}/{folder_name}"))
-    await db.commit()
-    return task
 
 
 async def rename_task(
@@ -572,9 +542,7 @@ async def rename_task(
     old_dir = dept_dir / task.folder_name
     new_dir = dept_dir / clean
     if new_dir.resolve() != old_dir.resolve():
-        if await asyncio.to_thread(
-            check_case_insensitive_collision, dept_dir, clean, old_dir.name
-        ):
+        if await asyncio.to_thread(check_case_insensitive_collision, dept_dir, clean, old_dir.name):
             raise ConflictError(f"Task '{clean}' already exists")
         if old_dir.exists():
             await asyncio.to_thread(shutil.move, str(old_dir), str(new_dir))
@@ -638,4 +606,3 @@ async def replace_entity_data(
         rows.append(row)
     await db.commit()
     return rows
-

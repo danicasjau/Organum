@@ -61,5 +61,3 @@ async def get_colorspace_lut(
         cache_key=res.cache_key,
         values=res.values,
     )
-
-

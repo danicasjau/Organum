@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Response
@@ -27,6 +27,22 @@ from app.services.permissions import AuthContext, visible_task_ids
 router = APIRouter(prefix="/departments", tags=["departments"])
 
 
+def _default_task_out(t: DepartmentDefaultTask) -> DefaultTaskOut:
+    return DefaultTaskOut(
+        id=t.id,
+        department_id=t.department_id,
+        name=t.name,
+        folder_name=t.folder_name,
+        sort_order=t.sort_order,
+        needs_lead_review=t.needs_lead_review,
+        needs_sup_review=t.needs_sup_review,
+        needs_client_review=t.needs_client_review,
+        default_priority=cast(Literal["normal", "high", "stopper"], t.default_priority),
+        default_bid_hours=t.default_bid_hours,
+        default_complexity=t.default_complexity,
+    )
+
+
 def _to_out(d: Department) -> DepartmentOut:
     return DepartmentOut(
         id=d.id,
@@ -37,14 +53,7 @@ def _to_out(d: Department) -> DepartmentOut:
         sort_order=d.sort_order,
         is_active=d.is_active,
         default_tasks=[
-            DefaultTaskOut(
-                id=t.id,
-                department_id=t.department_id,
-                name=t.name,
-                folder_name=t.folder_name,
-                sort_order=t.sort_order,
-            )
-            for t in sorted(d.default_tasks, key=lambda item: item.sort_order)
+            _default_task_out(t) for t in sorted(d.default_tasks, key=lambda item: item.sort_order)
         ],
     )
 
@@ -225,17 +234,17 @@ async def add_default_task(
         name=display,
         folder_name=folder,
         sort_order=max((s.sort_order for s in siblings), default=-1) + 1,
+        needs_lead_review=payload.needs_lead_review,
+        needs_sup_review=payload.needs_sup_review,
+        needs_client_review=payload.needs_client_review,
+        default_priority=payload.default_priority,
+        default_bid_hours=payload.default_bid_hours,
+        default_complexity=payload.default_complexity,
     )
     db.add(task)
     await db.commit()
     await db.refresh(task)
-    return DefaultTaskOut(
-        id=task.id,
-        department_id=task.department_id,
-        name=task.name,
-        folder_name=task.folder_name,
-        sort_order=task.sort_order,
-    )
+    return _default_task_out(task)
 
 
 @router.patch("/default-tasks/{task_id}", response_model=DefaultTaskOut)
@@ -254,15 +263,21 @@ async def update_default_task(
         task.folder_name = sanitize_folder_name(display)
     if payload.sort_order is not None:
         task.sort_order = payload.sort_order
+    if payload.needs_lead_review is not None:
+        task.needs_lead_review = payload.needs_lead_review
+    if payload.needs_sup_review is not None:
+        task.needs_sup_review = payload.needs_sup_review
+    if payload.needs_client_review is not None:
+        task.needs_client_review = payload.needs_client_review
+    if payload.default_priority is not None:
+        task.default_priority = payload.default_priority
+    if payload.default_bid_hours is not None:
+        task.default_bid_hours = payload.default_bid_hours
+    if payload.default_complexity is not None:
+        task.default_complexity = payload.default_complexity
     await db.commit()
     await db.refresh(task)
-    return DefaultTaskOut(
-        id=task.id,
-        department_id=task.department_id,
-        name=task.name,
-        folder_name=task.folder_name,
-        sort_order=task.sort_order,
-    )
+    return _default_task_out(task)
 
 
 @router.delete("/default-tasks/{task_id}", status_code=204)
@@ -301,13 +316,4 @@ async def reorder_default_tasks(
             by_id[tid].sort_order = idx
     await db.commit()
     ordered = sorted(tasks, key=lambda t: (t.sort_order, t.name))
-    return [
-        DefaultTaskOut(
-            id=t.id,
-            department_id=t.department_id,
-            name=t.name,
-            folder_name=t.folder_name,
-            sort_order=t.sort_order,
-        )
-        for t in ordered
-    ]
+    return [_default_task_out(t) for t in ordered]

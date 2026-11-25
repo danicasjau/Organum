@@ -68,5 +68,3 @@ class UserProjectIndex(AppBase):
         server_default=func.now(),
         nullable=False,
     )
-
-

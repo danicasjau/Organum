@@ -92,9 +92,7 @@ SHOT_CONTEXT_KEYWORDS: frozenset[str] = frozenset(
     }
 )
 
-_NUMERIC_SEQ_RE = re.compile(
-    r"^(?P<stem>.+?)(?P<sep>[._-])(?P<frame>\d{3,8})(?P<ext>\.[^.]+)$"
-)
+_NUMERIC_SEQ_RE = re.compile(r"^(?P<stem>.+?)(?P<sep>[._-])(?P<frame>\d{3,8})(?P<ext>\.[^.]+)$")
 _MARI_UDIM_RE = re.compile(
     r"^(?P<stem>.+?)(?P<sep>[._-])u(?P<u>\d+)_v(?P<v>\d+)(?P<ext>\.[^.]+)$",
     re.IGNORECASE,
@@ -413,4 +411,3 @@ def resolve_udim_tile_path(
         if tile.udim == udim:
             return tile.disk_path
     return None
-

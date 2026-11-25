@@ -9,6 +9,7 @@ import struct
 import subprocess
 import uuid
 import wave
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -20,6 +21,7 @@ import tifffile
 import trimesh
 from PIL import Image, ImageDraw
 from pxr import Gf, Sdf, Usd, UsdGeom, UsdShade
+from sqlalchemy import select
 
 from app.core.project_registry import DEFAULT_STARTER_DEPARTMENTS, ProjectRegistry
 from app.core.settings import get_settings
@@ -27,6 +29,15 @@ from app.db.session import create_engine_and_sessionmaker
 from app.formats.registry import build_default_registry
 from app.models.app_db import AppBase
 from app.models.project_db import Department, Entity, EntityDepartment, Product, Task
+from app.models.tasks import (
+    DependencyTemplate,
+    EntityLink,
+    TaskComment,
+    TaskDependency,
+    TaskEvent,
+    TaskReview,
+    TimeLog,
+)
 from app.models.user import (
     Company,
     CompanyDepartment,
@@ -590,11 +601,28 @@ async def _build_demo_project() -> None:
         )
         _write_obj_and_mtl(drone / "Modeling" / "main" / "products" / "v0001")
 
+        # Linked prop (props/glasses) and shot (shots/sh010) for CR03 Phase 7B links & workflow
+        glasses = prod_root / "props" / "glasses"
+        (glasses / "Modeling" / "main" / "products" / "v0001").mkdir(parents=True, exist_ok=True)
+        (glasses / "Modeling" / "main" / "scenefiles").mkdir(parents=True, exist_ok=True)
+        glasses_id = uuid.uuid4()
+        (glasses / ".entity.json").write_text(
+            json.dumps({"uuid": str(glasses_id), "schema_version": 2}, indent=2),
+            encoding="utf-8",
+        )
+        _write_obj_and_mtl(glasses / "Modeling" / "main" / "products" / "v0001")
+
+        sh010 = prod_root / "shots" / "sh010"
+        for d_name, t_name in (("Rigging", "main"), ("Lookdev", "main"), ("Lighting", "main")):
+            (sh010 / d_name / t_name / "products").mkdir(parents=True, exist_ok=True)
+            (sh010 / d_name / t_name / "scenefiles").mkdir(parents=True, exist_ok=True)
+        sh010_id = uuid.uuid4()
+        (sh010 / ".entity.json").write_text(
+            json.dumps({"uuid": str(sh010_id), "schema_version": 2}, indent=2),
+            encoding="utf-8",
+        )
+
         # Reconcile demo project into project.db and seed entity metadata/tags
-        from datetime import UTC, datetime
-
-        from sqlalchemy import select
-
         async with app_session_factory() as app_db:
             ctx, rep = await proj_registry.open_project(app_db, project_root)
             async with ctx.session_factory() as proj_db:
@@ -624,6 +652,24 @@ async def _build_demo_project() -> None:
                         drone_ent.id,
                         [("scale_cm", "float", "62.5")],
                     )
+                glasses_ent = await proj_db.get(Entity, glasses_id)
+                if glasses_ent is not None:
+                    glasses_ent.entity_type = "Prop"
+                    glasses_ent.description = "Optical visor accessory linked to hero_robot."
+                    await set_entity_tags(proj_db, glasses_ent.id, ["prop", "accessory"])
+                sh010_ent = await proj_db.get(Entity, sh010_id)
+                if sh010_ent is not None:
+                    sh010_ent.entity_type = "Shot"
+                    sh010_ent.description = "Sequence opening shot featuring hero_robot."
+                    await set_entity_tags(proj_db, sh010_ent.id, ["shot", "seq010"])
+                await proj_db.flush()
+                # Keep Task.parent_entity_type in sync after setting entity_type
+                all_ent_map = {
+                    e.id: e.entity_type
+                    for e in (await proj_db.execute(select(Entity))).scalars().all()
+                }
+                for t_sync in (await proj_db.execute(select(Task))).scalars().all():
+                    t_sync.parent_entity_type = all_ent_map.get(t_sync.entity_id)
 
                 # Seed companies, departments, and demo accounts for every role (CR03 7A)
                 depts_by_name = {
@@ -714,8 +760,47 @@ async def _build_demo_project() -> None:
                     )
                 ).all()
                 now = datetime.now(UTC)
+                today_d = now.date()
+                sh010_tasks: dict[str, Task] = {}
+                hero_mod_task: Task | None = None
+                hero_light_task: Task | None = None
+                glasses_mod_task: Task | None = None
+
                 for task_row, dept_name, prod_row in tasks_rows:
                     if dept_name == "Modeling" and task_row.name == "main":
+                        task_row.bid_hours = 24.0
+                        task_row.ideal_start_date = today_d - timedelta(days=2)
+                        task_row.ideal_finish_date = today_d + timedelta(days=3)
+                        if task_row.entity_id == glasses_id:
+                            glasses_mod_task = task_row
+                            task_row.status = "APP"
+                            task_row.approved_version_id = task_row.latest_version_id
+                        elif hero_ent is not None and task_row.entity_id == hero_ent.id:
+                            hero_mod_task = task_row
+                            task_row.status = "P_LEAD"
+                            task_row.needs_sup_review = True
+                            task_row.actual_start_date = today_d - timedelta(days=2)
+                            task_row.logged_hours = 6.0
+                            proj_db.add(
+                                TimeLog(
+                                    task_id=task_row.id,
+                                    user_id=seeded_users["art_sam"].id,
+                                    work_date=today_d - timedelta(days=1),
+                                    hours=6.0,
+                                    note="Base chassis bevels and clean topology pass.",
+                                )
+                            )
+                            proj_db.add(
+                                TaskReview(
+                                    task_id=task_row.id,
+                                    round_no=1,
+                                    version_id=task_row.latest_version_id,
+                                    stage="lead",
+                                    decision="pending",
+                                    reviewer_id=seeded_users["art_sam"].id,
+                                    acted_as="capacity:artist",
+                                )
+                            )
                         proj_db.add(
                             TaskAssignment(
                                 task_id=task_row.id,
@@ -738,6 +823,13 @@ async def _build_demo_project() -> None:
                             )
                         )
                     if dept_name == "Lighting" and task_row.name == "beauty":
+                        hero_light_task = task_row
+                        task_row.needs_client_review = True
+                        task_row.status = "P_CLIENT"
+                        task_row.priority = "high"
+                        task_row.bid_hours = 16.0
+                        task_row.ideal_start_date = today_d - timedelta(days=1)
+                        task_row.ideal_finish_date = today_d + timedelta(days=2)
                         # Director holds explicit supervisor capacity on Lighting/beauty
                         proj_db.add(
                             TaskAssignment(
@@ -764,6 +856,42 @@ async def _build_demo_project() -> None:
                                     shared_at=now,
                                 )
                             )
+                            proj_db.add(
+                                TaskReview(
+                                    task_id=task_row.id,
+                                    round_no=1,
+                                    version_id=prod_row.master_version_id,
+                                    stage="client",
+                                    decision="pending",
+                                    reviewer_id=seeded_users["dir_alex"].id,
+                                    acted_as="role:director",
+                                )
+                            )
+                        proj_db.add(
+                            TaskComment(
+                                task_id=task_row.id,
+                                author_id=seeded_users["sup_elena"].id,
+                                kind="note",
+                                visibility="internal",
+                                body="Internal: key light intensity bumped +0.5 EV.",
+                            )
+                        )
+                        proj_db.add(
+                            TaskComment(
+                                task_id=task_row.id,
+                                author_id=seeded_users["prod_maya"].id,
+                                kind="note",
+                                visibility="client",
+                                body="Client review ready for beauty v0001 look check.",
+                            )
+                        )
+                    if task_row.entity_id == sh010_id:
+                        sh010_tasks[dept_name] = task_row
+                        task_row.bid_hours = 16.0
+                        task_row.ideal_start_date = today_d + timedelta(days=1)
+                        task_row.ideal_finish_date = today_d + timedelta(days=5)
+                        if dept_name == "Lighting":
+                            task_row.status = "WTG"
                     if dept_name == "FX" and task_row.name == "audio":
                         proj_db.add(
                             TaskAssignment(
@@ -772,6 +900,73 @@ async def _build_demo_project() -> None:
                                 assignment_role="artist",
                             )
                         )
+
+                # Seed entity links (glasses -> hero_robot -> sh010) and dependency templates
+                if hero_ent is not None and glasses_ent is not None and sh010_ent is not None:
+                    proj_db.add_all(
+                        [
+                            EntityLink(
+                                source_entity_id=glasses_ent.id,
+                                target_entity_id=hero_ent.id,
+                                link_type="accessory",
+                                created_by=seeded_users["prod_maya"].id,
+                            ),
+                            EntityLink(
+                                source_entity_id=hero_ent.id,
+                                target_entity_id=sh010_ent.id,
+                                link_type="cast",
+                                created_by=seeded_users["prod_maya"].id,
+                            ),
+                        ]
+                    )
+
+                for up_d, dn_d, thresh in (
+                    ("Modeling", "Rigging", "APP"),
+                    ("Rigging", "Lighting", "APP"),
+                    ("Lookdev", "Lighting", "PUBLISHED"),
+                ):
+                    if up_d in depts_by_name and dn_d in depts_by_name:
+                        proj_db.add(
+                            DependencyTemplate(
+                                upstream_department_id=depts_by_name[up_d].id,
+                                downstream_department_id=depts_by_name[dn_d].id,
+                                threshold=thresh,
+                                enabled=True,
+                            )
+                        )
+
+                if "Lighting" in sh010_tasks and "Rigging" in sh010_tasks:
+                    proj_db.add(
+                        TaskDependency(
+                            task_id=sh010_tasks["Lighting"].id,
+                            upstream_task_id=sh010_tasks["Rigging"].id,
+                            threshold="APP",
+                            from_entity_link=False,
+                            created_by=seeded_users["sup_elena"].id,
+                        )
+                    )
+                if hero_light_task is not None and hero_mod_task is not None:
+                    proj_db.add(
+                        TaskDependency(
+                            task_id=hero_light_task.id,
+                            upstream_task_id=hero_mod_task.id,
+                            threshold="PUBLISHED",
+                            from_entity_link=False,
+                            created_by=seeded_users["sup_elena"].id,
+                        )
+                    )
+                if glasses_mod_task is not None:
+                    proj_db.add(
+                        TaskEvent(
+                            task_id=glasses_mod_task.id,
+                            user_id=seeded_users["qa_admin"].id,
+                            acted_as="role:admin",
+                            source="system",
+                            field="status",
+                            old_value="RDY",
+                            new_value="APP",
+                        )
+                    )
 
                 await proj_db.commit()
 

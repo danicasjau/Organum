@@ -27,9 +27,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     cfg = settings or get_settings()
     configure_logging()
 
-    app_engine, app_session_factory = create_engine_and_sessionmaker(
-        cfg.app_db_url, echo=cfg.debug
-    )
+    app_engine, app_session_factory = create_engine_and_sessionmaker(cfg.app_db_url, echo=cfg.debug)
     job_runner = InProcessRunner()
     format_registry = build_default_registry()
     project_registry = ProjectRegistry(cfg, format_registry)
