@@ -20,6 +20,7 @@ from app.models.project_db import (
 from app.models.tasks import (
     DependencyTemplate,
     EntityLink,
+    Rule,
     SavedView,
     TaskComment,
     TaskDependency,
@@ -69,6 +70,7 @@ __all__ = [
     "ProjectMeta",
     "Role",
     "RolePermission",
+    "Rule",
     "SavedView",
     "Tag",
     "Task",

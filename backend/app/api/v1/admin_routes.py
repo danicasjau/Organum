@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Annotated, Literal, cast
+from typing import Annotated, Any, Literal, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request, Response
@@ -34,6 +34,11 @@ from app.schemas.api import (
     AuditLogOut,
     CapacityPermissionsOut,
     CapacityPermissionsPutRequest,
+    DbColumnOut,
+    DbQueryRequest,
+    DbQueryResultOut,
+    DbTableRowsOut,
+    DbTableSummaryOut,
     ProjectSettingsOut,
     ProjectSettingsPatchRequest,
     RoleCreateRequest,
@@ -46,6 +51,7 @@ from app.schemas.api import (
     VersionSharesPutRequest,
 )
 from app.services.auth_service import write_audit
+from app.services.db_viewer import browse_db_table, execute_readonly_sql, list_db_tables
 from app.services.permissions import ALL_PERMISSION_KEYS, VALID_CAPACITIES, AuthContext, assert_can
 
 router = APIRouter(tags=["admin"])
@@ -637,3 +643,118 @@ async def put_version_shares(
     )
     await db.commit()
     return sorted(seen, key=str)
+
+
+@router.get("/admin/db/tables", response_model=list[DbTableSummaryOut])
+async def admin_db_list_tables(
+    request: Request,
+    auth: Annotated[AuthContext, Depends(require("admin.db"))],
+    ctx: Annotated[ProjectContext, Depends(get_project_context)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> list[DbTableSummaryOut]:
+    if auth.role.name != "admin":
+        raise AppError("forbidden", "Database viewer is restricted to administrators", 403)
+    db_path = ctx.pipeline_dir / "project.db"
+    raw = await list_db_tables(db_path)
+    await write_audit(
+        db,
+        user_id=auth.user.id,
+        action="admin.db.tables",
+        target_type="database",
+        target_id=ctx.uuid,
+        ip=client_ip_from_request(request),
+        detail={"table_count": len(raw)},
+    )
+    await db.commit()
+    return [
+        DbTableSummaryOut(
+            name=str(t["name"]),
+            row_count=int(t["row_count"]),
+            columns=[DbColumnOut(**cast(dict[str, Any], c)) for c in t["columns"]],
+        )
+        for t in raw
+    ]
+
+
+@router.get("/admin/db/tables/{table_name}", response_model=DbTableRowsOut)
+async def admin_db_browse_table(
+    table_name: str,
+    request: Request,
+    auth: Annotated[AuthContext, Depends(require("admin.db"))],
+    ctx: Annotated[ProjectContext, Depends(get_project_context)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=50, ge=1, le=200),
+    sort: str | None = Query(default=None),
+    sort_dir: Literal["asc", "desc"] = Query(default="asc"),
+    filter_text: str | None = Query(default=None, alias="filter"),
+) -> DbTableRowsOut:
+    if auth.role.name != "admin":
+        raise AppError("forbidden", "Database viewer is restricted to administrators", 403)
+    db_path = ctx.pipeline_dir / "project.db"
+    res = await browse_db_table(
+        db_path,
+        table_name,
+        page=page,
+        page_size=page_size,
+        sort=sort,
+        sort_dir=sort_dir,
+        filter_text=filter_text,
+    )
+    await write_audit(
+        db,
+        user_id=auth.user.id,
+        action="admin.db.table_view",
+        target_type="db_table",
+        target_id=table_name,
+        ip=client_ip_from_request(request),
+        detail={"page": page, "page_size": page_size, "filter": filter_text},
+    )
+    await db.commit()
+    return DbTableRowsOut(
+        table=str(res["table"]),
+        columns=[DbColumnOut(**cast(dict[str, Any], c)) for c in res["columns"]],
+        rows=cast(list[list[Any]], res["rows"]),
+        total=int(res["total"]),
+        page=int(res["page"]),
+        page_size=int(res["page_size"]),
+    )
+
+
+@router.post("/admin/db/query", response_model=DbQueryResultOut)
+async def admin_db_query(
+    payload: DbQueryRequest,
+    request: Request,
+    auth: Annotated[AuthContext, Depends(require("admin.db"))],
+    ctx: Annotated[ProjectContext, Depends(get_project_context)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> DbQueryResultOut:
+    if auth.role.name != "admin":
+        raise AppError("forbidden", "SQL console is restricted to administrators", 403)
+    meta = (
+        await db.execute(select(ProjectMeta).where(ProjectMeta.uuid == ctx.uuid))
+    ).scalar_one_or_none()
+    if meta is None or not meta.admin_sql_console_enabled:
+        raise AppError(
+            "forbidden",
+            "Read-only SQL console is disabled in Project Settings",
+            status_code=403,
+        )
+    db_path = ctx.pipeline_dir / "project.db"
+    res = await execute_readonly_sql(db_path, payload.sql, max_rows=1000, timeout_sec=5.0)
+    await write_audit(
+        db,
+        user_id=auth.user.id,
+        action="admin.db.query",
+        target_type="database",
+        target_id=ctx.uuid,
+        ip=client_ip_from_request(request),
+        detail={
+            "sql": payload.sql[:500],
+            "row_count": res["row_count"],
+            "truncated": res["truncated"],
+            "elapsed_ms": res["elapsed_ms"],
+        },
+    )
+    await db.commit()
+    return DbQueryResultOut(**res)

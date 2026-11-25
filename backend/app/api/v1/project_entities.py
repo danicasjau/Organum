@@ -82,6 +82,7 @@ from app.services.permissions import (
     visible_task_ids,
 )
 from app.services.reconcile_service import _discover_production_tree, reconcile_project
+from app.services.rules_engine import run_trigger_rules
 from app.services.streaming import build_ranged_file_response
 from app.storage.base import StorageBackend
 
@@ -575,6 +576,11 @@ async def create_entity(
         tags=payload.tags,
         department_ids=payload.department_ids,
     )
+    applied = await run_trigger_rules(
+        db, "entity_created", entity_ids=[ent.id], actor_user_id=_auth.user.id
+    )
+    if applied > 0:
+        await db.commit()
     loaded = await _load_entity_full(db, ent.id)
     return await _entity_to_out(db, loaded)
 
@@ -822,6 +828,11 @@ async def create_task_endpoint(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> TaskOut:
     task = await create_task_for_ed(db, ctx, ed_id, payload.name)
+    applied = await run_trigger_rules(
+        db, "task_created", task_ids=[task.id], actor_user_id=_auth.user.id
+    )
+    if applied > 0:
+        await db.commit()
     t_res = await db.execute(
         select(Task)
         .where(Task.id == task.id)

@@ -36,6 +36,7 @@ def test_alembic_upgrade_downgrade_sqlite(tmp_path: Path) -> None:
         "task_events",
         "entity_links",
         "dependency_templates",
+        "rules",
         "saved_views",
         "task_shares",
         "version_shares",
@@ -64,6 +65,7 @@ def test_alembic_upgrade_downgrade_sqlite(tmp_path: Path) -> None:
     tables_after = set(inspect(sync_engine).get_table_names())
     assert "files" not in tables_after
     assert "entities" not in tables_after
+    assert "rules" not in tables_after
     sync_engine.dispose()
 
     command.upgrade(cfg, "head")

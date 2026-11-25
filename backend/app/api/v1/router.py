@@ -15,6 +15,7 @@ from app.api.v1.jobs import router as jobs_router
 from app.api.v1.launch import router as launch_router
 from app.api.v1.products_api import router as products_router
 from app.api.v1.project_entities import router as project_entities_router
+from app.api.v1.rules_routes import router as rules_router
 from app.api.v1.scenefiles import router as scenefiles_router
 from app.api.v1.tasks_routes import router as tasks_router
 from app.api.v1.users_routes import router as users_router
@@ -33,6 +34,7 @@ project_router.include_router(departments_router)
 project_router.include_router(project_entities_router)
 project_router.include_router(tasks_router)
 project_router.include_router(entity_links_router)
+project_router.include_router(rules_router)
 project_router.include_router(products_router)
 project_router.include_router(scenefiles_router)
 project_router.include_router(launch_router)

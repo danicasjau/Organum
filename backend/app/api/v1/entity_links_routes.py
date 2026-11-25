@@ -38,6 +38,7 @@ from app.services.entity_links_service import (
     suggest_dependencies_for_entity,
 )
 from app.services.permissions import AuthContext
+from app.services.rules_engine import run_trigger_rules
 from app.services.task_service import get_project_policy
 
 router = APIRouter(tags=["entity_links"])
@@ -112,6 +113,14 @@ async def create_entity_link_endpoint(
         note=payload.note,
         ip=client_ip_from_request(request),
     )
+    applied = await run_trigger_rules(
+        db,
+        "link_created",
+        entity_ids=[link.source_entity_id, link.target_entity_id],
+        actor_user_id=auth.user.id,
+    )
+    if applied > 0:
+        await db.commit()
     ents = {
         e.id: e
         for e in (
@@ -144,6 +153,11 @@ async def bulk_create_entity_links_endpoint(
     if not links:
         return []
     ent_ids = {lk.source_entity_id for lk in links} | {lk.target_entity_id for lk in links}
+    applied = await run_trigger_rules(
+        db, "link_created", entity_ids=list(ent_ids), actor_user_id=auth.user.id
+    )
+    if applied > 0:
+        await db.commit()
     ents = {
         e.id: e
         for e in (await db.execute(select(Entity).where(Entity.id.in_(ent_ids)))).scalars().all()
