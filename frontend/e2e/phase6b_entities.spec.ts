@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { selectTask } from './helpers';
+import { loginAs, selectTask } from './helpers';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SCREENSHOTS_DIR = path.resolve(__dirname, '../../docs/screenshots');
@@ -18,7 +18,7 @@ test.describe('Phase 6B Entities Browser, Scenefiles, Publishing & Entity Tab', 
       if (msg.type() === 'error') errors.push(msg.text());
     });
 
-    await page.goto('/entities');
+    await loginAs(page, 'qa_admin', 'DemoPass123!', { targetPath: '/entities' });
     await expect(page.getByRole('option', { name: /hero_robot/ })).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole('tree', { name: 'Entity departments and tasks' })).toBeVisible();
     await expect(page.getByRole('tree', { name: 'Task product versions' })).toBeVisible();

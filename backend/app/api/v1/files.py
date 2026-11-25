@@ -9,12 +9,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_app_db, get_cache_storage, get_db, get_format_registry, get_storage
 from app.core.errors import AppError, NotFoundError
+from app.core.security import get_project_auth, require_not_archived
 from app.formats.base import FormatRegistry, InspectionDocument
 from app.models.app_db import UiPref
-from app.models.project_db import FileEntry
 from app.schemas.api import FilePatchRequest, FileSummaryOut
 from app.services.artifact_service import get_or_create_artifact, resolve_sequence_frame_key
 from app.services.inspect_service import inspect_file
+from app.services.permissions import AuthContext, can, can_access_file
 from app.services.streaming import build_ranged_file_response
 from app.services.udim_service import resolve_udim_tile_path
 from app.storage.base import StorageBackend
@@ -25,17 +26,15 @@ router = APIRouter(prefix="/files", tags=["files"])
 @router.get("/{file_id}/inspect", response_model=InspectionDocument)
 async def get_file_inspection(
     file_id: UUID,
+    auth: Annotated[AuthContext, Depends(get_project_auth)],
     db: Annotated[AsyncSession, Depends(get_db)],
     app_db: Annotated[AsyncSession, Depends(get_app_db)],
     storage: Annotated[StorageBackend, Depends(get_storage)],
     registry: Annotated[FormatRegistry, Depends(get_format_registry)],
 ) -> InspectionDocument:
+    await can_access_file(db, auth, file_id)
     pref = await app_db.get(UiPref, "udim_keywords")
-    kw = (
-        [str(x) for x in pref.value_json]
-        if pref and isinstance(pref.value_json, list)
-        else None
-    )
+    kw = [str(x) for x in pref.value_json] if pref and isinstance(pref.value_json, list) else None
     return await inspect_file(db, storage, registry, file_id, udim_keywords=kw)
 
 
@@ -43,11 +42,19 @@ async def get_file_inspection(
 async def patch_file(
     file_id: UUID,
     payload: FilePatchRequest,
+    auth: Annotated[AuthContext, Depends(get_project_auth)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> FileSummaryOut:
-    entry = await db.get(FileEntry, file_id)
-    if entry is None:
-        raise NotFoundError("file", str(file_id))
+    await require_not_archived(auth)
+    if auth.role.name == "client":
+        raise AppError("forbidden", "Clients cannot modify files", status_code=403)
+    entry, task = await can_access_file(db, auth, file_id)
+    if not auth.has_any_scope("entity.manage"):
+        ok, _ = await can(db, auth, "product.publish", task)
+        if not ok:
+            raise AppError(
+                "forbidden", "Insufficient permissions to modify file metadata", status_code=403
+            )
     fields = payload.model_fields_set
     if "colorspace_override" in fields:
         entry.colorspace_override = payload.colorspace_override
@@ -81,11 +88,12 @@ async def patch_file(
 async def get_file_content(
     file_id: UUID,
     request: Request,
+    auth: Annotated[AuthContext, Depends(get_project_auth)],
     db: Annotated[AsyncSession, Depends(get_db)],
     storage: Annotated[StorageBackend, Depends(get_storage)],
 ) -> Response:
-    entry = await db.get(FileEntry, file_id)
-    if entry is None or not storage.exists(entry.relative_path):
+    entry, _ = await can_access_file(db, auth, file_id)
+    if not storage.exists(entry.relative_path):
         raise NotFoundError("file", str(file_id))
     mime, _ = mimetypes.guess_type(entry.filename)
     return build_ranged_file_response(
@@ -102,11 +110,13 @@ async def get_file_content(
 async def get_file_thumbnail(
     file_id: UUID,
     request: Request,
+    auth: Annotated[AuthContext, Depends(get_project_auth)],
     db: Annotated[AsyncSession, Depends(get_db)],
     storage: Annotated[StorageBackend, Depends(get_storage)],
     cache_storage: Annotated[StorageBackend, Depends(get_cache_storage)],
     registry: Annotated[FormatRegistry, Depends(get_format_registry)],
 ) -> Response:
+    await can_access_file(db, auth, file_id)
     art = await get_or_create_artifact(
         db, storage, cache_storage, registry, file_id, "thumbnail", {}
     )
@@ -125,12 +135,11 @@ async def get_sequence_frame(
     file_id: UUID,
     frame: int,
     request: Request,
+    auth: Annotated[AuthContext, Depends(get_project_auth)],
     db: Annotated[AsyncSession, Depends(get_db)],
     storage: Annotated[StorageBackend, Depends(get_storage)],
 ) -> Response:
-    entry = await db.get(FileEntry, file_id)
-    if entry is None:
-        raise NotFoundError("file", str(file_id))
+    entry, _ = await can_access_file(db, auth, file_id)
     if not entry.is_sequence or not entry.sequence_pattern:
         raise AppError("not_sequence", "File is not an image sequence", status_code=400)
     f_start = entry.frame_start if entry.frame_start is not None else 0
@@ -156,12 +165,11 @@ async def get_udim_tile_content(
     file_id: UUID,
     udim: int,
     request: Request,
+    auth: Annotated[AuthContext, Depends(get_project_auth)],
     db: Annotated[AsyncSession, Depends(get_db)],
     storage: Annotated[StorageBackend, Depends(get_storage)],
 ) -> Response:
-    entry = await db.get(FileEntry, file_id)
-    if entry is None:
-        raise NotFoundError("file", str(file_id))
+    entry, _ = await can_access_file(db, auth, file_id)
     tile_path = resolve_udim_tile_path(entry, storage, udim)
     if tile_path is None or not tile_path.is_file():
         raise NotFoundError("udim_tile", str(udim))

@@ -1,9 +1,13 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Query
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Query
 
 from app.color.ocio_service import bake_3d_lut, get_ocio_status
+from app.core.security import get_current_auth
 from app.schemas.api import ColorspaceInfo, ColorspaceListResponse, LutResponse
+from app.services.permissions import AuthContext
 
 router = APIRouter(prefix="/colorspaces", tags=["colorspaces"])
 
@@ -28,7 +32,9 @@ _DISPLAY_VIEWS = [
 
 
 @router.get("", response_model=ColorspaceListResponse)
-async def list_colorspaces() -> ColorspaceListResponse:
+async def list_colorspaces(
+    _auth: Annotated[AuthContext, Depends(get_current_auth)],
+) -> ColorspaceListResponse:
     status = get_ocio_status()
     return ColorspaceListResponse(
         input_spaces=_INPUT_SPACES,
@@ -40,6 +46,7 @@ async def list_colorspaces() -> ColorspaceListResponse:
 
 @router.get("/lut", response_model=LutResponse)
 async def get_colorspace_lut(
+    _auth: Annotated[AuthContext, Depends(get_current_auth)],
     src: str = Query(default="acescg"),
     dst: str = Query(default="srgb"),
     size: int = Query(default=17, ge=9, le=33),

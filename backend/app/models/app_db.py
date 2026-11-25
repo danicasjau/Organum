@@ -52,3 +52,21 @@ class UiPref(AppBase):
         nullable=False,
     )
 
+
+class UserProjectIndex(AppBase):
+    """Per-username index across known projects used for 'Projects working on'."""
+
+    __tablename__ = "user_project_index"
+
+    username: Mapped[str] = mapped_column(String(64), primary_key=True)
+    project_uuid: Mapped[str] = mapped_column(String(36), primary_key=True, index=True)
+    project_name: Mapped[str] = mapped_column(String(128), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=utc_now,
+        onupdate=utc_now,
+        server_default=func.now(),
+        nullable=False,
+    )
+
+

@@ -118,6 +118,8 @@ class DepartmentOut(BaseModel):
     id: UUID
     name: str
     folder_name: str
+    short_code: str = ""
+    color: str = "--series-1"
     sort_order: int
     is_active: bool
     default_tasks: list[DefaultTaskOut] = Field(default_factory=list)
@@ -125,10 +127,14 @@ class DepartmentOut(BaseModel):
 
 class DepartmentCreate(BaseModel):
     name: str
+    short_code: str | None = None
+    color: str | None = None
 
 
 class DepartmentUpdate(BaseModel):
     name: str | None = None
+    short_code: str | None = None
+    color: str | None = None
     is_active: bool | None = None
     sort_order: int | None = None
 
@@ -186,11 +192,25 @@ class ProductOut(BaseModel):
     versions: list[ProductVersionOut] = Field(default_factory=list)
 
 
+class TaskAssignmentOut(BaseModel):
+    user_id: UUID
+    username: str
+    full_name: str
+    avatar_file: str | None = None
+    assignment_role: Literal["artist", "lead", "supervisor"]
+    source: str = "manual"
+
+
 class TaskOut(BaseModel):
     id: UUID
     name: str
     folder_name: str
     sort_order: int
+    status: str | None = None
+    acted_as: str | None = None
+    assignments: list[TaskAssignmentOut] = Field(default_factory=list)
+    my_capacities: list[str] = Field(default_factory=list)
+    shared_company_ids: list[UUID] = Field(default_factory=list)
     product: ProductOut | None = None
 
 
@@ -361,6 +381,7 @@ class AnnotationCreate(BaseModel):
     vector_json: list[dict[str, Any]] = Field(default_factory=list)
     plane_json: dict[str, Any] | None = None
     camera_json: dict[str, Any] | None = None
+    visibility: Literal["internal", "client"] = "internal"
 
 
 class AnnotationUpdate(BaseModel):
@@ -387,6 +408,7 @@ class AnnotationOut(BaseModel):
     plane_json: dict[str, Any] | None
     camera_json: dict[str, Any] | None
     author_id: UUID | None
+    visibility: Literal["internal", "client"] = "internal"
     created_at: datetime
     updated_at: datetime
 
@@ -436,3 +458,300 @@ class ArtifactOut(BaseModel):
     size: int
     status: str
     content_url: str
+
+
+# --- CR03 Phase 7A: Auth, Users, Roles, Capacities, Companies, Shares, Client Allowlist ---
+
+
+class LoginProjectOption(BaseModel):
+    uuid: str
+    name: str
+
+
+class BootstrapInfoOut(BaseModel):
+    bootstrap_allowed: bool
+    projects: list[LoginProjectOption] = Field(default_factory=list)
+
+
+class LoginRequest(BaseModel):
+    project_uuid: str
+    username: str
+    password: str
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str | None = None
+    new_password: str
+
+
+class ProjectRefOut(BaseModel):
+    project_uuid: str
+    project_name: str
+
+
+class UserOut(BaseModel):
+    id: UUID
+    username: str
+    full_name: str
+    email: str | None = None
+    role_id: UUID
+    role_name: str
+    role_label: str
+    company_id: UUID | None = None
+    company_name: str | None = None
+    avatar_file: str | None = None
+    daily_capacity_hours: float = 8.0
+    timezone: str = "UTC"
+    is_active: bool = True
+    must_change_password: bool = False
+    last_login_at: datetime | None = None
+    department_ids: list[UUID] = Field(default_factory=list)
+    projects_working_on: list[ProjectRefOut] = Field(default_factory=list)
+    created_at: datetime
+    updated_at: datetime
+
+
+class AuthUserSummaryOut(BaseModel):
+    id: UUID
+    username: str
+    full_name: str
+    email: str | None = None
+    role_id: UUID
+    role_name: str
+    role_label: str
+    company_id: UUID | None = None
+    avatar_file: str | None = None
+    daily_capacity_hours: float
+    timezone: str
+    is_active: bool
+    must_change_password: bool
+    department_ids: list[UUID] = Field(default_factory=list)
+    projects_working_on: list[ProjectRefOut] = Field(default_factory=list)
+
+
+class AuthMeOut(BaseModel):
+    user: AuthUserSummaryOut
+    project_uuid: str
+    project_status: str
+    permissions: dict[str, str]
+    capacity_permissions: dict[str, list[str]]
+
+
+class UserCreateRequest(BaseModel):
+    username: str
+    full_name: str
+    email: str | None = None
+    password: str
+    role_id: UUID
+    company_id: UUID | None = None
+    daily_capacity_hours: float = Field(default=8.0, ge=0.0, le=24.0)
+    timezone: str = "UTC"
+    department_ids: list[UUID] = Field(default_factory=list)
+    must_change_password: bool = True
+
+
+class UserUpdateRequest(BaseModel):
+    full_name: str | None = None
+    email: str | None = None
+    role_id: UUID | None = None
+    company_id: UUID | None = None
+    daily_capacity_hours: float | None = Field(default=None, ge=0.0, le=24.0)
+    timezone: str | None = None
+    is_active: bool | None = None
+
+
+class UserResetPasswordRequest(BaseModel):
+    new_password: str
+    must_change_password: bool = True
+
+
+class UserDepartmentsPutRequest(BaseModel):
+    department_ids: list[UUID] = Field(default_factory=list)
+
+
+class CompanyOut(BaseModel):
+    id: UUID
+    name: str
+    short_code: str
+    kind: Literal["internal", "external", "group"]
+    color: str
+    notes: str
+    department_ids: list[UUID] = Field(default_factory=list)
+    created_at: datetime
+    updated_at: datetime
+
+
+class CompanyCreateRequest(BaseModel):
+    name: str
+    short_code: str
+    kind: Literal["internal", "external", "group"] = "internal"
+    color: str = "--series-1"
+    notes: str = ""
+    department_ids: list[UUID] = Field(default_factory=list)
+
+
+class CompanyUpdateRequest(BaseModel):
+    name: str | None = None
+    short_code: str | None = None
+    kind: Literal["internal", "external", "group"] | None = None
+    color: str | None = None
+    notes: str | None = None
+
+
+class CompanyDepartmentsPutRequest(BaseModel):
+    department_ids: list[UUID] = Field(default_factory=list)
+
+
+class RoleOut(BaseModel):
+    id: UUID
+    name: str
+    label: str
+    rank: int
+    is_system: bool
+    permissions: dict[str, str] = Field(default_factory=dict)
+
+
+class RoleCreateRequest(BaseModel):
+    name: str
+    label: str
+    rank: int = 30
+
+
+class RoleUpdateRequest(BaseModel):
+    label: str | None = None
+    rank: int | None = None
+
+
+class RolePermissionsPutRequest(BaseModel):
+    permissions: dict[str, Literal["all", "company", "mine", "shared", "none"]]
+
+
+class CapacityPermissionsOut(BaseModel):
+    artist: list[str] = Field(default_factory=list)
+    lead: list[str] = Field(default_factory=list)
+    supervisor: list[str] = Field(default_factory=list)
+
+
+class CapacityPermissionsPutRequest(BaseModel):
+    artist: list[str]
+    lead: list[str]
+    supervisor: list[str]
+
+
+class ProjectSettingsOut(BaseModel):
+    uuid: str
+    name: str
+    status: Literal["active", "on_hold", "completed", "archived"]
+    hours_per_day: float
+    working_days: list[int]
+    task_code_pattern: str
+    require_version_to_submit: bool
+    enforce_dependencies_in_gantt: bool
+    admin_sql_console_enabled: bool
+    link_dependency_depth: int
+
+
+class ProjectSettingsPatchRequest(BaseModel):
+    name: str | None = None
+    status: Literal["active", "on_hold", "completed", "archived"] | None = None
+    hours_per_day: float | None = Field(default=None, gt=0.0, le=24.0)
+    working_days: list[int] | None = None
+    task_code_pattern: str | None = None
+    require_version_to_submit: bool | None = None
+    enforce_dependencies_in_gantt: bool | None = None
+    admin_sql_console_enabled: bool | None = None
+    link_dependency_depth: int | None = Field(default=None, ge=1, le=2)
+
+
+class AuditLogOut(BaseModel):
+    id: UUID
+    at: datetime
+    user_id: UUID | None = None
+    username: str | None = None
+    action: str
+    target_type: str | None = None
+    target_id: str | None = None
+    ip: str | None = None
+    detail_json: dict[str, Any] = Field(default_factory=dict)
+
+
+class TaskAssignmentItemIn(BaseModel):
+    user_id: UUID
+    assignment_role: Literal["artist", "lead", "supervisor"]
+
+
+class TaskAssignmentsPutRequest(BaseModel):
+    assignments: list[TaskAssignmentItemIn] = Field(default_factory=list)
+
+
+class TaskSharesPutRequest(BaseModel):
+    company_ids: list[UUID] = Field(default_factory=list)
+
+
+class VersionSharesPutRequest(BaseModel):
+    company_ids: list[UUID] = Field(default_factory=list)
+
+
+# Dedicated client-only allowlist serializers (§15)
+class ClientFileSummaryOut(BaseModel):
+    id: UUID
+    filename: str
+    relative_path: str
+    size: int
+    sha256: str
+    detected_format: str
+    media_kind: str
+    is_sequence: bool = False
+    sequence_pattern: str | None = None
+    sequence_kind: str = "none"
+    frame_start: int | None = None
+    frame_end: int | None = None
+    frame_count: int | None = None
+
+
+class ClientProductVersionOut(BaseModel):
+    id: UUID
+    version_number: int
+    label: str
+    comment: str
+    created_at: datetime
+    files: list[ClientFileSummaryOut] = Field(default_factory=list)
+
+
+class ClientProductOut(BaseModel):
+    id: UUID
+    task_id: UUID
+    name: str
+    master_version_id: UUID | None = None
+    versions: list[ClientProductVersionOut] = Field(default_factory=list)
+
+
+class ClientTaskOut(BaseModel):
+    id: UUID
+    name: str
+    status: str | None = None
+    product: ClientProductOut | None = None
+
+
+class ClientEntityDepartmentOut(BaseModel):
+    id: UUID
+    department_id: UUID
+    name: str
+    tasks: list[ClientTaskOut] = Field(default_factory=list)
+
+
+class ClientEntityOut(BaseModel):
+    id: UUID
+    name: str
+    entity_type: str | None = None
+    description: str | None = None
+    resolved_thumbnail_file_id: UUID | None = None
+    departments: list[ClientEntityDepartmentOut] = Field(default_factory=list)
+
+
+class ClientEntityTreeOut(BaseModel):
+    project_uuid: str
+    project_name: str
+    entities: list[ClientEntityOut] = Field(default_factory=list)
+    total: int = 0
+

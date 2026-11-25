@@ -161,6 +161,7 @@
     --radius-2: 3px;
     --radius-max: 4px;
     --border-w: 1px;
+    --border-double-w: 3px;
     --focus-w: 1px;
 
     --label-col-w: 35%;
@@ -253,6 +254,58 @@
     --z-tooltip: 200;
     --z-dialog: 300;
     --z-toast: 400;
+
+    /* CR03 layout, status, capacity, avatar, heatmap tokens */
+    --viewswitch-h: 24px;
+    --filterbar-h: 26px;
+    --task-panel-w: 380px;
+    --avatar-sm: 16px;
+    --avatar-md: 24px;
+    --gantt-row-h: 22px;
+    --gantt-header-h: 36px;
+    --gantt-bar-h: 12px;
+    --kanban-col-w: 220px;
+    --heat-cell-w: 28px;
+    --heat-cell-h: 20px;
+    --graph-node-w: 160px;
+    --graph-node-h: 40px;
+    --badge-cap-h: 16px;
+
+    --capacity-do: #38BDF8;
+    --capacity-do-bg: #132C42;
+    --capacity-do-text: #7DD3FC;
+    --capacity-lead: #A78BFA;
+    --capacity-lead-bg: #291E4A;
+    --capacity-lead-text: #DDD6FE;
+    --capacity-sup: #FBBF24;
+    --capacity-sup-bg: #3B280D;
+    --capacity-sup-text: #FDE68A;
+
+    --status-wtg: #94A3B8;
+    --status-rdy: #38BDF8;
+    --status-ip: #C4B5FD;
+    --status-rtk: #F87171;
+    --status-p-lead: #2DD4BF;
+    --status-p-sup: #A5B4FC;
+    --status-p-client: #F472B6;
+    --status-app: #34D399;
+    --status-hld: #FBBF24;
+
+    --avatar-fg: #FFFFFF;
+    --avatar-hue-0: #5B21B6;
+    --avatar-hue-1: #047857;
+    --avatar-hue-2: #0369A1;
+    --avatar-hue-3: #B45309;
+    --avatar-hue-4: #B91C1C;
+    --avatar-hue-5: #4338CA;
+    --avatar-hue-6: #0F766E;
+    --avatar-hue-7: #9D174D;
+
+    --heat-0: #1E293B;
+    --heat-1: #064E3B;
+    --heat-2: #0F766E;
+    --heat-3: #B45309;
+    --heat-4: #B91C1C;
   }
 
   [data-theme="light"] {
@@ -319,6 +372,32 @@
     --fam-doc: #64748B;
     --fam-folder: #94A3B8;
     --fam-unknown: #64748B;
+
+    --capacity-do: #0369A1;
+    --capacity-do-bg: #E0F2FE;
+    --capacity-do-text: #0C4A6E;
+    --capacity-lead: #6D28D9;
+    --capacity-lead-bg: #EDE9FE;
+    --capacity-lead-text: #4C1D95;
+    --capacity-sup: #B45309;
+    --capacity-sup-bg: #FEF3C7;
+    --capacity-sup-text: #78350F;
+
+    --status-wtg: #475569;
+    --status-rdy: #0369A1;
+    --status-ip: #6D28D9;
+    --status-rtk: #B91C1C;
+    --status-p-lead: #115E59;
+    --status-p-sup: #4338CA;
+    --status-p-client: #BE185D;
+    --status-app: #065F46;
+    --status-hld: #92400E;
+
+    --heat-0: #F1F5F9;
+    --heat-1: #A7F3D0;
+    --heat-2: #5EEAD4;
+    --heat-3: #FDE68A;
+    --heat-4: #FECACA;
   }
 
   [data-density="comfortable"] {

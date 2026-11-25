@@ -20,13 +20,14 @@ from app.core.settings import Settings
 from app.db.migrations import upgrade_project_db
 from app.db.session import create_engine_and_sessionmaker
 from app.formats.base import FormatRegistry
-from app.models.app_db import KnownProject
+from app.models.app_db import KnownProject, UserProjectIndex
 from app.models.project_db import (
     Department,
     DepartmentDefaultTask,
     ProjectMeta,
 )
 from app.models.user import User
+from app.services.permissions import seed_project_auth, sync_user_project_index
 from app.services.reconcile_service import ReconcileReport, reconcile_project
 from app.storage.local import LocalStorage
 
@@ -99,20 +100,20 @@ class ProjectRegistry:
             _, evicted = self._open.popitem(last=False)
             await evicted.engine.dispose()
 
-    async def _ensure_project_user(self, ctx: ProjectContext) -> None:
+    async def _ensure_project_user(
+        self,
+        ctx: ProjectContext,
+        app_db: AsyncSession | None = None,
+    ) -> None:
         async with ctx.session_factory() as session:
-            res = await session.execute(
-                select(User).where(User.username == self._settings.default_user_username)
+            await seed_project_auth(
+                session,
+                self._settings,
+                app_db=app_db,
+                project_uuid=ctx.uuid,
+                project_name=ctx.name,
             )
-            if res.scalar_one_or_none() is None:
-                session.add(
-                    User(
-                        username=self._settings.default_user_username,
-                        display_name=self._settings.default_user_display_name,
-                        role="reviewer",
-                    )
-                )
-                await session.commit()
+            await session.commit()
 
     def _prepare_create_dirs(self, path: Path, clean_name: str) -> tuple[Path, str, str]:
         resolved = path.resolve()
@@ -160,23 +161,30 @@ class ProjectRegistry:
 
         ctx = self._build_context(proj_uuid, clean_name, resolved)
         async with ctx.session_factory() as session:
-            session.add(ProjectMeta(uuid=proj_uuid, name=clean_name, schema_version=2))
-            session.add(
-                User(
-                    username=self._settings.default_user_username,
-                    display_name=self._settings.default_user_display_name,
-                    role="reviewer",
-                )
-            )
+            session.add(ProjectMeta(uuid=proj_uuid, name=clean_name, schema_version=3))
             depts = starter_departments or []
+            palette_tokens = [f"--series-{i}" for i in range(1, 8)]
+            used_codes: set[str] = set()
             for idx, dept_name in enumerate(depts):
                 clean_d = dept_name.strip()
                 if not clean_d:
                     continue
                 folder = clean_d.replace(" ", "_")
+                raw_code = "".join(ch for ch in clean_d.upper() if ch.isalnum())
+                base_code = (
+                    raw_code[:3] if len(raw_code) >= 3 else (raw_code + "XXX")[:3]
+                ) or "DPT"
+                short_code = base_code
+                c_idx = 1
+                while short_code in used_codes:
+                    short_code = f"{base_code[:2]}{c_idx}"
+                    c_idx += 1
+                used_codes.add(short_code)
                 dept = Department(
                     name=clean_d,
                     folder_name=folder,
+                    short_code=short_code,
+                    color=palette_tokens[idx % len(palette_tokens)],
                     sort_order=idx,
                     is_active=True,
                 )
@@ -190,6 +198,13 @@ class ProjectRegistry:
                         sort_order=0,
                     )
                 )
+            await seed_project_auth(
+                session,
+                self._settings,
+                app_db=app_db,
+                project_uuid=proj_uuid,
+                project_name=clean_name,
+            )
             await session.commit()
 
         existing_known = (
@@ -254,9 +269,17 @@ class ProjectRegistry:
                 self._open[proj_uuid] = ctx
                 await self._evict_if_needed()
 
-        await self._ensure_project_user(ctx)
+        await self._ensure_project_user(ctx, app_db=app_db)
         async with ctx.session_factory() as session:
             report = await reconcile_project(session, ctx.production_dir, self._format_registry)
+            active_usernames = (
+                (await session.execute(select(User.username).where(User.is_active.is_(True))))
+                .scalars()
+                .all()
+            )
+            await sync_user_project_index(
+                app_db, proj_uuid, name, [str(u) for u in active_usernames]
+            )
 
         known = await app_db.get(KnownProject, proj_uuid)
         if known is None:
@@ -298,13 +321,18 @@ class ProjectRegistry:
             ctx = self._build_context(known.uuid, known.name, root)
             self._open[project_uuid] = ctx
             await self._evict_if_needed()
-            await self._ensure_project_user(ctx)
+            await self._ensure_project_user(ctx, app_db=app_db)
             return ctx
 
     async def forget_project(self, app_db: AsyncSession, project_uuid: str) -> None:
         known = await app_db.get(KnownProject, project_uuid)
         if known is None:
             raise NotFoundError("project", project_uuid)
+        from sqlalchemy import delete as sa_delete
+
+        await app_db.execute(
+            sa_delete(UserProjectIndex).where(UserProjectIndex.project_uuid == project_uuid)
+        )
         await app_db.delete(known)
         await app_db.commit()
         async with self._lock:

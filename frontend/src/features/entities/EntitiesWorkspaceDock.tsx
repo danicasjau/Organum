@@ -17,6 +17,7 @@ import {
   type FileSummaryOut,
   type SceneEntryOut,
 } from '../../lib/api/client';
+import { hasPerm, useAuthStore } from '../auth/authStore';
 import { useProjectStore } from '../project/projectStore';
 import { DeptTaskColumn } from './DeptTaskColumn';
 import { useEntitiesStore, type LayoutPreset } from './entitiesStore';
@@ -45,6 +46,9 @@ export function EntitiesWorkspaceDock({
   const queryClient = useQueryClient();
   const toast = useToast();
   const activeProjectUuid = useProjectStore((s) => s.activeProjectUuid);
+  const auth = useAuthStore((s) => s.auth);
+  const canManageEntities = hasPerm(auth?.permissions, 'entity.manage');
+  const isClientRole = auth?.user.role_name === 'client';
 
   const selectedEntityId = useEntitiesStore((s) => s.selectedEntityId);
   const selectedTaskId = useEntitiesStore((s) => s.selectedTaskId);
@@ -150,22 +154,24 @@ export function EntitiesWorkspaceDock({
           >
             <Icon name="maximize" size="sm" />
           </Button>
-          <Button
-            size="sm"
-            variant="icon"
-            title="Reconcile project disk & DB"
-            aria-label="Reconcile project"
-            onClick={async () => {
-              if (!activeProjectUuid) return;
-              const rep = await apiClient.reconcileProject(activeProjectUuid);
-              await queryClient.invalidateQueries({ queryKey: ['entities', activeProjectUuid] });
-              const msg = `Reconciled ${rep.entities_scanned} entities (${rep.files_scanned} files)`;
-              onStatusMessage(msg);
-              toast.push('info', msg);
-            }}
-          >
-            <Icon name="refresh" size="sm" />
-          </Button>
+          {canManageEntities && (
+            <Button
+              size="sm"
+              variant="icon"
+              title="Reconcile project disk & DB"
+              aria-label="Reconcile project"
+              onClick={async () => {
+                if (!activeProjectUuid) return;
+                const rep = await apiClient.reconcileProject(activeProjectUuid);
+                await queryClient.invalidateQueries({ queryKey: ['entities', activeProjectUuid] });
+                const msg = `Reconciled ${rep.entities_scanned} entities (${rep.files_scanned} files)`;
+                onStatusMessage(msg);
+                toast.push('info', msg);
+              }}
+            >
+              <Icon name="refresh" size="sm" />
+            </Button>
+          )}
         </Inline>
       </div>
 
@@ -206,35 +212,46 @@ export function EntitiesWorkspaceDock({
 
               <SplitHandle />
               <SplitPane id="col-prod-scene" defaultSize="41%" minSize="140px">
-                <SplitGroup
-                  orientation="vertical"
-                  onLayoutChanged={(layout) => setCol3VertLayout(layout)}
-                >
-                  <SplitPane id="col3-products" defaultSize="50%" minSize="120px">
-                    <ProductsColumn
-                      entity={selectedEntity}
-                      task={activeTaskPair?.task ?? null}
-                      selectedFileId={selectedFileId}
-                      onSelectFile={onSelectFile}
-                      pendingExternalPublish={pendingPublish}
-                      onClearExternalPublish={() => setPendingPublish(null)}
-                    />
-                  </SplitPane>
-                  <SplitHandle />
-                  <SplitPane id="col3-scenefiles" defaultSize="50%" minSize="120px">
-                    <ScenefilesExplorer
-                      task={activeTaskPair?.task ?? null}
-                      onRequestPublish={(relPaths) =>
-                        setPendingPublish({
-                          source: 'scenefiles',
-                          scenefileRelPaths: relPaths,
-                          labels: relPaths,
-                        })
-                      }
-                      onOpenMediaScenefile={onOpenMediaScenefile}
-                    />
-                  </SplitPane>
-                </SplitGroup>
+                {isClientRole ? (
+                  <ProductsColumn
+                    entity={selectedEntity}
+                    task={activeTaskPair?.task ?? null}
+                    selectedFileId={selectedFileId}
+                    onSelectFile={onSelectFile}
+                    pendingExternalPublish={pendingPublish}
+                    onClearExternalPublish={() => setPendingPublish(null)}
+                  />
+                ) : (
+                  <SplitGroup
+                    orientation="vertical"
+                    onLayoutChanged={(layout) => setCol3VertLayout(layout)}
+                  >
+                    <SplitPane id="col3-products" defaultSize="50%" minSize="120px">
+                      <ProductsColumn
+                        entity={selectedEntity}
+                        task={activeTaskPair?.task ?? null}
+                        selectedFileId={selectedFileId}
+                        onSelectFile={onSelectFile}
+                        pendingExternalPublish={pendingPublish}
+                        onClearExternalPublish={() => setPendingPublish(null)}
+                      />
+                    </SplitPane>
+                    <SplitHandle />
+                    <SplitPane id="col3-scenefiles" defaultSize="50%" minSize="120px">
+                      <ScenefilesExplorer
+                        task={activeTaskPair?.task ?? null}
+                        onRequestPublish={(relPaths) =>
+                          setPendingPublish({
+                            source: 'scenefiles',
+                            scenefileRelPaths: relPaths,
+                            labels: relPaths,
+                          })
+                        }
+                        onOpenMediaScenefile={onOpenMediaScenefile}
+                      />
+                    </SplitPane>
+                  </SplitGroup>
+                )}
               </SplitPane>
             </>
           )}

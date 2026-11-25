@@ -1,4 +1,6 @@
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import type { ReactNode } from 'react';
+import { Avatar } from '../Avatar/Avatar';
 import { Badge, StatusDot } from '../Badge/Badge';
 import { Button } from '../Button/Button';
 import { Icon } from '../Icon/Icon';
@@ -21,6 +23,13 @@ export interface AppShellProps {
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
   userName?: string;
+  userFullName?: string;
+  userRoleLabel?: string;
+  userAvatarUrl?: string | null;
+  canAdmin?: boolean;
+  onOpenMyUser?: () => void;
+  onOpenAdmin?: () => void;
+  onLogout?: () => void;
   jobsActive?: number;
   statusBar: ReactNode;
   children: ReactNode;
@@ -34,10 +43,20 @@ export function AppShell({
   theme,
   onToggleTheme,
   userName = 'artist',
+  userFullName,
+  userRoleLabel,
+  userAvatarUrl,
+  canAdmin = false,
+  onOpenMyUser,
+  onOpenAdmin,
+  onLogout,
   jobsActive = 0,
   statusBar,
   children,
 }: AppShellProps) {
+  const hasInteractiveUserMenu = Boolean(onOpenMyUser || onOpenAdmin || onLogout);
+  const displayName = userFullName || userName;
+
   return (
     <div data-ui="app-shell" className="org-shell">
       <Topbar
@@ -94,7 +113,56 @@ export function AppShell({
                 <Icon name="settings" size="sm" />
               </Button>
             )}
-            <Badge tone="neutral">{userName}</Badge>
+            {hasInteractiveUserMenu ? (
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild>
+                  <button
+                    type="button"
+                    className="org-usermenu__trigger"
+                    aria-label="User menu"
+                    title={`${displayName}${userRoleLabel ? ` (${userRoleLabel})` : ''}`}
+                  >
+                    <Avatar
+                      username={userName}
+                      fullName={displayName}
+                      avatarUrl={userAvatarUrl}
+                      size="sm"
+                    />
+                    <span className="org-usermenu__name">{displayName}</span>
+                    {userRoleLabel && <Badge tone="neutral">{userRoleLabel}</Badge>}
+                  </button>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Portal>
+                  <DropdownMenu.Content align="end" sideOffset={2} className="org-menu__content">
+                    {onOpenMyUser && (
+                      <DropdownMenu.Item className="org-menu__item" onSelect={onOpenMyUser}>
+                        <span>My User</span>
+                      </DropdownMenu.Item>
+                    )}
+                    {onOpenSettings && (
+                      <DropdownMenu.Item className="org-menu__item" onSelect={onOpenSettings}>
+                        <span>Project Settings…</span>
+                      </DropdownMenu.Item>
+                    )}
+                    {canAdmin && onOpenAdmin && (
+                      <DropdownMenu.Item className="org-menu__item" onSelect={onOpenAdmin}>
+                        <span>Admin Console</span>
+                      </DropdownMenu.Item>
+                    )}
+                    {onLogout && (
+                      <>
+                        <DropdownMenu.Separator className="org-menu__sep" />
+                        <DropdownMenu.Item className="org-menu__item" onSelect={onLogout}>
+                          <span>Sign Out</span>
+                        </DropdownMenu.Item>
+                      </>
+                    )}
+                  </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+              </DropdownMenu.Root>
+            ) : (
+              <Badge tone="neutral">{userName}</Badge>
+            )}
             <StatusDot
               tone={jobsActive > 0 ? 'accent' : 'success'}
               label={jobsActive > 0 ? `${jobsActive} background jobs running` : 'Idle'}

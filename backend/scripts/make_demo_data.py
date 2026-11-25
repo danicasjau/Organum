@@ -26,18 +26,26 @@ from app.core.settings import get_settings
 from app.db.session import create_engine_and_sessionmaker
 from app.formats.registry import build_default_registry
 from app.models.app_db import AppBase
-from app.models.project_db import Entity
+from app.models.project_db import Department, Entity, EntityDepartment, Product, Task
+from app.models.user import (
+    Company,
+    CompanyDepartment,
+    Role,
+    TaskAssignment,
+    TaskShare,
+    User,
+    UserDepartment,
+    VersionShare,
+)
+from app.services.auth_service import hash_password
 from app.services.entity_service import replace_entity_data, set_entity_tags
+from app.services.permissions import sync_user_project_index
 
 
 def _write_obj_and_mtl(base_dir: Path) -> None:
     mtl_path = base_dir / "robot.mtl"
     mtl_path.write_text(
-        "# Demo MTL\n"
-        "newmtl body_metal\n"
-        "Kd 0.65 0.68 0.72\n"
-        "Ks 0.80 0.80 0.80\n"
-        "Ns 64.0\n",
+        "# Demo MTL\nnewmtl body_metal\nKd 0.65 0.68 0.72\nKs 0.80 0.80 0.80\nNs 64.0\n",
         encoding="utf-8",
     )
     obj_path = base_dir / "robot.obj"
@@ -431,10 +439,16 @@ def _write_pdf(path: Path) -> None:
         f"4 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
         f"/Resources {res} /Contents 7 0 R >>\nendobj\n".encode("ascii"),
         b"5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n",
-        b"6 0 obj\n<< /Length " + str(len(c1)).encode("ascii")
-        + b" >>\nstream\n" + c1 + b"\nendstream\nendobj\n",
-        b"7 0 obj\n<< /Length " + str(len(c2)).encode("ascii")
-        + b" >>\nstream\n" + c2 + b"\nendstream\nendobj\n",
+        b"6 0 obj\n<< /Length "
+        + str(len(c1)).encode("ascii")
+        + b" >>\nstream\n"
+        + c1
+        + b"\nendstream\nendobj\n",
+        b"7 0 obj\n<< /Length "
+        + str(len(c2)).encode("ascii")
+        + b" >>\nstream\n"
+        + c2
+        + b"\nendstream\nendobj\n",
         b"8 0 obj\n<< /Title (ORGANUM Shot Review Brief) "
         b"/Author (Lead Artist) /Producer (ORGANUM) >>\nendobj\n",
     ]
@@ -577,6 +591,10 @@ async def _build_demo_project() -> None:
         _write_obj_and_mtl(drone / "Modeling" / "main" / "products" / "v0001")
 
         # Reconcile demo project into project.db and seed entity metadata/tags
+        from datetime import UTC, datetime
+
+        from sqlalchemy import select
+
         async with app_session_factory() as app_db:
             ctx, rep = await proj_registry.open_project(app_db, project_root)
             async with ctx.session_factory() as proj_db:
@@ -606,7 +624,166 @@ async def _build_demo_project() -> None:
                         drone_ent.id,
                         [("scale_cm", "float", "62.5")],
                     )
+
+                # Seed companies, departments, and demo accounts for every role (CR03 7A)
+                depts_by_name = {
+                    d.name: d for d in (await proj_db.execute(select(Department))).scalars().all()
+                }
+                roles_by_name = {
+                    r.name: r for r in (await proj_db.execute(select(Role))).scalars().all()
+                }
+                c_internal = Company(
+                    name="Studio Internal",
+                    short_code="INT",
+                    kind="internal",
+                    color="--series-1",
+                    notes="Primary in-house production team",
+                )
+                c_external = Company(
+                    name="Outsource FX Co",
+                    short_code="OFX",
+                    kind="external",
+                    color="--series-4",
+                    notes="External FX vendor",
+                )
+                c_client = Company(
+                    name="Client Studio",
+                    short_code="CLI",
+                    kind="external",
+                    color="--series-3",
+                    notes="Client review organization",
+                )
+                proj_db.add_all([c_internal, c_external, c_client])
+                await proj_db.flush()
+
+                for d_name, dept_obj in depts_by_name.items():
+                    proj_db.add(
+                        CompanyDepartment(company_id=c_internal.id, department_id=dept_obj.id)
+                    )
+                    if d_name == "FX":
+                        proj_db.add(
+                            CompanyDepartment(company_id=c_external.id, department_id=dept_obj.id)
+                        )
+
+                demo_pw_hash = hash_password("DemoPass123!")
+                demo_users_spec: list[tuple[str, str, str, uuid.UUID | None, list[str]]] = [
+                    ("qa_admin", "QA Administrator", "admin", c_internal.id, list(depts_by_name)),
+                    ("prod_maya", "Maya Chen", "producer", c_internal.id, list(depts_by_name)),
+                    ("dir_alex", "Alex Vance", "director", c_internal.id, list(depts_by_name)),
+                    (
+                        "sup_elena",
+                        "Elena Rostova",
+                        "supervisor",
+                        c_internal.id,
+                        ["Modeling", "Lookdev", "Lighting"],
+                    ),
+                    ("lead_marco", "Marco Silva", "lead", c_internal.id, ["Modeling", "Rigging"]),
+                    ("art_sam", "Sam Rivera", "artist", c_internal.id, ["Modeling", "Animation"]),
+                    ("ext_li", "Li Wei", "external", c_external.id, ["FX"]),
+                    ("cli_jordan", "Jordan Blake", "client", c_client.id, []),
+                ]
+                seeded_users: dict[str, User] = {}
+                for uname, fname, rname, comp_id, u_depts in demo_users_spec:
+                    u = User(
+                        username=uname,
+                        full_name=fname,
+                        email=f"{uname}@organum.local",
+                        password_hash=demo_pw_hash,
+                        role_id=roles_by_name[rname].id,
+                        company_id=comp_id,
+                        is_active=True,
+                        must_change_password=False,
+                        has_initial_password=False,
+                    )
+                    proj_db.add(u)
+                    await proj_db.flush()
+                    seeded_users[uname] = u
+                    for dn in u_depts:
+                        if dn in depts_by_name:
+                            proj_db.add(
+                                UserDepartment(user_id=u.id, department_id=depts_by_name[dn].id)
+                            )
+
+                # Assign capacities and client shares on demo tasks for Gate A verification
+                tasks_rows = (
+                    await proj_db.execute(
+                        select(Task, Department.name, Product)
+                        .join(EntityDepartment, EntityDepartment.id == Task.entity_department_id)
+                        .join(Department, Department.id == Task.department_id)
+                        .outerjoin(Product, Product.task_id == Task.id)
+                    )
+                ).all()
+                now = datetime.now(UTC)
+                for task_row, dept_name, prod_row in tasks_rows:
+                    if dept_name == "Modeling" and task_row.name == "main":
+                        proj_db.add(
+                            TaskAssignment(
+                                task_id=task_row.id,
+                                user_id=seeded_users["art_sam"].id,
+                                assignment_role="artist",
+                            )
+                        )
+                        proj_db.add(
+                            TaskAssignment(
+                                task_id=task_row.id,
+                                user_id=seeded_users["lead_marco"].id,
+                                assignment_role="lead",
+                            )
+                        )
+                        proj_db.add(
+                            TaskAssignment(
+                                task_id=task_row.id,
+                                user_id=seeded_users["sup_elena"].id,
+                                assignment_role="supervisor",
+                            )
+                        )
+                    if dept_name == "Lighting" and task_row.name == "beauty":
+                        # Director holds explicit supervisor capacity on Lighting/beauty
+                        proj_db.add(
+                            TaskAssignment(
+                                task_id=task_row.id,
+                                user_id=seeded_users["dir_alex"].id,
+                                assignment_role="supervisor",
+                            )
+                        )
+                        # Share Lighting/beauty + v0001 with Client Studio
+                        proj_db.add(
+                            TaskShare(
+                                task_id=task_row.id,
+                                company_id=c_client.id,
+                                shared_by=seeded_users["prod_maya"].id,
+                                shared_at=now,
+                            )
+                        )
+                        if prod_row is not None and prod_row.master_version_id is not None:
+                            proj_db.add(
+                                VersionShare(
+                                    version_id=prod_row.master_version_id,
+                                    company_id=c_client.id,
+                                    shared_by=seeded_users["prod_maya"].id,
+                                    shared_at=now,
+                                )
+                            )
+                    if dept_name == "FX" and task_row.name == "audio":
+                        proj_db.add(
+                            TaskAssignment(
+                                task_id=task_row.id,
+                                user_id=seeded_users["ext_li"].id,
+                                assignment_role="artist",
+                            )
+                        )
+
                 await proj_db.commit()
+
+                all_active = (
+                    (await proj_db.execute(select(User.username).where(User.is_active.is_(True))))
+                    .scalars()
+                    .all()
+                )
+                await sync_user_project_index(
+                    app_db, ctx.uuid, ctx.name, [str(u) for u in all_active]
+                )
+                await app_db.commit()
             print(
                 f"Demo project built at {project_root} ({ctx.uuid}): "
                 f"entities={rep.entities_scanned} versions={rep.versions_registered} "
@@ -623,4 +800,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

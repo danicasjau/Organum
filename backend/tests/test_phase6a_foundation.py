@@ -11,6 +11,7 @@ from PIL import Image
 
 from app.core.errors import AppError
 from app.services.naming import check_case_insensitive_collision, sanitize_folder_name
+from tests.conftest import TEST_ADMIN_PASSWORD, authenticate_project_admin, login_client
 
 
 def test_folder_name_sanitization_and_collision(tmp_path: Path) -> None:
@@ -50,6 +51,7 @@ async def test_project_lifecycle_departments_reconcile_and_launchers(
     proj = create_resp.json()
     proj_uuid = str(proj["uuid"])
     assert proj_uuid != initial_uuid
+    await authenticate_project_admin(client, proj_uuid)
     assert (custom_root / "00_Pipeline" / "project.json").is_file()
     assert (custom_root / "00_Pipeline" / "project.db").is_file()
     assert (custom_root / "00_Pipeline" / "cache").is_dir()
@@ -164,7 +166,8 @@ async def test_project_lifecycle_departments_reconcile_and_launchers(
     assert put_resp.status_code == 200
     assert put_resp.json()[0]["extension"] == ".blend"
 
-    # 5. Forget project does not delete disk files
+    # 5. Switch back to initial_uuid admin session, forget project without deleting disk files
+    await login_client(client, initial_uuid, "admin", TEST_ADMIN_PASSWORD)
     assert (await client.delete(f"/api/v1/projects/{proj_uuid}")).status_code == 204
     assert (custom_root / "00_Pipeline" / "project.json").is_file()
 

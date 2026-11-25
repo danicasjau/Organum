@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { selectDemoFile } from './helpers';
+import { loginAs, selectDemoFile } from './helpers';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SCREENSHOTS_DIR = path.resolve(__dirname, '../../docs/screenshots');
@@ -16,7 +16,7 @@ test.describe('Phase 5 Formats, Scopes, PDF, DataGrid & Charts', () => {
       if (msg.type() === 'error') errors.push(msg.text());
     });
 
-    await page.goto('/viewer');
+    await loginAs(page, 'qa_admin', 'DemoPass123!', { targetPath: '/viewer' });
 
     // 1. Open env_light.hdr -> verify float decode + Inspector RGB/Luma Histogram Scope
     await selectDemoFile(page, 'textures', /env_light\.hdr/);

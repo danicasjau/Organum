@@ -19,6 +19,17 @@ def test_alembic_upgrade_downgrade_sqlite(tmp_path: Path) -> None:
     tables = set(inspect(sync_engine).get_table_names())
     assert {
         "users",
+        "roles",
+        "role_permissions",
+        "capacity_permissions",
+        "companies",
+        "company_departments",
+        "user_departments",
+        "sessions",
+        "audit_log",
+        "task_assignments",
+        "task_shares",
+        "version_shares",
         "project_meta",
         "departments",
         "department_default_tasks",

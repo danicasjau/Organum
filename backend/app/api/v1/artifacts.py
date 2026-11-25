@@ -8,10 +8,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_cache_storage, get_db, get_format_registry, get_storage
 from app.core.errors import NotFoundError
+from app.core.security import get_project_auth
 from app.formats.base import FormatRegistry
 from app.models.artifact import Artifact
 from app.schemas.api import ArtifactOut, ArtifactRequest
 from app.services.artifact_service import get_or_create_artifact
+from app.services.permissions import AuthContext, can_access_file
 from app.services.streaming import build_ranged_file_response
 from app.storage.base import StorageBackend
 
@@ -38,12 +40,14 @@ async def create_or_get_file_artifact(
     project_uuid: str,
     file_id: UUID,
     kind: str,
+    auth: Annotated[AuthContext, Depends(get_project_auth)],
     db: Annotated[AsyncSession, Depends(get_db)],
     storage: Annotated[StorageBackend, Depends(get_storage)],
     cache_storage: Annotated[StorageBackend, Depends(get_cache_storage)],
     registry: Annotated[FormatRegistry, Depends(get_format_registry)],
     body: ArtifactRequest | None = None,
 ) -> ArtifactOut:
+    await can_access_file(db, auth, file_id)
     params = body.params if body is not None else {}
     art = await get_or_create_artifact(db, storage, cache_storage, registry, file_id, kind, params)
     return _to_out(project_uuid, art)
@@ -53,12 +57,14 @@ async def create_or_get_file_artifact(
 async def stream_artifact_content(
     artifact_id: UUID,
     request: Request,
+    auth: Annotated[AuthContext, Depends(get_project_auth)],
     db: Annotated[AsyncSession, Depends(get_db)],
     cache_storage: Annotated[StorageBackend, Depends(get_cache_storage)],
 ) -> Response:
     art = await db.get(Artifact, artifact_id)
     if art is None or not cache_storage.exists(art.storage_key):
         raise NotFoundError("artifact", str(artifact_id))
+    await can_access_file(db, auth, art.file_id)
     return build_ranged_file_response(
         request,
         cache_storage,
@@ -73,12 +79,14 @@ async def stream_artifact_content(
 async def stream_artifact_atlas(
     artifact_id: UUID,
     request: Request,
+    auth: Annotated[AuthContext, Depends(get_project_auth)],
     db: Annotated[AsyncSession, Depends(get_db)],
     cache_storage: Annotated[StorageBackend, Depends(get_cache_storage)],
 ) -> Response:
     art = await db.get(Artifact, artifact_id)
     if art is None:
         raise NotFoundError("artifact", str(artifact_id))
+    await can_access_file(db, auth, art.file_id)
     base_prefix = art.storage_key.rsplit("/", 1)[0]
     atlas_key = f"{base_prefix}/atlas.png"
     if not cache_storage.exists(atlas_key):
@@ -99,12 +107,14 @@ async def stream_artifact_tile(
     level: int,
     tile_name: str,
     request: Request,
+    auth: Annotated[AuthContext, Depends(get_project_auth)],
     db: Annotated[AsyncSession, Depends(get_db)],
     cache_storage: Annotated[StorageBackend, Depends(get_cache_storage)],
 ) -> Response:
     art = await db.get(Artifact, artifact_id)
     if art is None:
         raise NotFoundError("artifact", str(artifact_id))
+    await can_access_file(db, auth, art.file_id)
     base_prefix = art.storage_key.rsplit("/", 1)[0]
     clean_tile = tile_name if tile_name.endswith(".png") else f"{tile_name}.png"
     tile_key = f"{base_prefix}/{level}/{clean_tile}"
@@ -118,4 +128,3 @@ async def stream_artifact_tile(
         media_type="image/png",
         immutable=True,
     )
-

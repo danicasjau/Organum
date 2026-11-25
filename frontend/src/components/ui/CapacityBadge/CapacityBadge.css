@@ -1,0 +1,40 @@
+@layer components {
+  .org-capbadge-list {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    flex-wrap: wrap;
+  }
+
+  .org-capbadge {
+    display: inline-flex;
+    align-items: center;
+    height: var(--badge-cap-h);
+    padding: var(--space-0) var(--space-1);
+    border-radius: var(--radius-1);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+
+  .org-capbadge[data-capacity="artist"] {
+    background: var(--capacity-do-bg);
+    color: var(--capacity-do-text);
+    border: var(--border-w) solid var(--capacity-do);
+  }
+
+  .org-capbadge[data-capacity="lead"] {
+    background: var(--capacity-lead-bg);
+    color: var(--capacity-lead-text);
+    border: var(--border-double-w) double var(--capacity-lead);
+  }
+
+  .org-capbadge[data-capacity="supervisor"] {
+    background: var(--capacity-sup-bg);
+    color: var(--capacity-sup-text);
+    border: var(--border-w) dashed var(--capacity-sup);
+  }
+}

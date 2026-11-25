@@ -15,6 +15,7 @@ import {
   type PropertyGroupDef,
 } from '../../components/ui';
 import { apiClient, type EntityDataItem, type EntityOut } from '../../lib/api/client';
+import { useAuthStore } from '../auth/authStore';
 import { useProjectStore } from '../project/projectStore';
 import './EntityInspectorTab.css';
 
@@ -38,6 +39,7 @@ export function EntityInspectorTab({
   const queryClient = useQueryClient();
   const toast = useToast();
   const activeProjectUuid = useProjectStore((s) => s.activeProjectUuid);
+  const isClientRole = useAuthStore((s) => s.auth?.user.role_name === 'client');
   const [thumbBroken, setThumbBroken] = useState(false);
   const [tagDraft, setTagDraft] = useState('');
   const [draftRows, setDraftRows] = useState<EntityDataItem[]>([]);
@@ -48,7 +50,7 @@ export function EntityInspectorTab({
   const { data: rowsData } = useQuery({
     queryKey: ['entity-data', activeProjectUuid, entity.id],
     queryFn: () => apiClient.getEntityData(entity.id, activeProjectUuid),
-    enabled: Boolean(activeProjectUuid && entity.id),
+    enabled: Boolean(activeProjectUuid && entity.id && !isClientRole),
   });
   const serverRows = rowsData ?? EMPTY_ENTITY_DATA;
 

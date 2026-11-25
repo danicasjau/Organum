@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import type { ThemeMode } from '../../app/App';
-import { getRegisteredPanels } from '../../app/panels';
+import { getVisiblePanels } from '../../app/panels';
 import {
   AppShell,
   Banner,
@@ -30,6 +30,7 @@ import {
   type FileSummaryOut,
   type SceneEntryOut,
 } from '../../lib/api/client';
+import { hasPerm, useAuthStore } from '../auth/authStore';
 import { EntitiesWorkspaceDock } from '../entities/EntitiesWorkspaceDock';
 import { useEntitiesStore, type LayoutPreset } from '../entities/entitiesStore';
 import { useProjectStore } from '../project/projectStore';
@@ -88,6 +89,8 @@ export function ViewerPage({
   const activeProjectUuid = useProjectStore((s) => s.activeProjectUuid);
   const setActiveProject = useProjectStore((s) => s.setActiveProject);
   const openSettings = useProjectStore((s) => s.openSettings);
+  const auth = useAuthStore((s) => s.auth);
+  const logout = useAuthStore((s) => s.logout);
 
   const activeFileId = useViewerStore((s) => s.activeFileId);
   const byFile = useViewerStore((s) => s.byFile);
@@ -261,8 +264,8 @@ export function ViewerPage({
           : ['.wav', '.flac', '.ogg', '.mp3'].includes(entry.extension.toLowerCase())
             ? 'audio'
             : ['.gltf', '.glb', '.obj', '.usda', '.usdc', '.usd'].includes(
-                  entry.extension.toLowerCase(),
-                )
+              entry.extension.toLowerCase(),
+            )
               ? 'scene3d'
               : entry.extension.toLowerCase() === '.pdf'
                 ? 'document'
@@ -341,11 +344,11 @@ export function ViewerPage({
       const is3DMode = selectedFile?.media_kind === 'scene3d' && !viewerState.frozen && viewerState.activeTextureIndex === null;
       const fileTimeBased = Boolean(
         selectedFile &&
-          (selectedFile.is_sequence ||
-            selectedFile.media_kind === 'video' ||
-            selectedFile.media_kind === 'audio' ||
-            selectedFile.media_kind === 'timeline' ||
-            inspection?.capabilities?.time_based),
+        (selectedFile.is_sequence ||
+          selectedFile.media_kind === 'video' ||
+          selectedFile.media_kind === 'audio' ||
+          selectedFile.media_kind === 'timeline' ||
+          inspection?.capabilities?.time_based),
       );
 
       if (e.key === 'Tab' && selectedFile?.media_kind === 'scene3d') {
@@ -506,8 +509,8 @@ export function ViewerPage({
 
   const isUdimActive = Boolean(
     selectedFile?.is_sequence &&
-      (selectedFile.sequence_kind === 'udim' ||
-        (selectedFile.sequence_kind !== 'frames' && inspection?.capabilities?.udim)),
+    (selectedFile.sequence_kind === 'udim' ||
+      (selectedFile.sequence_kind !== 'frames' && inspection?.capabilities?.udim)),
   );
   const effectiveMediaKind = selectedFile
     ? selectedFile.is_sequence
@@ -520,15 +523,15 @@ export function ViewerPage({
   const udimInfo: UdimOverrideInfo | null =
     selectedFile && selectedFile.is_sequence
       ? {
-          sequenceKind: selectedFile.sequence_kind as UdimOverrideInfo['sequenceKind'],
-          isUserOverride: Boolean(selectedFile.sequence_kind_user_override),
-          canToggleUdim: Boolean(
-            inspection?.summary?.can_override_udim ||
-              selectedFile.sequence_kind === 'udim' ||
-              inspection?.capabilities?.udim,
-          ),
-          tileCount: Number(inspection?.summary?.udim_tile_count ?? 0),
-        }
+        sequenceKind: selectedFile.sequence_kind as UdimOverrideInfo['sequenceKind'],
+        isUserOverride: Boolean(selectedFile.sequence_kind_user_override),
+        canToggleUdim: Boolean(
+          inspection?.summary?.can_override_udim ||
+          selectedFile.sequence_kind === 'udim' ||
+          inspection?.capabilities?.udim,
+        ),
+        tileCount: Number(inspection?.summary?.udim_tile_count ?? 0),
+      }
       : null;
   const detectedCs = inspection?.summary?.colorspace
     ? String(inspection.summary.colorspace)
@@ -536,34 +539,54 @@ export function ViewerPage({
   const tlDoc = (inspection?.timeline ?? null) as Record<string, unknown> | null;
   const isTimeBased = Boolean(
     selectedFile &&
-      (selectedFile.is_sequence ||
-        selectedFile.media_kind === 'video' ||
-        selectedFile.media_kind === 'audio' ||
-        selectedFile.media_kind === 'timeline' ||
-        inspection?.capabilities?.time_based),
+    (selectedFile.is_sequence ||
+      selectedFile.media_kind === 'video' ||
+      selectedFile.media_kind === 'audio' ||
+      selectedFile.media_kind === 'timeline' ||
+      inspection?.capabilities?.time_based),
   );
   const frameStart = Number(tlDoc?.start ?? (selectedFile?.frame_start ?? 0));
   const frameEnd = Math.max(frameStart, Number(tlDoc?.end ?? (selectedFile?.frame_end ?? 100)));
 
   const panelItems = useMemo(
     () =>
-      getRegisteredPanels().map((p) => ({
+      getVisiblePanels(auth?.permissions).map((p) => ({
         id: p.id,
         label: p.label,
-        active: location.pathname.startsWith(p.route) || location.pathname === '/viewer',
+        active:
+          p.id === 'entities'
+            ? location.pathname === '/entities' || location.pathname === '/viewer'
+            : location.pathname.startsWith(p.route),
         onClick: () => navigate(p.route),
       })),
-    [location.pathname, navigate],
+    [auth?.permissions, location.pathname, navigate],
   );
+
+  const canAdmin = hasPerm(auth?.permissions, 'role.manage');
+  const isClientRole = auth?.user.role_name === 'client';
 
   return (
     <AppShell
       menus={menus}
       panels={panelItems}
       projectName={activeProject?.name ?? null}
-      onOpenSettings={() => openSettings()}
+      onOpenSettings={isClientRole ? undefined : () => openSettings()}
       theme={theme}
       onToggleTheme={onToggleTheme}
+      userName={auth?.user.username ?? 'user'}
+      userFullName={auth?.user.full_name}
+      userRoleLabel={auth?.user.role_label}
+      userAvatarUrl={
+        auth?.user.avatar_file && auth?.project_uuid
+          ? `${apiClient.userAvatarUrl(auth.user.id, auth.project_uuid)}?v=${encodeURIComponent(auth.user.avatar_file)}`
+          : null
+      }
+      canAdmin={canAdmin}
+      onOpenMyUser={() => navigate('/me')}
+      onOpenAdmin={canAdmin ? () => navigate('/admin') : undefined}
+      onLogout={() => {
+        void logout().then(() => navigate('/login', { replace: true }));
+      }}
       statusBar={
         <StatusBar>
           <StatusBarSegment grow>{statusMessage}</StatusBarSegment>

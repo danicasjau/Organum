@@ -14,6 +14,9 @@ ORGANUM is a dense, 2002-era professional DCC-styled product review application 
 - Node.js 22+ & npm
 - Optional: `ffmpeg` on PATH for generating the demo MP4
 
+### Windows One-Click Launcher (`launch.bat`)
+Double-click `launch.bat` at the repository root (or run `launch.bat` in Command Prompt / PowerShell) to install missing dependencies, seed the demo project if absent, and start both the backend (`127.0.0.1:8000`) and frontend (`127.0.0.1:5173`).
+
 ### Local Development
 
 ```powershell
@@ -35,7 +38,19 @@ npm run generate:api
 npm run dev
 ```
 
-Visit `http://localhost:5173/entities` (or `/viewer` alias) for the workspace, or `http://localhost:5173/gallery` for the Widget Gallery.
+Visit `http://localhost:5173/login` (redirects automatically from `/entities`), sign in to a project, or visit `http://localhost:5173/gallery` for the Widget Gallery. See [docs/SECURITY.md](docs/SECURITY.md) and [docs/PERMISSIONS.md](docs/PERMISSIONS.md) for authentication, Argon2id/CSRF/Origin security, role permissions, capacity rules, and client isolation.
+
+#### Seeded Demo Accounts (Project: `ORGANUM Demo`)
+- **Initial Admin (first-login forced password change):** `admin` / initial password `magicadmin**` (or `ORGANUM_INITIAL_ADMIN_PASSWORD`)
+- **Active Role Accounts (password `DemoPass123!`):**
+  - `qa_admin` — Administrator
+  - `prod_maya` — Production (`producer`)
+  - `dir_alex` — Director (also assigned `SUP` capacity on `hero_robot/Lighting/beauty`)
+  - `sup_elena` — Supervisor
+  - `lead_marco` — Lead
+  - `art_sam` — Artist (`DO` on `hero_robot/Modeling/main`)
+  - `ext_li` — External (`Outsource FX Co`, `FX` department)
+  - `cli_jordan` — Client (`Client Studio`, shared access to `hero_robot/Lighting/beauty` `v0001` only)
 
 > **Important (Local Launching & SQLite Caveats):** Browsers block `file://` launching, so DCC launching runs strictly through the local loopback backend ([docs/LAUNCHING.md](docs/LAUNCHING.md)). Each project stores `00_Pipeline/project.db` in SQLite WAL mode; keep active `project.db` on a local drive rather than a network share ([docs/PROJECT_LAYOUT.md](docs/PROJECT_LAYOUT.md)).
 

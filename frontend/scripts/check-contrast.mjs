@@ -77,6 +77,23 @@ const checks = [
   ['--focus-ring', '--surface-field', 3.0, 'focus ring on field'],
   ['--border-control', '--surface-panel', 3.0, 'control border on panel'],
   ['--border-control', '--surface-field', 3.0, 'control border on field'],
+  ['--capacity-do-text', '--capacity-do-bg', 4.5, 'capacity DO chip'],
+  ['--capacity-lead-text', '--capacity-lead-bg', 4.5, 'capacity LEAD chip'],
+  ['--capacity-sup-text', '--capacity-sup-bg', 4.5, 'capacity SUP chip'],
+  ['--status-wtg', '--surface-panel', 4.5, 'status WTG on panel'],
+  ['--status-rdy', '--surface-panel', 4.5, 'status RDY on panel'],
+  ['--status-ip', '--surface-panel', 4.5, 'status IP on panel'],
+  ['--status-rtk', '--surface-panel', 4.5, 'status RTK on panel'],
+  ['--status-p-lead', '--surface-panel', 4.5, 'status P_LEAD on panel'],
+  ['--status-p-sup', '--surface-panel', 4.5, 'status P_SUP on panel'],
+  ['--status-p-client', '--surface-panel', 4.5, 'status P_CLIENT on panel'],
+  ['--status-app', '--surface-panel', 4.5, 'status APP on panel'],
+  ['--status-hld', '--surface-panel', 4.5, 'status HLD on panel'],
+  ['--avatar-fg', '--avatar-hue-0', 4.5, 'avatar hue 0'],
+  ['--avatar-fg', '--avatar-hue-1', 4.5, 'avatar hue 1'],
+  ['--avatar-fg', '--avatar-hue-2', 4.5, 'avatar hue 2'],
+  ['--avatar-fg', '--avatar-hue-3', 4.5, 'avatar hue 3'],
+  ['--avatar-fg', '--avatar-hue-4', 4.5, 'avatar hue 4'],
 ];
 
 let failed = false;

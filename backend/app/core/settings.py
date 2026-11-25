@@ -44,8 +44,13 @@ class Settings(BaseSettings):
     )
     jwt_secret: str = "organum-dev-secret-change-in-production"
     jwt_algorithm: str = "HS256"
-    default_user_username: str = "artist"
-    default_user_display_name: str = "Lead Artist"
+    initial_admin_password: str = Field(default="magicadmin**", repr=False)
+    session_idle_hours: int = 8
+    session_absolute_days: int = 7
+    lockout_max_attempts: int = 5
+    lockout_minutes: int = 15
+    default_user_username: str = "admin"
+    default_user_display_name: str = "Administrator"
     auto_scan_on_startup: bool = True
     frontend_dist_dir: Path | None = None
     ocio_config_path: str | None = None

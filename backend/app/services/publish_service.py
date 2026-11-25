@@ -70,6 +70,7 @@ async def load_task_with_product(db: AsyncSession, task_id: UUID) -> tuple[Task,
             .selectinload(Product.versions)
             .selectinload(ProductVersion.files),
         )
+        .execution_options(populate_existing=True)
     )
     task = res.scalar_one_or_none()
     if task is None:
@@ -106,6 +107,7 @@ async def _allocate_and_register_version(
     source_paths: list[str],
     set_master: bool | None,
     stage_dir: Path,
+    created_by_user_id: UUID | None = None,
 ) -> ProductVersion:
     """Allocate next version number transactionally, move staged files, register, and set master."""
     _, products_dir, _ = task_dirs(ctx, task)
@@ -138,6 +140,7 @@ async def _allocate_and_register_version(
                 rel_path=v_rel,
                 comment=comment.strip(),
                 source_json=source_paths,
+                created_by_user_id=created_by_user_id,
             )
             db.add(version)
             await db.flush()
@@ -174,6 +177,7 @@ async def publish_from_scenefiles(
     *,
     comment: str = "",
     set_master: bool | None = None,
+    created_by_user_id: UUID | None = None,
 ) -> ProductVersion:
     if not scenefile_rel_paths:
         raise AppError("empty_publish", "Select at least one file to publish", status_code=400)
@@ -225,6 +229,7 @@ async def publish_from_scenefiles(
                 source_paths=source_project_rels,
                 set_master=set_master,
                 stage_dir=stage_dir,
+                created_by_user_id=created_by_user_id,
             )
         except Exception:
             await asyncio.to_thread(shutil.rmtree, stage_dir, True)
@@ -240,6 +245,7 @@ async def publish_from_uploads(
     *,
     comment: str = "",
     set_master: bool | None = None,
+    created_by_user_id: UUID | None = None,
 ) -> ProductVersion:
     if not uploads:
         raise AppError("empty_publish", "Provide at least one file to publish", status_code=400)
@@ -275,6 +281,7 @@ async def publish_from_uploads(
                 source_paths=names,
                 set_master=set_master,
                 stage_dir=stage_dir,
+                created_by_user_id=created_by_user_id,
             )
         except Exception:
             await asyncio.to_thread(shutil.rmtree, stage_dir, True)

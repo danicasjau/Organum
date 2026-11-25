@@ -10,7 +10,8 @@ from sqlalchemy.orm import selectinload
 
 from app.core.deps import get_db
 from app.core.errors import ConflictError, NotFoundError
-from app.models.project_db import Department, DepartmentDefaultTask
+from app.core.security import get_project_auth, require
+from app.models.project_db import Department, DepartmentDefaultTask, Task
 from app.schemas.api import (
     DefaultTaskCreate,
     DefaultTaskOut,
@@ -21,6 +22,7 @@ from app.schemas.api import (
     ReorderRequest,
 )
 from app.services.naming import sanitize_folder_name
+from app.services.permissions import AuthContext, visible_task_ids
 
 router = APIRouter(prefix="/departments", tags=["departments"])
 
@@ -30,6 +32,8 @@ def _to_out(d: Department) -> DepartmentOut:
         id=d.id,
         name=d.name,
         folder_name=d.folder_name,
+        short_code=d.short_code,
+        color=d.color,
         sort_order=d.sort_order,
         is_active=d.is_active,
         default_tasks=[
@@ -47,6 +51,7 @@ def _to_out(d: Department) -> DepartmentOut:
 
 @router.get("", response_model=list[DepartmentOut])
 async def list_departments(
+    auth: Annotated[AuthContext, Depends(get_project_auth)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> list[DepartmentOut]:
     res = await db.execute(
@@ -54,12 +59,22 @@ async def list_departments(
         .options(selectinload(Department.default_tasks))
         .order_by(Department.sort_order, Department.name)
     )
-    return [_to_out(d) for d in res.scalars().all()]
+    depts = list(res.scalars().all())
+    if auth.role.name == "client":
+        vis = await visible_task_ids(db, auth, "task.view")
+        if not vis:
+            return []
+        dept_ids = set(
+            (await db.execute(select(Task.department_id).where(Task.id.in_(vis)))).scalars().all()
+        )
+        depts = [d for d in depts if d.id in dept_ids]
+    return [_to_out(d) for d in depts]
 
 
 @router.post("", response_model=DepartmentOut, status_code=201)
 async def create_department(
     payload: DepartmentCreate,
+    _auth: Annotated[AuthContext, Depends(require("entity.manage", write=True))],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> DepartmentOut:
     display = payload.name.strip()
@@ -76,7 +91,18 @@ async def create_department(
 
     all_depts = (await db.execute(select(Department))).scalars().all()
     next_order = max((d.sort_order for d in all_depts), default=-1) + 1
-    dept = Department(name=display, folder_name=folder, sort_order=next_order, is_active=True)
+    raw_sc = (payload.short_code or "".join(c for c in display.upper() if c.isalnum()))[:4]
+    short_code = (raw_sc[:3] if len(raw_sc) >= 3 else (raw_sc + "XXX")[:3]) or "DPT"
+    palette_tokens = [f"--series-{i}" for i in range(1, 8)]
+    color = (payload.color or "").strip() or palette_tokens[next_order % len(palette_tokens)]
+    dept = Department(
+        name=display,
+        folder_name=folder,
+        short_code=short_code,
+        color=color,
+        sort_order=next_order,
+        is_active=True,
+    )
     db.add(dept)
     await db.flush()
     db.add(
@@ -100,6 +126,7 @@ async def create_department(
 async def update_department(
     dept_id: UUID,
     payload: DepartmentUpdate,
+    _auth: Annotated[AuthContext, Depends(require("entity.manage", write=True))],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> DepartmentOut:
     res = await db.execute(
@@ -115,6 +142,10 @@ async def update_department(
         folder = sanitize_folder_name(display)
         dept.name = display
         dept.folder_name = folder
+    if payload.short_code is not None:
+        dept.short_code = payload.short_code.strip().upper()[:8] or dept.short_code
+    if payload.color is not None:
+        dept.color = payload.color.strip() or dept.color
     if payload.is_active is not None:
         dept.is_active = payload.is_active
     if payload.sort_order is not None:
@@ -127,6 +158,7 @@ async def update_department(
 @router.delete("/{dept_id}", status_code=204)
 async def delete_department(
     dept_id: UUID,
+    _auth: Annotated[AuthContext, Depends(require("entity.manage", write=True))],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> Response:
     dept = await db.get(Department, dept_id)
@@ -140,11 +172,14 @@ async def delete_department(
 @router.put("/reorder", response_model=list[DepartmentOut])
 async def reorder_departments(
     payload: ReorderRequest,
+    _auth: Annotated[AuthContext, Depends(require("entity.manage", write=True))],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> list[DepartmentOut]:
     depts = (
-        await db.execute(select(Department).options(selectinload(Department.default_tasks)))
-    ).scalars().all()
+        (await db.execute(select(Department).options(selectinload(Department.default_tasks))))
+        .scalars()
+        .all()
+    )
     by_id = {d.id: d for d in depts}
     for idx, did in enumerate(payload.ids):
         if did in by_id:
@@ -158,6 +193,7 @@ async def reorder_departments(
 async def add_default_task(
     dept_id: UUID,
     payload: DefaultTaskCreate,
+    _auth: Annotated[AuthContext, Depends(require("entity.manage", write=True))],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> DefaultTaskOut:
     dept = await db.get(Department, dept_id)
@@ -176,10 +212,14 @@ async def add_default_task(
     if existing is not None:
         raise ConflictError(f"Default task '{display}' already exists")
     siblings = (
-        await db.execute(
-            select(DepartmentDefaultTask).where(DepartmentDefaultTask.department_id == dept_id)
+        (
+            await db.execute(
+                select(DepartmentDefaultTask).where(DepartmentDefaultTask.department_id == dept_id)
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     task = DepartmentDefaultTask(
         department_id=dept_id,
         name=display,
@@ -202,6 +242,7 @@ async def add_default_task(
 async def update_default_task(
     task_id: UUID,
     payload: DefaultTaskUpdate,
+    _auth: Annotated[AuthContext, Depends(require("entity.manage", write=True))],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> DefaultTaskOut:
     task = await db.get(DepartmentDefaultTask, task_id)
@@ -227,6 +268,7 @@ async def update_default_task(
 @router.delete("/default-tasks/{task_id}", status_code=204)
 async def delete_default_task(
     task_id: UUID,
+    _auth: Annotated[AuthContext, Depends(require("entity.manage", write=True))],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> Response:
     task = await db.get(DepartmentDefaultTask, task_id)
@@ -241,13 +283,18 @@ async def delete_default_task(
 async def reorder_default_tasks(
     dept_id: UUID,
     payload: ReorderRequest,
+    _auth: Annotated[AuthContext, Depends(require("entity.manage", write=True))],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> list[DefaultTaskOut]:
     tasks = (
-        await db.execute(
-            select(DepartmentDefaultTask).where(DepartmentDefaultTask.department_id == dept_id)
+        (
+            await db.execute(
+                select(DepartmentDefaultTask).where(DepartmentDefaultTask.department_id == dept_id)
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     by_id = {t.id: t for t in tasks}
     for idx, tid in enumerate(payload.ids):
         if tid in by_id:
@@ -264,4 +311,3 @@ async def reorder_default_tasks(
         )
         for t in ordered
     ]
-

@@ -29,7 +29,27 @@ class ProjectMeta(TimestampMixin, Base):
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     uuid: Mapped[str] = mapped_column(String(36), unique=True, nullable=False)
     name: Mapped[str] = mapped_column(String(128), nullable=False)
-    schema_version: Mapped[int] = mapped_column(Integer, default=2, nullable=False)
+    schema_version: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(16), default="active", server_default="active", nullable=False
+    )  # 'active' | 'on_hold' | 'completed' | 'archived'
+    hours_per_day: Mapped[float] = mapped_column(Float, default=8.0, nullable=False)
+    working_days: Mapped[list[int]] = mapped_column(
+        JSON, default=lambda: [1, 2, 3, 4, 5], nullable=False
+    )
+    task_code_pattern: Mapped[str] = mapped_column(
+        String(128), default="{entity_folder}_{dept_short}_{task_folder}", nullable=False
+    )
+    require_version_to_submit: Mapped[bool] = mapped_column(
+        Boolean, default=True, nullable=False
+    )
+    enforce_dependencies_in_gantt: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
+    admin_sql_console_enabled: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
+    link_dependency_depth: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
 
 
 class Department(TimestampMixin, Base):
@@ -38,6 +58,8 @@ class Department(TimestampMixin, Base):
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(128), unique=True, nullable=False)
     folder_name: Mapped[str] = mapped_column(String(128), unique=True, nullable=False)
+    short_code: Mapped[str] = mapped_column(String(8), default="", nullable=False)
+    color: Mapped[str] = mapped_column(String(32), default="--series-1", nullable=False)
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 

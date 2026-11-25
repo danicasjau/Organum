@@ -14,6 +14,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.deps import get_app_db, get_project_registry, get_settings_dep
 from app.core.errors import AppError, NotFoundError
 from app.core.project_registry import ProjectRegistry
+from app.core.security import (
+    check_origin,
+    get_current_auth,
+    get_optional_auth,
+    require_admin_global,
+)
 from app.core.settings import Settings
 from app.models.app_db import KnownProject, Launcher, UiPref
 from app.schemas.api import (
@@ -29,8 +35,14 @@ from app.schemas.api import (
     UiPrefPutRequest,
 )
 from app.services.launcher_service import autodetect_launchers, is_loopback_client
+from app.services.permissions import AuthContext
 
 router = APIRouter(tags=["app"])
+
+
+async def _has_valid_projects(app_db: AsyncSession) -> bool:
+    rows = (await app_db.execute(select(KnownProject))).scalars().all()
+    return any((Path(r.path) / "00_Pipeline" / "project.json").is_file() for r in rows)
 
 
 def _to_known_out(k: KnownProject) -> KnownProjectOut:
@@ -47,20 +59,39 @@ def _to_known_out(k: KnownProject) -> KnownProjectOut:
 
 @router.get("/projects", response_model=list[KnownProjectOut])
 async def list_known_projects(
+    auth: Annotated[AuthContext, Depends(get_current_auth)],
     app_db: Annotated[AsyncSession, Depends(get_app_db)],
 ) -> list[KnownProjectOut]:
     rows = (
-        await app_db.execute(select(KnownProject).order_by(KnownProject.last_opened.desc()))
-    ).scalars().all()
+        (await app_db.execute(select(KnownProject).order_by(KnownProject.last_opened.desc())))
+        .scalars()
+        .all()
+    )
+    if auth.role.name in {"client", "external"}:
+        rows = [r for r in rows if r.uuid == auth.project_uuid]
     return [_to_known_out(r) for r in rows]
 
 
 @router.post("/projects", response_model=KnownProjectOut, status_code=201)
 async def create_new_project(
     payload: ProjectCreateRequest,
+    request: Request,
     app_db: Annotated[AsyncSession, Depends(get_app_db)],
     registry: Annotated[ProjectRegistry, Depends(get_project_registry)],
+    settings: Annotated[Settings, Depends(get_settings_dep)],
+    auth: Annotated[AuthContext | None, Depends(get_optional_auth)] = None,
 ) -> KnownProjectOut:
+    check_origin(request, settings)
+    has_existing = await _has_valid_projects(app_db)
+    if has_existing:
+        if auth is None:
+            raise AppError(
+                "unauthorized", "Authentication required to create projects", status_code=401
+            )
+        if auth.role.name != "admin":
+            raise AppError(
+                "forbidden", "Only administrators can create new projects", status_code=403
+            )
     ctx = await registry.create_project(
         app_db,
         path=Path(payload.path),
@@ -75,6 +106,7 @@ async def create_new_project(
 @router.post("/projects/open", response_model=KnownProjectOut)
 async def open_existing_project(
     payload: ProjectOpenRequest,
+    _auth: Annotated[AuthContext, Depends(require_admin_global())],
     app_db: Annotated[AsyncSession, Depends(get_app_db)],
     registry: Annotated[ProjectRegistry, Depends(get_project_registry)],
 ) -> KnownProjectOut:
@@ -87,6 +119,7 @@ async def open_existing_project(
 @router.delete("/projects/{project_uuid}", status_code=204)
 async def forget_known_project(
     project_uuid: str,
+    _auth: Annotated[AuthContext, Depends(require_admin_global())],
     app_db: Annotated[AsyncSession, Depends(get_app_db)],
     registry: Annotated[ProjectRegistry, Depends(get_project_registry)],
 ) -> Response:
@@ -137,9 +170,18 @@ def _browse_sync(path_str: str, fallback_dir: Path) -> FsBrowseResponse:
 @router.get("/fs/browse", response_model=FsBrowseResponse)
 async def browse_server_folders(
     request: Request,
+    app_db: Annotated[AsyncSession, Depends(get_app_db)],
     settings: Annotated[Settings, Depends(get_settings_dep)],
+    auth: Annotated[AuthContext | None, Depends(get_optional_auth)] = None,
     path: str = Query(default=""),
 ) -> FsBrowseResponse:
+    if await _has_valid_projects(app_db):
+        if auth is None:
+            raise AppError("unauthorized", "Authentication required", status_code=401)
+        if auth.role.name != "admin":
+            raise AppError(
+                "forbidden", "Only administrators can browse server folders", status_code=403
+            )
     client_host = request.client.host if request.client else None
     if not is_loopback_client(settings.bind_host) or not is_loopback_client(client_host):
         raise AppError(
@@ -152,11 +194,16 @@ async def browse_server_folders(
 
 @router.get("/launchers", response_model=list[LauncherOut])
 async def list_launchers(
+    auth: Annotated[AuthContext, Depends(get_current_auth)],
     app_db: Annotated[AsyncSession, Depends(get_app_db)],
 ) -> list[LauncherOut]:
+    if auth.role.name == "client":
+        raise AppError("forbidden", "Launchers are not accessible to clients", status_code=403)
     rows = (
-        await app_db.execute(select(Launcher).order_by(Launcher.extension, Launcher.label))
-    ).scalars().all()
+        (await app_db.execute(select(Launcher).order_by(Launcher.extension, Launcher.label)))
+        .scalars()
+        .all()
+    )
     return [
         LauncherOut(
             id=r.id,
@@ -173,8 +220,13 @@ async def list_launchers(
 @router.put("/launchers", response_model=list[LauncherOut])
 async def save_launchers(
     payload: LaunchersPutRequest,
+    auth: Annotated[AuthContext, Depends(get_current_auth)],
     app_db: Annotated[AsyncSession, Depends(get_app_db)],
 ) -> list[LauncherOut]:
+    if auth.role.name != "admin" and not auth.has_any_scope("scenefile.launch"):
+        raise AppError(
+            "forbidden", "Insufficient permissions to configure launchers", status_code=403
+        )
     await app_db.execute(delete(Launcher))
     created: list[Launcher] = []
     for item in payload.launchers:
@@ -208,12 +260,19 @@ async def save_launchers(
 
 
 @router.post("/launchers/autodetect", response_model=list[AutodetectedLauncherOut])
-async def autodetect_installed_launchers() -> list[AutodetectedLauncherOut]:
+async def autodetect_installed_launchers(
+    auth: Annotated[AuthContext, Depends(get_current_auth)],
+) -> list[AutodetectedLauncherOut]:
+    if auth.role.name != "admin" and not auth.has_any_scope("scenefile.launch"):
+        raise AppError(
+            "forbidden", "Insufficient permissions to autodetect launchers", status_code=403
+        )
     return [AutodetectedLauncherOut(**item) for item in autodetect_launchers()]
 
 
 @router.get("/ui-prefs", response_model=list[UiPrefOut])
 async def list_ui_prefs(
+    _auth: Annotated[AuthContext, Depends(get_current_auth)],
     app_db: Annotated[AsyncSession, Depends(get_app_db)],
 ) -> list[UiPrefOut]:
     rows = (await app_db.execute(select(UiPref).order_by(UiPref.key))).scalars().all()
@@ -224,6 +283,7 @@ async def list_ui_prefs(
 async def put_ui_pref(
     key: str,
     payload: UiPrefPutRequest,
+    _auth: Annotated[AuthContext, Depends(get_current_auth)],
     app_db: Annotated[AsyncSession, Depends(get_app_db)],
 ) -> UiPrefOut:
     existing = await app_db.get(UiPref, key)
@@ -238,6 +298,7 @@ async def put_ui_pref(
 
 @router.get("/icons", response_model=list[str])
 async def list_custom_extension_icons(
+    _auth: Annotated[AuthContext, Depends(get_current_auth)],
     settings: Annotated[Settings, Depends(get_settings_dep)],
 ) -> list[str]:
     """List available user override icon extensions from data/icons/."""
@@ -258,6 +319,7 @@ async def list_custom_extension_icons(
 @router.get("/icons/{ext}")
 async def get_custom_extension_icon(
     ext: str,
+    _auth: Annotated[AuthContext, Depends(get_current_auth)],
     settings: Annotated[Settings, Depends(get_settings_dep)],
 ) -> Response:
     """Serve optional user override icon from data/icons/<ext>.(png|svg)."""

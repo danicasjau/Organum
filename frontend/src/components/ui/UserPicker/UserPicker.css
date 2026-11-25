@@ -1,0 +1,85 @@
+@layer components {
+  .org-userpicker__trigger {
+    max-width: 100%;
+    justify-content: flex-start;
+  }
+
+  .org-userpicker__trigger-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .org-userpicker {
+    width: var(--settings-dialog-w);
+    max-width: var(--dialog-min-w);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .org-userpicker__head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .org-userpicker__list {
+    display: flex;
+    flex-direction: column;
+    max-height: var(--select-max-h);
+    overflow-y: auto;
+    border: var(--border-w) solid var(--border-dark);
+    background: var(--surface-field);
+  }
+
+  .org-userpicker__row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    min-height: var(--min-hit);
+    padding: var(--space-1) var(--space-2);
+    border: none;
+    border-bottom: var(--border-w) solid var(--border-dark);
+    background: transparent;
+    color: var(--text);
+    text-align: left;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: var(--font-size);
+  }
+
+  .org-userpicker__row:hover {
+    background: var(--surface-hover);
+  }
+
+  .org-userpicker__row[data-selected="true"] {
+    background: var(--accent-soft);
+  }
+
+  .org-userpicker__meta {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .org-userpicker__name {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .org-userpicker__sub {
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .org-userpicker__empty {
+    padding: var(--space-3);
+    color: var(--text-muted);
+    font-size: var(--font-size);
+  }
+}
+

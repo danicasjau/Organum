@@ -10,7 +10,9 @@ from sse_starlette.sse import EventSourceResponse
 
 from app.core.deps import get_job_runner
 from app.core.errors import NotFoundError
+from app.core.security import get_current_auth
 from app.jobs.base import JobRunner
+from app.services.permissions import AuthContext
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -18,6 +20,7 @@ router = APIRouter(prefix="/jobs", tags=["jobs"])
 @router.get("/{job_id}/events")
 async def stream_job_events(
     job_id: UUID,
+    _auth: Annotated[AuthContext, Depends(get_current_auth)],
     runner: Annotated[JobRunner, Depends(get_job_runner)],
 ) -> EventSourceResponse:
     if runner.get_status(job_id) is None:
@@ -45,6 +48,7 @@ async def stream_job_events(
 @router.post("/{job_id}/cancel")
 async def cancel_job(
     job_id: UUID,
+    _auth: Annotated[AuthContext, Depends(get_current_auth)],
     runner: Annotated[JobRunner, Depends(get_job_runner)],
 ) -> dict[str, bool]:
     cancelled = await runner.cancel(job_id)

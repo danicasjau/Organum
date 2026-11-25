@@ -1,7 +1,10 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Suspense, lazy, useEffect, useState } from 'react';
+import { Suspense, lazy, useEffect, useState, type ReactNode } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { Spinner, ToastProvider, TooltipProvider } from '../components/ui';
+import { ForcePasswordChangeDialog } from '../features/auth/ForcePasswordChangeDialog';
+import { LoginPage } from '../features/auth/LoginPage';
+import { hasPerm, useAuthStore } from '../features/auth/authStore';
 import './App.css';
 
 const ViewerPage = lazy(() =>
@@ -10,19 +13,55 @@ const ViewerPage = lazy(() =>
 const GalleryPage = lazy(() =>
   import('../gallery/GalleryPage').then((m) => ({ default: m.GalleryPage })),
 );
+const UsersPage = lazy(() =>
+  import('../features/users/UsersPage').then((m) => ({ default: m.UsersPage })),
+);
+const MyUserPage = lazy(() =>
+  import('../features/me/MyUserPage').then((m) => ({ default: m.MyUserPage })),
+);
+const AdminPage = lazy(() =>
+  import('../features/admin/AdminPage').then((m) => ({ default: m.AdminPage })),
+);
 
 const queryClient = new QueryClient();
 
 export type ThemeMode = 'dark' | 'light';
 export type DensityMode = 'compact' | 'comfortable';
 
+function RequireAuth({
+  requiredPerm,
+  children,
+}: {
+  requiredPerm?: string;
+  children: ReactNode;
+}) {
+  const initialized = useAuthStore((s) => s.initialized);
+  const auth = useAuthStore((s) => s.auth);
+
+  if (!initialized) {
+    return <Spinner label="Checking session" />;
+  }
+  if (!auth) {
+    return <Navigate to="/login" replace />;
+  }
+  if (requiredPerm && !hasPerm(auth.permissions, requiredPerm)) {
+    return <Navigate to="/entities" replace />;
+  }
+  return <>{children}</>;
+}
+
 export function App() {
+  const bootstrapSession = useAuthStore((s) => s.bootstrapSession);
   const [theme, setTheme] = useState<ThemeMode>(() => {
     const saved = localStorage.getItem('organum.theme');
     return saved === 'light' ? 'light' : 'dark';
   });
   const [density, setDensity] = useState<DensityMode>('compact');
   const [redline, setRedline] = useState(false);
+
+  useEffect(() => {
+    void bootstrapSession();
+  }, [bootstrapSession]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -48,12 +87,53 @@ export function App() {
               <Routes>
                 <Route path="/" element={<Navigate to="/entities" replace />} />
                 <Route
+                  path="/login"
+                  element={<LoginPage theme={theme} onToggleTheme={toggleTheme} />}
+                />
+                <Route
                   path="/entities"
-                  element={<ViewerPage theme={theme} onToggleTheme={toggleTheme} />}
+                  element={
+                    <RequireAuth>
+                      <ViewerPage theme={theme} onToggleTheme={toggleTheme} />
+                    </RequireAuth>
+                  }
                 />
                 <Route
                   path="/viewer"
-                  element={<ViewerPage theme={theme} onToggleTheme={toggleTheme} />}
+                  element={
+                    <RequireAuth>
+                      <ViewerPage theme={theme} onToggleTheme={toggleTheme} />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/users"
+                  element={
+                    <RequireAuth requiredPerm="user.view">
+                      <UsersPage theme={theme} onToggleTheme={toggleTheme} />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/me"
+                  element={
+                    <RequireAuth>
+                      <MyUserPage
+                        theme={theme}
+                        onToggleTheme={toggleTheme}
+                        density={density}
+                        onChangeDensity={setDensity}
+                      />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/admin"
+                  element={
+                    <RequireAuth requiredPerm="role.manage">
+                      <AdminPage theme={theme} onToggleTheme={toggleTheme} />
+                    </RequireAuth>
+                  }
                 />
                 <Route
                   path="/gallery"
@@ -71,6 +151,7 @@ export function App() {
                   }
                 />
               </Routes>
+              <ForcePasswordChangeDialog />
             </Suspense>
           </BrowserRouter>
         </ToastProvider>

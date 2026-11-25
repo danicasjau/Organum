@@ -25,18 +25,28 @@ def _to_out(ann: Annotation) -> AnnotationOut:
         plane_json=ann.plane_json,
         camera_json=ann.camera_json,
         author_id=ann.author_id,
+        visibility=ann.visibility,
         created_at=ann.created_at,
         updated_at=ann.updated_at,
     )
 
 
-async def list_annotations(db: AsyncSession, file_id: UUID) -> list[AnnotationOut]:
+async def list_annotations(
+    db: AsyncSession,
+    file_id: UUID,
+    *,
+    allowed_visibilities: tuple[str, ...] = ("internal",),
+) -> list[AnnotationOut]:
     file_entry = await db.get(FileEntry, file_id)
     if file_entry is None:
         raise NotFoundError("file", str(file_id))
     res = await db.execute(
         select(Annotation)
-        .where(Annotation.file_id == file_id, Annotation.deleted_at.is_(None))
+        .where(
+            Annotation.file_id == file_id,
+            Annotation.deleted_at.is_(None),
+            Annotation.visibility.in_(allowed_visibilities),
+        )
         .order_by(Annotation.frame_in, Annotation.created_at)
     )
     return [_to_out(a) for a in res.scalars().all()]
@@ -47,10 +57,13 @@ async def create_annotation(
     file_id: UUID,
     author_id: UUID,
     payload: AnnotationCreate,
+    *,
+    forced_visibility: str | None = None,
 ) -> AnnotationOut:
     file_entry = await db.get(FileEntry, file_id)
     if file_entry is None:
         raise NotFoundError("file", str(file_id))
+    vis = forced_visibility if forced_visibility is not None else payload.visibility
     ann = Annotation(
         file_id=file_id,
         kind=payload.kind,
@@ -63,6 +76,7 @@ async def create_annotation(
         plane_json=payload.plane_json,
         camera_json=payload.camera_json,
         author_id=author_id,
+        visibility=vis,
     )
     db.add(ann)
     await db.commit()

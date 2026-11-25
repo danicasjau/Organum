@@ -11,6 +11,7 @@ from httpx import AsyncClient
 from PIL import Image
 
 from app.services.launcher_service import build_launch_argv
+from tests.conftest import authenticate_project_admin
 
 
 @pytest.mark.asyncio
@@ -30,6 +31,7 @@ async def test_entity_folder_atomicity_tags_data_thumbnail_and_trash(
     )
     assert create_proj.status_code == 201
     proj_uuid = str(create_proj.json()["uuid"])
+    await authenticate_project_admin(client, proj_uuid)
     base = f"/api/v1/projects/{proj_uuid}"
 
     depts = (await client.get(f"{base}/departments")).json()
@@ -155,6 +157,7 @@ async def test_publish_concurrency_master_star_scenefiles_and_sequence_override(
         },
     )
     proj_uuid = str(create_proj.json()["uuid"])
+    await authenticate_project_admin(client, proj_uuid)
     base = f"/api/v1/projects/{proj_uuid}"
 
     depts = (await client.get(f"{base}/departments")).json()

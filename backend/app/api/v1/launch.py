@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.deps import get_app_db, get_project_context, get_settings_dep
 from app.core.errors import AppError, NotFoundError
 from app.core.project_registry import ProjectContext
+from app.core.security import get_project_auth, require
 from app.core.settings import Settings
 from app.models.app_db import Launcher
 from app.schemas.api import LaunchRequest, LaunchResponse, RevealRequest
@@ -24,6 +25,7 @@ from app.services.launcher_service import (
     is_loopback_client,
     spawn_detached,
 )
+from app.services.permissions import AuthContext
 
 router = APIRouter(tags=["launch"])
 
@@ -99,10 +101,12 @@ def _os_reveal(target: Path) -> None:
 async def launch_file_endpoint(
     payload: LaunchRequest,
     request: Request,
+    auth: Annotated[AuthContext, Depends(require("scenefile.launch"))],
     ctx: Annotated[ProjectContext, Depends(get_project_context)],
     app_db: Annotated[AsyncSession, Depends(get_app_db)],
     settings: Annotated[Settings, Depends(get_settings_dep)],
 ) -> LaunchResponse:
+    _ = auth
     _assert_loopback_and_origin(request, settings)
     target = _resolve_project_target(ctx, payload.rel_path)
 
@@ -115,12 +119,16 @@ async def launch_file_endpoint(
         ext = target.suffix.lower()
         if ext:
             rows = (
-                await app_db.execute(
-                    select(Launcher)
-                    .where(Launcher.extension == ext)
-                    .order_by(Launcher.is_default.desc(), Launcher.label.asc())
+                (
+                    await app_db.execute(
+                        select(Launcher)
+                        .where(Launcher.extension == ext)
+                        .order_by(Launcher.is_default.desc(), Launcher.label.asc())
+                    )
                 )
-            ).scalars().all()
+                .scalars()
+                .all()
+            )
             launcher = rows[0] if rows else None
 
     if launcher is not None:
@@ -151,9 +159,16 @@ async def launch_file_endpoint(
 async def reveal_in_file_manager(
     payload: RevealRequest,
     request: Request,
+    auth: Annotated[AuthContext, Depends(get_project_auth)],
     ctx: Annotated[ProjectContext, Depends(get_project_context)],
     settings: Annotated[Settings, Depends(get_settings_dep)],
 ) -> LaunchResponse:
+    if auth.role.name in {"client", "external"}:
+        raise AppError(
+            "forbidden",
+            "Clients and external users cannot reveal local server paths",
+            status_code=403,
+        )
     _assert_loopback_and_origin(request, settings)
     target = _resolve_project_target(ctx, payload.rel_path)
     try:

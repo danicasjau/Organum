@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import type { DensityMode, ThemeMode } from '../app/App';
 import {
   AngleDial,
+  Avatar,
   Badge,
   Banner,
   BarChart,
   BrandWordmark,
   Button,
   ButtonGroup,
+  CapacityBadge,
   Checkbox,
   ColorField,
   ContextMenu,
@@ -66,6 +68,7 @@ import {
   Tooltip,
   Topbar,
   TransportControls,
+  UserPicker,
   VectorField,
   useToast,
   type CurvePoint,
@@ -172,6 +175,7 @@ export function GalleryPage({
   ]);
   const [galleryFrame, setGalleryFrame] = useState(12);
   const [galleryPlaying, setGalleryPlaying] = useState(false);
+  const [pickedUsers, setPickedUsers] = useState<string[]>(['u1']);
 
   const menus: MenuBarMenu[] = [
     {
@@ -953,6 +957,28 @@ export function GalleryPage({
                   ]}
                 />
               </Grid>
+            </Stack>
+          </Panel>
+
+          {/* Section 9: Production Identity & Capacity Primitives */}
+          <Panel title="9. Production Users & Capacities (CR03)" collapsible>
+            <Stack gap="2">
+              <Inline gap="2" wrap>
+                <Avatar username="admin" fullName="Administrator" size="sm" />
+                <Avatar username="dir_alex" fullName="Alex Vance" size="md" />
+                <Avatar username="cli_jordan" fullName="Jordan Blake" size="md" />
+                <CapacityBadge capacity="artist" />
+                <CapacityBadge capacity="lead" />
+                <CapacityBadge capacity="supervisor" />
+                <UserPicker
+                  users={[
+                    { id: 'u1', username: 'art_sam', fullName: 'Sam Rivera', roleLabel: 'Artist', companyName: 'Studio' },
+                    { id: 'u2', username: 'dir_alex', fullName: 'Alex Vance', roleLabel: 'Director', companyName: 'Studio' },
+                  ]}
+                  selectedIds={pickedUsers}
+                  onChange={setPickedUsers}
+                />
+              </Inline>
             </Stack>
           </Panel>
         </Stack>

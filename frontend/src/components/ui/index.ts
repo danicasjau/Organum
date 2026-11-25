@@ -3,10 +3,12 @@ import './styles/tokens.css';
 import './styles/base.css';
 
 export * from './AppShell/AppShell';
+export * from './Avatar/Avatar';
 export * from './Badge/Badge';
 export * from './Banner/Banner';
 export * from './Button/Button';
 export * from './ButtonGroup/ButtonGroup';
+export * from './CapacityBadge/CapacityBadge';
 export * from './Charts/Charts';
 export * from './Checkbox/Checkbox';
 export * from './ColorPicker/ColorPicker';
@@ -37,4 +39,5 @@ export * from './Timebar/Timebar';
 export * from './Toolbar/Toolbar';
 export * from './Tree/Tree';
 export * from './Typography/Typography';
+export * from './UserPicker/UserPicker';
 export * from './VectorField/VectorField';

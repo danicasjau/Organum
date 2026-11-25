@@ -205,9 +205,8 @@ export function EntityColumn({
 
     const matchingEntities = (tree.entities ?? []).filter((e) => {
       if (!isFiltering) {
-        const parent = e.rel_path.includes('/')
-          ? e.rel_path.slice(0, e.rel_path.lastIndexOf('/'))
-          : '';
+        const rel = e.rel_path ?? '';
+        const parent = rel.includes('/') ? rel.slice(0, rel.lastIndexOf('/')) : '';
         if (parent !== currentFolder) return false;
       }
       if (filterType && (e.entity_type ?? '') !== filterType) return false;

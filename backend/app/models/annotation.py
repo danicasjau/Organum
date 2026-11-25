@@ -44,6 +44,9 @@ class Annotation(TimestampMixin, Base):
     author_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid, ForeignKey("users.id", ondelete="SET NULL"), index=True, nullable=True
     )
+    visibility: Mapped[str] = mapped_column(
+        String(16), default="internal", server_default="internal", nullable=False
+    )  # 'internal' | 'client'
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 

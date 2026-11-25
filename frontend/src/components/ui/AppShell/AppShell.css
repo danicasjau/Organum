@@ -16,5 +16,33 @@
     min-height: 0;
     overflow: hidden;
   }
+
+  .org-usermenu__trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    height: var(--ctl-h);
+    min-height: var(--min-hit);
+    padding: var(--space-0) var(--space-2);
+    border: var(--border-w) solid var(--border-dark);
+    border-radius: var(--radius-1);
+    background: var(--bevel-raised-bg);
+    box-shadow: var(--bevel-inset);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: var(--font-size);
+    cursor: pointer;
+  }
+
+  .org-usermenu__trigger:hover {
+    background: var(--bevel-hover-bg);
+  }
+
+  .org-usermenu__name {
+    max-width: var(--viewer-select-w);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 

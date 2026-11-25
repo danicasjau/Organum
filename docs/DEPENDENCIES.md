@@ -19,7 +19,8 @@ All packages below were verified against PyPI and the npm registry for current a
 | `python-multipart` | 0.0.34 | 2026-11-16 | Yes | Apache-2.0 | Streamed multipart file upload |
 | `watchfiles` | 1.3.0 | 2026-09-21 | Yes | MIT | Rust-backed filesystem watcher |
 | `sse-starlette` | 3.7.1 | 2026-11-22 | Yes | BSD-3-Clause | Server-Sent Events for job progress |
-| `pyjwt` | 2.15.1 | 2026-09-28 | Yes | MIT | JWT authentication stub |
+| `pyjwt` | 2.15.1 | 2026-09-28 | Yes | MIT | Legacy JWT helper (superseded for web auth by server-side sessions) |
+| `argon2-cffi` | 25.1.0 | 2025-06-02 | Yes | MIT | Argon2id password hashing (`argon2-cffi-bindings` 26.2.0) |
 | `pyyaml` | 6.0.4 | 2026-11-20 | Yes | MIT | YAML parsing for data viewer |
 | `pillow` | 13.0.0 | 2026-10-16 | Yes | MIT-CMU | Baseline image probing & demo generation |
 | `numpy` | 2.5.5 | 2026-11-15 | Yes | BSD-3-Clause | Array processing for pixels/audio |

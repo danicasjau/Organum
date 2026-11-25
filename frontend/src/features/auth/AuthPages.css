@@ -1,0 +1,78 @@
+@layer components {
+  .org-login-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: var(--surface-window);
+    color: var(--text);
+  }
+
+  .org-login-main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-5);
+  }
+
+  .org-login-card {
+    width: var(--settings-dialog-w);
+    max-width: var(--dialog-max-w);
+  }
+
+  .org-auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .org-auth-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .org-auth-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .org-auth-row > :first-child {
+    flex: 1;
+  }
+
+  .org-auth-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    padding-top: var(--space-1);
+  }
+
+  .org-fs-list {
+    display: flex;
+    flex-direction: column;
+    max-height: var(--select-max-h);
+    overflow-y: auto;
+    border: var(--border-w) solid var(--border-dark);
+    background: var(--surface-field);
+  }
+
+  .org-fs-item {
+    border: none;
+    border-bottom: var(--border-w) solid var(--border-dark);
+    background: transparent;
+    color: var(--text);
+    text-align: left;
+    padding: var(--space-1) var(--space-2);
+    font-family: var(--font-ui);
+    font-size: var(--font-size);
+    cursor: pointer;
+    min-height: var(--min-hit);
+  }
+
+  .org-fs-item:hover {
+    background: var(--surface-hover);
+  }
+}
+

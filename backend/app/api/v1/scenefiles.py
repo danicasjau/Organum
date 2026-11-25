@@ -19,6 +19,7 @@ from watchfiles import awatch
 from app.core.deps import get_db, get_format_registry, get_project_context
 from app.core.errors import AppError, ConflictError, NotFoundError
 from app.core.project_registry import ProjectContext
+from app.core.security import get_project_auth, require_not_archived
 from app.formats.base import FormatRegistry, InspectionDocument
 from app.schemas.api import (
     SceneDeleteRequest,
@@ -34,6 +35,7 @@ from app.services.entity_service import (
     unregister_active_watch,
 )
 from app.services.naming import check_case_insensitive_collision, sanitize_folder_name
+from app.services.permissions import AuthContext, assert_can, can
 from app.services.publish_service import load_task_with_product, task_dirs
 from app.services.streaming import build_ranged_file_response
 from app.storage.local import LocalStorage
@@ -78,8 +80,27 @@ def _resolve_in_scenefiles(scenefiles_root: Path, rel_path: str) -> Path:
     return cand
 
 
-async def _task_scenefiles_root(db: AsyncSession, ctx: ProjectContext, task_id: UUID) -> Path:
+async def _task_scenefiles_root(
+    db: AsyncSession,
+    ctx: ProjectContext,
+    task_id: UUID,
+    auth: AuthContext,
+    *,
+    write: bool = False,
+) -> Path:
+    if auth.role.name == "client":
+        raise NotFoundError("task", str(task_id))
     task, _ = await load_task_with_product(db, task_id)
+    if write:
+        await require_not_archived(auth)
+        if not auth.has_any_scope("entity.manage"):
+            ok, _ = await can(db, auth, "product.publish", task)
+            if not ok:
+                raise AppError(
+                    "forbidden", "Insufficient permissions to modify scenefiles", status_code=403
+                )
+    else:
+        await assert_can(db, auth, "media.view", task)
     _, _, scene_dir = task_dirs(ctx, task)
     scene_dir.mkdir(parents=True, exist_ok=True)
     return scene_dir
@@ -88,11 +109,12 @@ async def _task_scenefiles_root(db: AsyncSession, ctx: ProjectContext, task_id: 
 @router.get("/tasks/{task_id}/scenefiles", response_model=SceneListResponse)
 async def list_scenefiles(
     task_id: UUID,
+    auth: Annotated[AuthContext, Depends(get_project_auth)],
     ctx: Annotated[ProjectContext, Depends(get_project_context)],
     db: Annotated[AsyncSession, Depends(get_db)],
     path: str = Query(default=""),
 ) -> SceneListResponse:
-    scene_root = await _task_scenefiles_root(db, ctx, task_id)
+    scene_root = await _task_scenefiles_root(db, ctx, task_id, auth)
     target = _resolve_in_scenefiles(scene_root, path)
     if not target.exists() or not target.is_dir():
         raise NotFoundError("scenefile_dir", path)
@@ -137,11 +159,7 @@ async def list_scenefiles(
         if target.resolve() == scene_root.resolve()
         else target.relative_to(scene_root.resolve()).as_posix()
     )
-    parent_rel = (
-        None
-        if not cur_rel
-        else ("" if "/" not in cur_rel else cur_rel.rsplit("/", 1)[0])
-    )
+    parent_rel = None if not cur_rel else ("" if "/" not in cur_rel else cur_rel.rsplit("/", 1)[0])
     return SceneListResponse(current_path=cur_rel, parent_path=parent_rel, entries=entries)
 
 
@@ -149,11 +167,12 @@ async def list_scenefiles(
 async def get_scenefile_thumbnail(
     task_id: UUID,
     request: Request,
+    auth: Annotated[AuthContext, Depends(get_project_auth)],
     ctx: Annotated[ProjectContext, Depends(get_project_context)],
     db: Annotated[AsyncSession, Depends(get_db)],
     path: str = Query(...),
 ) -> Response:
-    scene_root = await _task_scenefiles_root(db, ctx, task_id)
+    scene_root = await _task_scenefiles_root(db, ctx, task_id, auth)
     target = _resolve_in_scenefiles(scene_root, path)
     if not target.is_file():
         raise NotFoundError("scenefile", path)
@@ -166,6 +185,7 @@ async def get_scenefile_thumbnail(
     out_path = thumb_storage.resolve_safe(thumb_key)
 
     if not out_path.is_file():
+
         def _make_thumb() -> None:
             out_path.parent.mkdir(parents=True, exist_ok=True)
             with Image.open(target) as im:
@@ -194,11 +214,12 @@ async def get_scenefile_thumbnail(
 async def get_scenefile_content(
     task_id: UUID,
     request: Request,
+    auth: Annotated[AuthContext, Depends(get_project_auth)],
     ctx: Annotated[ProjectContext, Depends(get_project_context)],
     db: Annotated[AsyncSession, Depends(get_db)],
     path: str = Query(...),
 ) -> Response:
-    scene_root = await _task_scenefiles_root(db, ctx, task_id)
+    scene_root = await _task_scenefiles_root(db, ctx, task_id, auth)
     target = _resolve_in_scenefiles(scene_root, path)
     if not target.is_file():
         raise NotFoundError("scenefile", path)
@@ -219,12 +240,13 @@ async def get_scenefile_content(
 @router.get("/tasks/{task_id}/scenefiles/inspect", response_model=InspectionDocument)
 async def inspect_scenefile_live(
     task_id: UUID,
+    auth: Annotated[AuthContext, Depends(get_project_auth)],
     ctx: Annotated[ProjectContext, Depends(get_project_context)],
     db: Annotated[AsyncSession, Depends(get_db)],
     registry: Annotated[FormatRegistry, Depends(get_format_registry)],
     path: str = Query(...),
 ) -> InspectionDocument:
-    scene_root = await _task_scenefiles_root(db, ctx, task_id)
+    scene_root = await _task_scenefiles_root(db, ctx, task_id, auth)
     target = _resolve_in_scenefiles(scene_root, path)
     if not target.is_file():
         raise NotFoundError("scenefile", path)
@@ -244,10 +266,11 @@ async def inspect_scenefile_live(
 async def mkdir_scenefile(
     task_id: UUID,
     payload: SceneMkdirRequest,
+    auth: Annotated[AuthContext, Depends(get_project_auth)],
     ctx: Annotated[ProjectContext, Depends(get_project_context)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> dict[str, str]:
-    scene_root = await _task_scenefiles_root(db, ctx, task_id)
+    scene_root = await _task_scenefiles_root(db, ctx, task_id, auth, write=True)
     parent = _resolve_in_scenefiles(scene_root, payload.path)
     if not parent.is_dir():
         raise NotFoundError("scenefile_dir", payload.path)
@@ -262,12 +285,13 @@ async def mkdir_scenefile(
 @router.post("/tasks/{task_id}/scenefiles/upload", status_code=201)
 async def upload_scenefiles(
     task_id: UUID,
+    auth: Annotated[AuthContext, Depends(get_project_auth)],
     ctx: Annotated[ProjectContext, Depends(get_project_context)],
     db: Annotated[AsyncSession, Depends(get_db)],
     files: list[UploadFile] = File(...),
     path: str = Form(default=""),
 ) -> dict[str, list[str]]:
-    scene_root = await _task_scenefiles_root(db, ctx, task_id)
+    scene_root = await _task_scenefiles_root(db, ctx, task_id, auth, write=True)
     dest_dir = _resolve_in_scenefiles(scene_root, path)
     if not dest_dir.is_dir():
         raise NotFoundError("scenefile_dir", path)
@@ -291,10 +315,11 @@ async def upload_scenefiles(
 async def rename_scenefile(
     task_id: UUID,
     payload: SceneRenameRequest,
+    auth: Annotated[AuthContext, Depends(get_project_auth)],
     ctx: Annotated[ProjectContext, Depends(get_project_context)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> dict[str, str]:
-    scene_root = await _task_scenefiles_root(db, ctx, task_id)
+    scene_root = await _task_scenefiles_root(db, ctx, task_id, auth, write=True)
     src = _resolve_in_scenefiles(scene_root, payload.rel_path)
     if src.resolve() == scene_root.resolve():
         raise AppError("invalid_path", "Cannot rename scenefiles root", status_code=400)
@@ -322,10 +347,11 @@ async def rename_scenefile(
 async def move_scenefiles(
     task_id: UUID,
     payload: SceneMoveRequest,
+    auth: Annotated[AuthContext, Depends(get_project_auth)],
     ctx: Annotated[ProjectContext, Depends(get_project_context)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> dict[str, list[str]]:
-    scene_root = await _task_scenefiles_root(db, ctx, task_id)
+    scene_root = await _task_scenefiles_root(db, ctx, task_id, auth, write=True)
     dest_dir = _resolve_in_scenefiles(scene_root, payload.dest_dir)
     if not dest_dir.is_dir():
         raise NotFoundError("scenefile_dir", payload.dest_dir)
@@ -354,10 +380,11 @@ async def move_scenefiles(
 async def delete_scenefiles(
     task_id: UUID,
     payload: SceneDeleteRequest,
+    auth: Annotated[AuthContext, Depends(get_project_auth)],
     ctx: Annotated[ProjectContext, Depends(get_project_context)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> dict[str, int]:
-    scene_root = await _task_scenefiles_root(db, ctx, task_id)
+    scene_root = await _task_scenefiles_root(db, ctx, task_id, auth, write=True)
     count = 0
     for rel in payload.rel_paths:
         target = _resolve_in_scenefiles(scene_root, rel)
@@ -372,11 +399,12 @@ async def delete_scenefiles(
 async def watch_scenefiles_sse(
     task_id: UUID,
     request: Request,
+    auth: Annotated[AuthContext, Depends(get_project_auth)],
     ctx: Annotated[ProjectContext, Depends(get_project_context)],
     db: Annotated[AsyncSession, Depends(get_db)],
     path: str = Query(default=""),
 ) -> EventSourceResponse:
-    scene_root = await _task_scenefiles_root(db, ctx, task_id)
+    scene_root = await _task_scenefiles_root(db, ctx, task_id, auth)
     target = _resolve_in_scenefiles(scene_root, path)
     if not target.is_dir():
         target = scene_root

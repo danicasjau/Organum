@@ -97,7 +97,16 @@ async def _ensure_department(db: AsyncSession, folder_name: str) -> Department:
     if dept is not None:
         return dept
     clean = sanitize_folder_name(folder_name)
-    dept = Department(name=clean, folder_name=clean, sort_order=99, is_active=True)
+    raw = "".join(c for c in clean.upper() if c.isalnum())
+    short_code = (raw[:3] if len(raw) >= 3 else (raw + "XXX")[:3]) or "DPT"
+    dept = Department(
+        name=clean,
+        folder_name=clean,
+        short_code=short_code,
+        color="--series-1",
+        sort_order=99,
+        is_active=True,
+    )
     db.add(dept)
     await db.flush()
     return dept

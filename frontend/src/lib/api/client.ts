@@ -35,6 +35,21 @@ export type AnnotationCreate = components['schemas']['AnnotationCreate'];
 export type AnnotationUpdate = components['schemas']['AnnotationUpdate'];
 export type ColorspaceListResponse = components['schemas']['ColorspaceListResponse'];
 export type LutResponse = components['schemas']['LutResponse'];
+export type BootstrapInfoOut = components['schemas']['BootstrapInfoOut'];
+export type AuthMeOut = components['schemas']['AuthMeOut'];
+export type UserOut = components['schemas']['UserOut'];
+export type UserCreateRequest = components['schemas']['UserCreateRequest'];
+export type UserUpdateRequest = components['schemas']['UserUpdateRequest'];
+export type CompanyOut = components['schemas']['CompanyOut'];
+export type CompanyCreateRequest = components['schemas']['CompanyCreateRequest'];
+export type CompanyUpdateRequest = components['schemas']['CompanyUpdateRequest'];
+export type RoleOut = components['schemas']['RoleOut'];
+export type CapacityPermissionsOut = components['schemas']['CapacityPermissionsOut'];
+export type ProjectSettingsOut = components['schemas']['ProjectSettingsOut'];
+export type ProjectSettingsPatchRequest = components['schemas']['ProjectSettingsPatchRequest'];
+export type AuditLogOut = components['schemas']['AuditLogOut'];
+export type TaskAssignmentOut = components['schemas']['TaskAssignmentOut'];
+export type TaskAssignmentItemIn = components['schemas']['TaskAssignmentItemIn'];
 
 export interface LayerThumbItem {
   id: string;
@@ -109,24 +124,73 @@ export function isScenefilePreviewId(fileId: string | null | undefined): boolean
   return Boolean(fileId && scenefilePreviewUrls.has(fileId));
 }
 
+function readCsrfCookie(): string | null {
+  if (typeof document === 'undefined') return null;
+  const pairs = document.cookie.split(';');
+  for (const raw of pairs) {
+    const idx = raw.indexOf('=');
+    if (idx === -1) continue;
+    const k = raw.slice(0, idx).trim();
+    if (k === 'organum_csrf') {
+      return decodeURIComponent(raw.slice(idx + 1).trim());
+    }
+  }
+  return null;
+}
+
+let unauthorizedHandler: ((code?: string) => void) | null = null;
+let passwordChangeRequiredHandler: (() => void) | null = null;
+
+export function registerAuthHandlers(handlers: {
+  onUnauthorized?: (code?: string) => void;
+  onPasswordChangeRequired?: () => void;
+}): void {
+  unauthorizedHandler = handlers.onUnauthorized ?? null;
+  passwordChangeRequiredHandler = handlers.onPasswordChangeRequired ?? null;
+}
+
+export class ApiHttpError extends Error {
+  status: number;
+  code: string;
+
+  constructor(status: number, code: string, message: string) {
+    super(message);
+    this.status = status;
+    this.code = code;
+  }
+}
+
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const method = (init?.method ?? 'GET').toUpperCase();
+  const isMutating = method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE';
+  const csrfToken = isMutating ? readCsrfCookie() : null;
   const isFormData = typeof FormData !== 'undefined' && init?.body instanceof FormData;
   const response = await fetch(path, {
+    credentials: 'include',
     headers: {
       ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+      ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
       ...(init?.headers ?? {}),
     },
     ...init,
   });
   if (!response.ok) {
     let message = `HTTP ${response.status}`;
+    let code = 'http_error';
     try {
       const body = (await response.json()) as ApiErrorEnvelope;
       if (body?.error?.message) message = body.error.message;
+      if (body?.error?.code) code = body.error.code;
     } catch {
       // ignore non-JSON body
     }
-    throw new Error(message);
+    if (response.status === 401 && !path.includes('/auth/login') && !path.includes('/auth/me')) {
+      unauthorizedHandler?.(code);
+    }
+    if (response.status === 403 && code === 'password_change_required') {
+      passwordChangeRequiredHandler?.();
+    }
+    throw new ApiHttpError(response.status, code, message);
   }
   if (response.status === 204) {
     return undefined as T;
@@ -136,6 +200,172 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
 
 export const apiClient = {
   getHealth: () => apiFetch<HealthResponse>('/api/v1/health'),
+
+  // Auth & security
+  getBootstrapInfo: () => apiFetch<BootstrapInfoOut>('/api/v1/auth/bootstrap'),
+  getAuthMe: () => apiFetch<AuthMeOut>('/api/v1/auth/me'),
+  login: (projectUuid: string, username: string, password: string) =>
+    apiFetch<AuthMeOut>(`/api/v1/projects/${encodeURIComponent(projectUuid)}/auth/login`, {
+      method: 'POST',
+      body: JSON.stringify({ project_uuid: projectUuid, username, password }),
+    }),
+  logout: (projectUuid?: string | null) =>
+    apiFetch<void>(`${getProjBase(projectUuid)}/auth/logout`, { method: 'POST' }),
+  changePassword: (
+    payload: { current_password?: string | null; new_password: string },
+    projectUuid?: string | null,
+  ) =>
+    apiFetch<AuthMeOut>(`${getProjBase(projectUuid)}/auth/change-password`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  // Users & Companies
+  listUsers: (projectUuid?: string | null) =>
+    apiFetch<UserOut[]>(`${getProjBase(projectUuid)}/users`),
+  createUser: (payload: UserCreateRequest, projectUuid?: string | null) =>
+    apiFetch<UserOut>(`${getProjBase(projectUuid)}/users`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  updateUser: (userId: string, payload: UserUpdateRequest, projectUuid?: string | null) =>
+    apiFetch<UserOut>(`${getProjBase(projectUuid)}/users/${userId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    }),
+  resetUserPassword: (
+    userId: string,
+    payload: { new_password: string; must_change_password?: boolean },
+    projectUuid?: string | null,
+  ) =>
+    apiFetch<UserOut>(`${getProjBase(projectUuid)}/users/${userId}/reset-password`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  setUserDepartments: (userId: string, departmentIds: string[], projectUuid?: string | null) =>
+    apiFetch<UserOut>(`${getProjBase(projectUuid)}/users/${userId}/departments`, {
+      method: 'PUT',
+      body: JSON.stringify({ department_ids: departmentIds }),
+    }),
+  uploadUserAvatar: (userId: string, file: File, projectUuid?: string | null) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    return apiFetch<UserOut>(`${getProjBase(projectUuid)}/users/${userId}/avatar`, {
+      method: 'POST',
+      body: fd,
+    });
+  },
+  userAvatarUrl: (userId: string, projectUuid?: string | null) =>
+    `${getProjBase(projectUuid)}/users/${userId}/avatar`,
+
+  listCompanies: (projectUuid?: string | null) =>
+    apiFetch<CompanyOut[]>(`${getProjBase(projectUuid)}/companies`),
+  createCompany: (payload: CompanyCreateRequest, projectUuid?: string | null) =>
+    apiFetch<CompanyOut>(`${getProjBase(projectUuid)}/companies`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  updateCompany: (
+    companyId: string,
+    payload: CompanyUpdateRequest,
+    projectUuid?: string | null,
+  ) =>
+    apiFetch<CompanyOut>(`${getProjBase(projectUuid)}/companies/${companyId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    }),
+  deleteCompany: (companyId: string, projectUuid?: string | null) =>
+    apiFetch<void>(`${getProjBase(projectUuid)}/companies/${companyId}`, {
+      method: 'DELETE',
+    }),
+  setCompanyDepartments: (
+    companyId: string,
+    departmentIds: string[],
+    projectUuid?: string | null,
+  ) =>
+    apiFetch<CompanyOut>(`${getProjBase(projectUuid)}/companies/${companyId}/departments`, {
+      method: 'PUT',
+      body: JSON.stringify({ department_ids: departmentIds }),
+    }),
+
+  // Roles, Capacities, Project Settings, Audit, Task Assignments & Client Shares
+  listRoles: (projectUuid?: string | null) =>
+    apiFetch<RoleOut[]>(`${getProjBase(projectUuid)}/roles`),
+  createRole: (
+    payload: { name: string; label: string; rank?: number },
+    projectUuid?: string | null,
+  ) =>
+    apiFetch<RoleOut>(`${getProjBase(projectUuid)}/roles`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  updateRole: (
+    roleId: string,
+    payload: { label?: string; rank?: number },
+    projectUuid?: string | null,
+  ) =>
+    apiFetch<RoleOut>(`${getProjBase(projectUuid)}/roles/${roleId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    }),
+  deleteRole: (roleId: string, projectUuid?: string | null) =>
+    apiFetch<void>(`${getProjBase(projectUuid)}/roles/${roleId}`, {
+      method: 'DELETE',
+    }),
+  putRolePermissions: (
+    roleId: string,
+    permissions: Record<string, 'all' | 'company' | 'mine' | 'shared' | 'none'>,
+    projectUuid?: string | null,
+  ) =>
+    apiFetch<RoleOut>(`${getProjBase(projectUuid)}/roles/${roleId}/permissions`, {
+      method: 'PUT',
+      body: JSON.stringify({ permissions }),
+    }),
+  getCapacities: (projectUuid?: string | null) =>
+    apiFetch<CapacityPermissionsOut>(`${getProjBase(projectUuid)}/capacities`),
+  putCapacities: (
+    payload: { artist: string[]; lead: string[]; supervisor: string[] },
+    projectUuid?: string | null,
+  ) =>
+    apiFetch<CapacityPermissionsOut>(`${getProjBase(projectUuid)}/capacities`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+  getProjectSettings: (projectUuid?: string | null) =>
+    apiFetch<ProjectSettingsOut>(`${getProjBase(projectUuid)}/project/settings`),
+  patchProjectSettings: (
+    payload: ProjectSettingsPatchRequest,
+    projectUuid?: string | null,
+  ) =>
+    apiFetch<ProjectSettingsOut>(`${getProjBase(projectUuid)}/project/settings`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    }),
+  listAuditLogs: (action?: string, limit = 100, projectUuid?: string | null) => {
+    const qs = new URLSearchParams();
+    if (action) qs.set('action', action);
+    qs.set('limit', String(limit));
+    return apiFetch<AuditLogOut[]>(`${getProjBase(projectUuid)}/admin/audit?${qs.toString()}`);
+  },
+  putTaskAssignments: (
+    taskId: string,
+    assignments: TaskAssignmentItemIn[],
+    projectUuid?: string | null,
+  ) =>
+    apiFetch<TaskAssignmentOut[]>(`${getProjBase(projectUuid)}/tasks/${taskId}/assignments`, {
+      method: 'PUT',
+      body: JSON.stringify({ assignments }),
+    }),
+  putTaskShares: (taskId: string, companyIds: string[], projectUuid?: string | null) =>
+    apiFetch<string[]>(`${getProjBase(projectUuid)}/tasks/${taskId}/shares`, {
+      method: 'PUT',
+      body: JSON.stringify({ company_ids: companyIds }),
+    }),
+  putVersionShares: (versionId: string, companyIds: string[], projectUuid?: string | null) =>
+    apiFetch<string[]>(`${getProjBase(projectUuid)}/versions/${versionId}/shares`, {
+      method: 'PUT',
+      body: JSON.stringify({ company_ids: companyIds }),
+    }),
 
   // App-level project registry & preferences
   listProjects: () => apiFetch<KnownProjectOut[]>('/api/v1/projects'),
@@ -180,7 +410,13 @@ export const apiClient = {
     }),
   updateDepartment: (
     deptId: string,
-    patch: { name?: string; is_active?: boolean; sort_order?: number },
+    patch: {
+      name?: string;
+      short_code?: string;
+      color?: string;
+      is_active?: boolean;
+      sort_order?: number;
+    },
     projectUuid?: string | null,
   ) =>
     apiFetch<DepartmentOut>(`${getProjBase(projectUuid)}/departments/${deptId}`, {
@@ -459,10 +695,10 @@ export const apiClient = {
       | string
       | null
       | {
-          colorspace_override?: string | null;
-          sequence_kind?: 'none' | 'frames' | 'udim' | 'auto';
-          sequence_kind_user_override?: boolean;
-        },
+        colorspace_override?: string | null;
+        sequence_kind?: 'none' | 'frames' | 'udim' | 'auto';
+        sequence_kind_user_override?: boolean;
+      },
     projectUuid?: string | null,
   ) => {
     const body = typeof patch === 'object' && patch !== null ? patch : { colorspace_override: patch };
@@ -485,7 +721,10 @@ export const apiClient = {
     apiFetch<AnnotationOut[]>(`${getProjBase(projectUuid)}/files/${fileId}/annotations`),
   createAnnotation: (
     fileId: string,
-    payload: Omit<AnnotationCreate, 'coord_space'> & { coord_space?: string },
+    payload: Omit<AnnotationCreate, 'coord_space' | 'visibility'> & {
+      coord_space?: string;
+      visibility?: 'internal' | 'client';
+    },
     projectUuid?: string | null,
   ) =>
     apiFetch<AnnotationOut>(`${getProjBase(projectUuid)}/files/${fileId}/annotations`, {

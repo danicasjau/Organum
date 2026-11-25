@@ -19,6 +19,7 @@ from app.db.session import create_engine_and_sessionmaker
 from app.formats.registry import build_default_registry
 from app.jobs.inprocess import InProcessRunner
 from app.models.app_db import AppBase, KnownProject
+from app.services.auth_service import verify_startup_security
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -48,6 +49,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 )
                 if not has_valid and demo_meta.is_file():
                     await project_registry.open_project(app_db, cfg.demo_project_path)
+
+        async with app_session_factory() as sec_db:
+            await verify_startup_security(cfg, sec_db, project_registry)
         try:
             yield
         finally:

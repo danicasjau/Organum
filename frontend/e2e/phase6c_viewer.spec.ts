@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { selectDemoFile } from './helpers';
+import { loginAs, selectDemoFile } from './helpers';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SCREENSHOTS_DIR = path.resolve(__dirname, '../../docs/screenshots');
@@ -16,7 +16,7 @@ test.describe('Phase 6C Viewer — Two-Row Topbar, Tool Wells, LayerStrip & UDIM
       if (msg.type() === 'error') errors.push(msg.text());
     });
 
-    await page.goto('/entities');
+    await loginAs(page, 'qa_admin', 'DemoPass123!', { targetPath: '/entities' });
 
     // 1. Inspect two-row topbar + 8 tool wells, select beauty_aovs.exr in Browse mode first
     const topbar = page.getByRole('toolbar', { name: 'Viewer controls' });
@@ -91,13 +91,14 @@ test.describe('Phase 6C Viewer — Two-Row Topbar, Tool Wells, LayerStrip & UDIM
     await page.getByRole('button', { name: 'Free Draw' }).click();
     const uvLayer = page.locator('[data-ui="annotation-layer-2d"]');
     await expect(uvLayer).toHaveAttribute('data-coord-space', 'uv');
+    await page.waitForTimeout(200);
     const box = await uvLayer.boundingBox();
     expect(box).not.toBeNull();
     await page.mouse.move(box!.x + box!.width * 0.42, box!.y + box!.height * 0.42);
     await page.mouse.down();
-    await page.mouse.move(box!.x + box!.width * 0.56, box!.y + box!.height * 0.58, { steps: 5 });
+    await page.mouse.move(box!.x + box!.width * 0.56, box!.y + box!.height * 0.58, { steps: 6 });
     await page.mouse.up();
-    await expect(page.getByText('Saved', { exact: true })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('tab', { name: 'Annotations (1)' })).toBeVisible({ timeout: 5000 });
 
     // Capture UDIM Mosaic Dark & Light screenshots
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
@@ -116,10 +117,16 @@ test.describe('Phase 6C Viewer — Two-Row Topbar, Tool Wells, LayerStrip & UDIM
     await page.evaluate(async () => {
       const fid = new URL(window.location.href).searchParams.get('file');
       const pid = localStorage.getItem('organum.activeProjectUuid');
+      const csrfMatch = document.cookie.match(/(?:^|; )organum_csrf=([^;]+)/);
+      const csrf = csrfMatch?.[1] ? decodeURIComponent(csrfMatch[1]) : '';
       if (fid && pid) {
         await fetch(`/api/v1/projects/${pid}/files/${fid}`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(csrf ? { 'X-CSRF-Token': csrf } : {}),
+          },
           body: JSON.stringify({ sequence_kind: 'udim', sequence_kind_user_override: false }),
         });
       }

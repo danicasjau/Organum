@@ -1,0 +1,112 @@
+@layer components {
+  .org-admin-shell {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .org-admin-nav {
+    width: var(--settings-nav-w);
+    flex-shrink: 0;
+    background: var(--surface-panel);
+    border-right: var(--border-w) solid var(--border-dark);
+    padding: var(--space-2);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .org-admin-nav__title {
+    font-size: var(--font-size);
+    font-weight: 700;
+    color: var(--text-muted);
+    padding: var(--space-1) var(--space-2);
+  }
+
+  .org-admin-nav__item {
+    display: flex;
+    align-items: center;
+    min-height: var(--ctl-h);
+    padding: var(--space-0) var(--space-2);
+    border: var(--border-w) solid transparent;
+    border-radius: var(--radius-1);
+    background: transparent;
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: var(--font-size);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .org-admin-nav__item:hover {
+    background: var(--surface-hover);
+  }
+
+  .org-admin-nav__item[data-active="true"] {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    font-weight: 700;
+  }
+
+  .org-admin-content {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+    padding: var(--space-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .org-admin-toolbar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    padding-top: var(--space-2);
+  }
+
+  .org-admin-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    max-width: var(--dialog-max-w);
+  }
+
+  .org-admin-table-wrap {
+    overflow: auto;
+    border: var(--border-w) solid var(--border-dark);
+    background: var(--surface-field);
+    max-height: 100%;
+  }
+
+  .org-admin-matrix {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size);
+  }
+
+  .org-admin-matrix th,
+  .org-admin-matrix td {
+    padding: var(--space-1) var(--space-2);
+    border-bottom: var(--border-w) solid var(--border-dark);
+    border-right: var(--border-w) solid var(--border-dark);
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .org-admin-matrix thead th {
+    position: sticky;
+    top: 0;
+    background: var(--surface-raised);
+    z-index: 1;
+  }
+
+  .org-admin-matrix__perm {
+    font-family: var(--font-mono);
+    font-weight: 600;
+  }
+}
+

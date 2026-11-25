@@ -1,5 +1,5 @@
 from app.models.annotation import Annotation, AnnotationRevision
-from app.models.app_db import AppBase, KnownProject, Launcher, UiPref
+from app.models.app_db import AppBase, KnownProject, Launcher, UiPref, UserProjectIndex
 from app.models.artifact import Artifact
 from app.models.job import Job
 from app.models.project_db import (
@@ -17,13 +17,30 @@ from app.models.project_db import (
     Task,
     TaskLink,
 )
-from app.models.user import User
+from app.models.user import (
+    AuditLog,
+    CapacityPermission,
+    Company,
+    CompanyDepartment,
+    Role,
+    RolePermission,
+    TaskAssignment,
+    TaskShare,
+    User,
+    UserDepartment,
+    UserSession,
+    VersionShare,
+)
 
 __all__ = [
     "Annotation",
     "AnnotationRevision",
     "AppBase",
     "Artifact",
+    "AuditLog",
+    "CapacityPermission",
+    "Company",
+    "CompanyDepartment",
     "Department",
     "DepartmentDefaultTask",
     "Entity",
@@ -37,9 +54,17 @@ __all__ = [
     "Product",
     "ProductVersion",
     "ProjectMeta",
+    "Role",
+    "RolePermission",
     "Tag",
     "Task",
+    "TaskAssignment",
     "TaskLink",
+    "TaskShare",
     "UiPref",
     "User",
+    "UserDepartment",
+    "UserProjectIndex",
+    "UserSession",
+    "VersionShare",
 ]

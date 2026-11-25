@@ -2,6 +2,7 @@ export interface RegisteredPanel {
   id: string;
   label: string;
   route: string;
+  visibleFor?: (permissions: Record<string, string>) => boolean;
 }
 
 const registry: RegisteredPanel[] = [];
@@ -16,5 +17,17 @@ export function getRegisteredPanels(): ReadonlyArray<RegisteredPanel> {
   return registry;
 }
 
-registerPanel({ id: 'entities', label: 'ENTITIES', route: '/entities' });
+export function getVisiblePanels(
+  permissions: Record<string, string> | undefined,
+): ReadonlyArray<RegisteredPanel> {
+  if (!permissions) return [];
+  return registry.filter((p) => (p.visibleFor ? p.visibleFor(permissions) : true));
+}
 
+registerPanel({ id: 'entities', label: 'ENTITIES', route: '/entities' });
+registerPanel({
+  id: 'users',
+  label: 'USERS',
+  route: '/users',
+  visibleFor: (perms) => (perms['user.view'] ?? 'none') !== 'none',
+});

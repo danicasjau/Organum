@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { selectDemoFile, selectTask } from './helpers';
+import { loginAs, selectDemoFile, selectTask } from './helpers';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SCREENSHOTS_DIR = path.resolve(__dirname, '../../docs/screenshots');
@@ -16,7 +16,7 @@ test.describe('Phase 2 /viewer Vertical Slice', () => {
       if (msg.type() === 'error') errors.push(msg.text());
     });
 
-    await page.goto('/viewer');
+    await loginAs(page, 'qa_admin', 'DemoPass123!', { targetPath: '/viewer' });
     await expect(page.getByText('ORGANUM', { exact: true })).toBeVisible();
     await selectTask(page, 'beauty');
     const prodTree = page.getByRole('tree', { name: 'Task product versions' });

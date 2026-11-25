@@ -21,6 +21,7 @@ import {
   type DepartmentOut,
   type LauncherItemIn,
 } from '../../lib/api/client';
+import { useAuthStore } from '../auth/authStore';
 import { useProjectStore, type SettingsPageId } from '../project/projectStore';
 import { FolderBrowserDialog } from './FolderBrowserDialog';
 import './SettingsDialog.css';
@@ -62,6 +63,7 @@ export function SettingsDialog({
   const settingsPage = useProjectStore((s) => s.settingsPage);
   const closeSettings = useProjectStore((s) => s.closeSettings);
   const setSettingsPage = useProjectStore((s) => s.setSettingsPage);
+  const switchProjectSession = useAuthStore((s) => s.switchProjectSession);
 
   // Create/Open Project form state
   const [createPath, setCreatePath] = useState('');
@@ -160,8 +162,10 @@ export function SettingsDialog({
         starter_departments: starterList,
       });
       await refetchProjects();
-      setActiveProject(created.uuid, queryClient);
-      toast.push('success', `Created project '${created.name}'`);
+      toast.push(
+        'success',
+        `Created project '${created.name}'. Click Switch to sign in to it.`,
+      );
       setCreateName('');
       setCreatePath('');
     } catch (err) {
@@ -173,8 +177,13 @@ export function SettingsDialog({
     try {
       const opened = await apiClient.openProject(openPath.trim());
       await refetchProjects();
-      setActiveProject(opened.uuid, queryClient);
-      toast.push('success', `Opened project '${opened.name}'`);
+      if (opened.uuid !== activeProjectUuid) {
+        closeSettings();
+        await switchProjectSession(`Opened '${opened.name}' — sign in to continue.`);
+        setActiveProject(opened.uuid, queryClient);
+      } else {
+        toast.push('success', `Opened project '${opened.name}'`);
+      }
     } catch (err) {
       toast.push('danger', err instanceof Error ? err.message : 'Open project failed');
     }
@@ -368,8 +377,11 @@ export function SettingsDialog({
                             <Button
                               size="sm"
                               onClick={() => {
+                                closeSettings();
+                                void switchProjectSession(
+                                  `Switched to '${p.name}' — sign in to continue.`,
+                                );
                                 setActiveProject(p.uuid, queryClient);
-                                toast.push('info', `Switched to '${p.name}'`);
                               }}
                             >
                               Switch

@@ -1,0 +1,213 @@
+@layer components {
+  .org-users-page {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-2);
+  }
+
+  .org-users-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+    flex: 1;
+    min-height: 0;
+    padding-top: var(--space-2);
+  }
+
+  .org-users-left,
+  .org-users-right {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .org-users-toolbar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+  }
+
+  .org-users-vlist {
+    flex: 1;
+    min-height: var(--grid-min-h);
+    overflow-y: auto;
+    border: var(--border-w) solid var(--border-dark);
+    background: var(--surface-field);
+    position: relative;
+  }
+
+  .org-users-vlist__inner {
+    position: relative;
+    width: 100%;
+    height: var(--virt-total-h, 0px);
+  }
+
+  .org-users-vrow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: var(--virt-h);
+    transform: translateY(var(--virt-y));
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    border: none;
+    border-bottom: var(--border-w) solid var(--border-dark);
+    background: transparent;
+    color: var(--text);
+    text-align: left;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: var(--font-size);
+  }
+
+  .org-users-vrow:hover {
+    background: var(--surface-hover);
+  }
+
+  .org-users-vrow[data-selected="true"] {
+    background: var(--accent-soft);
+  }
+
+  .org-users-vrow__main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .org-users-vrow__name {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .org-users-vrow__sub {
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .org-users-profile-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    padding-bottom: var(--space-2);
+    border-bottom: var(--border-w) solid var(--border-dark);
+  }
+
+  .org-users-profile-head > :nth-child(2) {
+    flex: 1;
+  }
+
+  .org-users-badges,
+  .org-users-head-btns,
+  .org-users-proj-list {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    flex-wrap: wrap;
+  }
+
+  .org-users-hidden {
+    display: none;
+  }
+
+  .org-users-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+  }
+
+  .org-users-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .org-users-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding-top: var(--space-1);
+  }
+
+  .org-users-checks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .org-users-simple-list {
+    display: flex;
+    flex-direction: column;
+    border: var(--border-w) solid var(--border-dark);
+    background: var(--surface-field);
+    overflow-y: auto;
+  }
+
+  .org-users-simple-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--min-hit);
+    padding: var(--space-1) var(--space-2);
+    border: none;
+    border-bottom: var(--border-w) solid var(--border-dark);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .org-users-simple-row[data-selected="true"] {
+    background: var(--accent-soft);
+  }
+
+  .org-users-depts {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding-top: var(--space-2);
+  }
+
+  .org-users-table-wrap {
+    overflow: auto;
+    border: var(--border-w) solid var(--border-dark);
+    background: var(--surface-field);
+  }
+
+  .org-users-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size);
+  }
+
+  .org-users-table th,
+  .org-users-table td {
+    padding: var(--space-1) var(--space-2);
+    border-bottom: var(--border-w) solid var(--border-dark);
+    border-right: var(--border-w) solid var(--border-dark);
+    text-align: left;
+  }
+
+  .org-users-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    padding-top: var(--space-2);
+  }
+}

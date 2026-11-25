@@ -1,7 +1,9 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import {
+  Avatar,
   Button,
+  CapacityBadgeList,
   ContextMenu,
   Dialog,
   Icon,
@@ -194,6 +196,15 @@ export function DeptTaskColumn({
                       >
                         <Icon name="layers" size="sm" />
                         <span className="org-dtcol__label">{task.name}</span>
+                        <CapacityBadgeList capacities={task.my_capacities ?? []} />
+                        {(task.assignments ?? []).slice(0, 2).map((a) => (
+                          <Avatar
+                            key={`${a.user_id}-${a.assignment_role}`}
+                            username={a.username}
+                            fullName={`${a.full_name} (${a.assignment_role})`}
+                            size="sm"
+                          />
+                        ))}
                         <Text size="sm" variant="muted">
                           {task.product?.versions?.length ?? 0}v
                         </Text>

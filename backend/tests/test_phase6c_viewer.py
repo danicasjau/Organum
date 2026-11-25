@@ -118,6 +118,9 @@ async def test_udim_reconcile_override_atlas_and_uv_annotations(
     )
     assert created.status_code == 201
     proj_uuid = created.json()["uuid"]
+    from tests.conftest import authenticate_project_admin
+
+    await authenticate_project_admin(client, proj_uuid)
     base = f"/api/v1/projects/{proj_uuid}"
 
     first_rec = await client.post(f"{base}/reconcile")
