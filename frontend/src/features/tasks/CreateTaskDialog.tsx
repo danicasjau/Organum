@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Banner,
   Button,
@@ -14,9 +14,12 @@ import {
   DatePicker,
 } from '../../components/ui';
 import { apiClient, type DepartmentOut, type EntityOut } from '../../lib/api/client';
+import { hasPerm, useAuthStore } from '../auth/authStore';
 import { useProjectStore } from '../project/projectStore';
 import { PRIORITY_OPTIONS } from './taskHelpers';
 import './CreateTaskDialog.css';
+
+const CUSTOM_DEPARTMENT = '__custom_department__';
 
 export function CreateTaskDialog({
   open,
@@ -34,9 +37,14 @@ export function CreateTaskDialog({
   const queryClient = useQueryClient();
   const toast = useToast();
   const activeProjectUuid = useProjectStore((s) => s.activeProjectUuid);
+  const auth = useAuthStore((s) => s.auth);
+  const canCreateDepartments = hasPerm(auth?.permissions, 'entity.manage');
 
   const [entityId, setEntityId] = useState('');
   const [departmentId, setDepartmentId] = useState('');
+  const [customDepartmentName, setCustomDepartmentName] = useState('');
+  const [isCustomDepartment, setIsCustomDepartment] = useState(false);
+  const [createdDepartment, setCreatedDepartment] = useState<DepartmentOut | null>(null);
   const [name, setName] = useState('main');
   const [priority, setPriority] = useState<'normal' | 'high' | 'stopper'>('normal');
   const [bidHours, setBidHours] = useState(8);
@@ -47,11 +55,19 @@ export function CreateTaskDialog({
   const [idealFinish, setIdealFinish] = useState('');
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const wasOpen = useRef(false);
+  const activeDepartments = useMemo(
+    () => departments.filter((department) => department.is_active),
+    [departments],
+  );
 
   useEffect(() => {
-    if (open) {
+    if (open && !wasOpen.current) {
       setEntityId(entities[0]?.id ?? '');
-      setDepartmentId(departments[0]?.id ?? '');
+      setDepartmentId(activeDepartments[0]?.id ?? '');
+      setCustomDepartmentName('');
+      setIsCustomDepartment(false);
+      setCreatedDepartment(null);
       setName('main');
       setPriority('normal');
       setBidHours(8);
@@ -61,21 +77,48 @@ export function CreateTaskDialog({
       setIdealStart('');
       setIdealFinish('');
       setErr(null);
+      setBusy(false);
     }
-  }, [open, entities, departments]);
+    wasOpen.current = open;
+  }, [open, entities, activeDepartments]);
 
   const handleSubmit = async () => {
-    if (!entityId || !departmentId || !name.trim()) {
+    if (
+      !entityId ||
+      (!departmentId && !isCustomDepartment) ||
+      (isCustomDepartment && !customDepartmentName.trim()) ||
+      !name.trim()
+    ) {
       setErr('Entity, department, and task name are required.');
       return;
     }
     setBusy(true);
     setErr(null);
     try {
+      let resolvedDepartmentId = departmentId;
+      let departmentWasCreated = false;
+      if (isCustomDepartment) {
+        const customName = customDepartmentName.trim();
+        const existingDepartment = departments.find(
+          (department) => department.name.toLocaleLowerCase() === customName.toLocaleLowerCase(),
+        );
+        if (existingDepartment && !existingDepartment.is_active) {
+          setErr(`Department "${existingDepartment.name}" is inactive. Activate it before use.`);
+          return;
+        }
+        const department =
+          existingDepartment ?? (await apiClient.createDepartment(customName, activeProjectUuid));
+        resolvedDepartmentId = department.id;
+        setDepartmentId(department.id);
+        setIsCustomDepartment(false);
+        departmentWasCreated = !existingDepartment;
+        if (departmentWasCreated) setCreatedDepartment(department);
+      }
+
       const created = await apiClient.createFullTask(
         {
           entity_id: entityId,
-          department_id: departmentId,
+          department_id: resolvedDepartmentId,
           name: name.trim(),
           description: '',
           priority,
@@ -91,6 +134,9 @@ export function CreateTaskDialog({
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectUuid] }),
         queryClient.invalidateQueries({ queryKey: ['entities', activeProjectUuid] }),
+        ...(departmentWasCreated
+          ? [queryClient.invalidateQueries({ queryKey: ['departments', activeProjectUuid] })]
+          : []),
       ]);
       toast.push('success', `Created task ${created.task_code}`);
       onCreated?.(created.id);
@@ -101,6 +147,12 @@ export function CreateTaskDialog({
       setBusy(false);
     }
   };
+  const availableDepartments = createdDepartment
+    ? [
+        ...activeDepartments.filter((department) => department.id !== createdDepartment.id),
+        createdDepartment,
+      ]
+    : activeDepartments;
 
   return (
     <Dialog
@@ -141,10 +193,34 @@ export function CreateTaskDialog({
             </Text>
             <Select
               ariaLabel="Task department"
-              value={departmentId}
-              onChange={setDepartmentId}
-              options={departments.map((d) => ({ value: d.id, label: d.name }))}
+              value={isCustomDepartment ? CUSTOM_DEPARTMENT : departmentId}
+              onChange={(value) => {
+                if (value === CUSTOM_DEPARTMENT) {
+                  setIsCustomDepartment(true);
+                  setDepartmentId('');
+                } else {
+                  setIsCustomDepartment(false);
+                  setDepartmentId(value);
+                }
+              }}
+              options={[
+                ...availableDepartments.map((department) => ({
+                  value: department.id,
+                  label: department.name,
+                })),
+                ...(canCreateDepartments
+                  ? [{ value: CUSTOM_DEPARTMENT, label: 'Create custom department...' }]
+                  : []),
+              ]}
             />
+            {isCustomDepartment && (
+              <TextField
+                aria-label="Custom department name"
+                placeholder="Enter a department name"
+                value={customDepartmentName}
+                onChange={(event) => setCustomDepartmentName(event.target.value)}
+              />
+            )}
           </Stack>
         </div>
 

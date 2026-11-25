@@ -4244,6 +4244,8 @@ export interface components {
             parent_path?: string | null;
             /** Entries */
             entries?: components["schemas"]["SceneEntryOut"][];
+            /** Current Project Rel Path */
+            current_project_rel_path?: string | null;
         };
         /** SceneMkdirRequest */
         SceneMkdirRequest: {
@@ -4742,6 +4744,12 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+            /** Last Feedback At */
+            last_feedback_at?: string | null;
+            /** Last Feedback By */
+            last_feedback_by?: string | null;
+            /** Last Feedback Kind */
+            last_feedback_kind?: string | null;
             /** Acted As */
             acted_as?: string | null;
             /** Allowed Transitions */
@@ -5030,6 +5038,12 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+            /** Last Feedback At */
+            last_feedback_at?: string | null;
+            /** Last Feedback By */
+            last_feedback_by?: string | null;
+            /** Last Feedback Kind */
+            last_feedback_kind?: string | null;
         };
         /** TaskListOut */
         TaskListOut: {

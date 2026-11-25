@@ -451,13 +451,23 @@ export function SettingsDialog({
                             size="sm"
                             disabled={!newDeptName.trim()}
                             onClick={async () => {
-                              const created = await apiClient.createDepartment(
-                                newDeptName.trim(),
-                                activeProjectUuid,
-                              );
-                              setNewDeptName('');
-                              await refetchDepts();
-                              setSelectedDeptId(created.id);
+                              try {
+                                const created = await apiClient.createDepartment(
+                                  newDeptName.trim(),
+                                  activeProjectUuid,
+                                );
+                                setNewDeptName('');
+                                await refetchDepts();
+                                setSelectedDeptId(created.id);
+                                toast.push('success', `Created department "${created.name}".`);
+                              } catch (err) {
+                                toast.push(
+                                  'danger',
+                                  err instanceof Error
+                                    ? err.message
+                                    : 'Unable to create department',
+                                );
+                              }
                             }}
                           >
                             Add
@@ -523,13 +533,30 @@ export function SettingsDialog({
                             />
                             <Button
                               size="sm"
+                              disabled={
+                                !renameDeptDraft.trim() ||
+                                renameDeptDraft.trim() === selectedDept.name
+                              }
                               onClick={async () => {
-                                await apiClient.updateDepartment(
-                                  selectedDept.id,
-                                  { name: renameDeptDraft.trim() },
-                                  activeProjectUuid,
-                                );
-                                await refetchDepts();
+                                try {
+                                  await apiClient.updateDepartment(
+                                    selectedDept.id,
+                                    { name: renameDeptDraft.trim() },
+                                    activeProjectUuid,
+                                  );
+                                  await refetchDepts();
+                                  toast.push(
+                                    'success',
+                                    `Renamed department "${renameDeptDraft.trim()}".`,
+                                  );
+                                } catch (err) {
+                                  toast.push(
+                                    'danger',
+                                    err instanceof Error
+                                      ? err.message
+                                      : 'Unable to rename department',
+                                  );
+                                }
                               }}
                             >
                               Rename

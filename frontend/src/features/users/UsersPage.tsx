@@ -372,7 +372,11 @@ export function UsersPage({
     if (!projectUuid || !newDeptName.trim()) return;
     setErrorMsg(null);
     try {
-      await apiClient.createDepartment(newDeptName.trim(), projectUuid);
+      await apiClient.createDepartment(
+        newDeptName.trim(),
+        projectUuid,
+        newDeptCode.trim() || undefined,
+      );
       setNewDeptName('');
       setNewDeptCode('');
       await queryClient.invalidateQueries({ queryKey: ['departments', projectUuid] });

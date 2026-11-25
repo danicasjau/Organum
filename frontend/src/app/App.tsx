@@ -21,6 +21,9 @@ const GalleryPage = lazy(() =>
 const UsersPage = lazy(() =>
   import('../features/users/UsersPage').then((m) => ({ default: m.UsersPage })),
 );
+const AdminPage = lazy(() =>
+  import('../features/admin/AdminPage').then((m) => ({ default: m.AdminPage })),
+);
 const MyUserPage = lazy(() =>
   import('../features/me/MyUserPage').then((m) => ({ default: m.MyUserPage })),
 );

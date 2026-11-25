@@ -1,5 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import type { ThemeMode } from '../../app/App';
 import {
   Badge,
   Banner,
@@ -62,20 +64,31 @@ const CAPACITY_COLS: ReadonlyArray<'artist' | 'lead' | 'supervisor'> = [
  * Administration sections (roles matrix, project settings, audit log) rendered
  * inside the unified Users panel.
  */
-export function AdminConsoleContent({ section }: { section: AdminSection }) {
+export function AdminConsoleContent({
+  section: embeddedSection,
+  theme,
+  onToggleTheme,
+}: {
+  section?: AdminSection;
+  theme?: ThemeMode;
+  onToggleTheme?: () => void;
+}) {
+  const navigate = useNavigate();
   const auth = useAuthStore((s) => s.auth);
   const queryClient = useQueryClient();
   const projectUuid = auth?.project_uuid ?? null;
   const canManageRoles = hasPerm(auth?.permissions, 'role.manage');
   const canManageRules = hasPerm(auth?.permissions, 'rules.manage');
   const canManageEntities = hasPerm(auth?.permissions, 'entity.manage');
-  const canAdminDb =
-    auth?.user.role_name === 'admin' && hasPerm(auth?.permissions, 'admin.db');
+  const canAdminDb = auth?.user.role_name === 'admin' && hasPerm(auth?.permissions, 'admin.db');
   const canViewUsers = hasPerm(auth?.permissions, 'user.view');
 
-  const [section, setSection] = useState<AdminSection>(() =>
-    hasPerm(auth?.permissions, 'role.manage') ? 'roles' : 'rules',
+  const [currentSection, setCurrentSection] = useState<AdminSection>(
+    () => embeddedSection ?? (hasPerm(auth?.permissions, 'role.manage') ? 'roles' : 'rules'),
   );
+  useEffect(() => {
+    if (embeddedSection) setCurrentSection(embeddedSection);
+  }, [embeddedSection]);
   const [matrixTab, setMatrixTab] = useState('role-matrix');
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -104,7 +117,7 @@ export function AdminConsoleContent({ section }: { section: AdminSection }) {
   const auditQuery = useQuery({
     queryKey: ['admin-audit', projectUuid, auditFilter],
     queryFn: () => apiClient.listAuditLogs(auditFilter || undefined, 150, projectUuid),
-    enabled: Boolean(projectUuid && canManageRoles && section === 'audit'),
+    enabled: Boolean(projectUuid && canManageRoles && currentSection === 'audit'),
   });
 
   const roles = useMemo(() => rolesQuery.data ?? [], [rolesQuery.data]);
@@ -220,13 +233,9 @@ export function AdminConsoleContent({ section }: { section: AdminSection }) {
     }
   };
 
-  return (
-    <AuthenticatedShell
-      theme={theme}
-      onToggleTheme={onToggleTheme}
-      statusText={`Admin Console — ${auth?.project_status ?? 'active'}`}
-    >
-      <div className="org-admin-shell" data-ui="admin-page">
+  const content = (
+    <div className="org-admin-shell" data-ui="admin-page">
+      {!embeddedSection && (
         <aside className="org-admin-nav" aria-label="Admin sections">
           <div className="org-admin-nav__title">Admin Console</div>
           {(
@@ -248,19 +257,23 @@ export function AdminConsoleContent({ section }: { section: AdminSection }) {
                 key={id}
                 type="button"
                 className="org-admin-nav__item"
-                data-active={section === id ? 'true' : undefined}
+                data-active={currentSection === id ? 'true' : undefined}
                 onClick={() => {
                   if (id === 'users') navigate('/users');
                   else if (id === 'departments') navigate('/users?tab=departments');
-                  else setSection(id);
+                  else setCurrentSection(id);
                 }}
               >
                 {label}
               </button>
             ))}
         </aside>
+      )}
 
-        {section === 'roles' && (
+      <section className="org-admin-content">
+        {errorMsg && <Banner severity="danger">{errorMsg}</Banner>}
+        {statusMsg && <Banner severity="success">{statusMsg}</Banner>}
+        {currentSection === 'roles' && (
           <Tabs
             activeId={matrixTab}
             onChange={setMatrixTab}
@@ -379,91 +392,16 @@ export function AdminConsoleContent({ section }: { section: AdminSection }) {
           />
         )}
 
-          {section === 'project' && projDraft && (
-            <Panel title="Project Lifecycle & Security Settings">
-              <Stack gap="2">
-                <label className="org-admin-field">
-                  <Text size="sm" variant="muted">Project Status</Text>
-                  <Select
-                    ariaLabel="Project Status"
-                    value={projDraft.status}
-                    onChange={(v) =>
-                      setProjDraft({
-                        ...projDraft,
-                        status: v as ProjectSettingsOut['status'],
-                      })
-                    }
-                    options={[
-                      { value: 'active', label: 'active (read/write)' },
-                      { value: 'on_hold', label: 'on_hold' },
-                      { value: 'completed', label: 'completed' },
-                      { value: 'archived', label: 'archived (read-only for non-admins)' },
-                    ]}
-                  />
-                </label>
-                <label className="org-admin-field">
-                  <Text size="sm" variant="muted">Hours per Day</Text>
-                  <TextField
-                    type="number"
-                    value={String(projDraft.hours_per_day)}
-                    onChange={(e) =>
-                      setProjDraft({
-                        ...projDraft,
-                        hours_per_day: Number(e.target.value) || 8,
-                      })
-                    }
-                  />
-                </label>
-                <label className="org-admin-field">
-                  <Text size="sm" variant="muted">Task Code Pattern</Text>
-                  <TextField
-                    value={projDraft.task_code_pattern}
-                    onChange={(e) =>
-                      setProjDraft({ ...projDraft, task_code_pattern: e.target.value })
-                    }
-                  />
-                </label>
-                <div className="org-admin-field">
-                  <Text size="sm" variant="muted">Working Days</Text>
-                  <div className="org-admin-toolbar">
-                    {WEEKDAY_OPTIONS.map((w) => {
-                      const active = (projDraft.working_days ?? []).includes(w.day);
-                      return (
-                        <Checkbox
-                          key={w.day}
-                          label={w.label}
-                          checked={active}
-                          onChange={(checked) => {
-                            const next = new Set(projDraft.working_days ?? []);
-                            if (checked) next.add(w.day);
-                            else next.delete(w.day);
-                            setProjDraft({
-                              ...projDraft,
-                              working_days: Array.from(next).sort((a, b) => a - b),
-                            });
-                          }}
-                        />
-                      );
-                    })}
-                  </div>
-                </div>
-                <label className="org-admin-field">
-                  <Text size="sm" variant="muted">Link Dependency Depth</Text>
-                  <Select
-                    ariaLabel="Link Dependency Depth"
-                    value={String(projDraft.link_dependency_depth ?? 1)}
-                    onChange={(v) =>
-                      setProjDraft({ ...projDraft, link_dependency_depth: Number(v) })
-                    }
-                    options={[
-                      { value: '1', label: '1 hop (direct links)' },
-                      { value: '2', label: '2 hops (indirect links)' },
-                    ]}
-                  />
-                </label>
-                <Checkbox
-                  label="Require published version to submit for review"
-                  checked={projDraft.require_version_to_submit}
+        {currentSection === 'project' && projDraft && (
+          <Panel title="Project Lifecycle & Security Settings">
+            <Stack gap="2">
+              <label className="org-admin-field">
+                <Text size="sm" variant="muted">
+                  Project Status
+                </Text>
+                <Select
+                  ariaLabel="Project Status"
+                  value={projDraft.status}
                   onChange={(v) =>
                     setProjDraft({
                       ...projDraft,
@@ -492,12 +430,56 @@ export function AdminConsoleContent({ section }: { section: AdminSection }) {
                     })
                   }
                 />
-                <Checkbox
-                  label="Enable read-only admin SQL console"
-                  checked={projDraft.admin_sql_console_enabled}
-                  onChange={(v) =>
-                    setProjDraft({ ...projDraft, admin_sql_console_enabled: v })
+              </label>
+              <label className="org-admin-field">
+                <Text size="sm" variant="muted">
+                  Task Code Pattern
+                </Text>
+                <TextField
+                  value={projDraft.task_code_pattern}
+                  onChange={(e) =>
+                    setProjDraft({ ...projDraft, task_code_pattern: e.target.value })
                   }
+                />
+              </label>
+              <div className="org-admin-field">
+                <Text size="sm" variant="muted">
+                  Working Days
+                </Text>
+                <div className="org-admin-toolbar">
+                  {WEEKDAY_OPTIONS.map((w) => {
+                    const active = (projDraft.working_days ?? []).includes(w.day);
+                    return (
+                      <Checkbox
+                        key={w.day}
+                        label={w.label}
+                        checked={active}
+                        onChange={(checked) => {
+                          const next = new Set(projDraft.working_days ?? []);
+                          if (checked) next.add(w.day);
+                          else next.delete(w.day);
+                          setProjDraft({
+                            ...projDraft,
+                            working_days: Array.from(next).sort((a, b) => a - b),
+                          });
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+              <label className="org-admin-field">
+                <Text size="sm" variant="muted">
+                  Link Dependency Depth
+                </Text>
+                <Select
+                  ariaLabel="Link Dependency Depth"
+                  value={String(projDraft.link_dependency_depth ?? 1)}
+                  onChange={(v) => setProjDraft({ ...projDraft, link_dependency_depth: Number(v) })}
+                  options={[
+                    { value: '1', label: '1 hop (direct links)' },
+                    { value: '2', label: '2 hops (indirect links)' },
+                  ]}
                 />
               </label>
               <Checkbox
@@ -528,48 +510,59 @@ export function AdminConsoleContent({ section }: { section: AdminSection }) {
           </Panel>
         )}
 
-          {section === 'default_tasks' && canManageEntities && (
-            <AdminDefaultTasksSection projectUuid={projectUuid} />
-          )}
+        {currentSection === 'default_tasks' && canManageEntities && (
+          <AdminDefaultTasksSection projectUuid={projectUuid} />
+        )}
 
-          {section === 'dep_templates' && canManageEntities && (
-            <AdminDepTemplatesSection projectUuid={projectUuid} />
-          )}
+        {currentSection === 'dep_templates' && canManageEntities && (
+          <AdminDepTemplatesSection projectUuid={projectUuid} />
+        )}
 
-          {section === 'rules' && canManageRules && (
-            <AdminRulesSection projectUuid={projectUuid} />
-          )}
+        {currentSection === 'rules' && canManageRules && (
+          <AdminRulesSection projectUuid={projectUuid} />
+        )}
 
-          {section === 'database' && canAdminDb && (
-            <AdminDatabaseSection
-              projectUuid={projectUuid}
-              sqlConsoleEnabled={Boolean(projSettingsQuery.data?.admin_sql_console_enabled)}
-            />
-          )}
+        {currentSection === 'database' && canAdminDb && (
+          <AdminDatabaseSection
+            projectUuid={projectUuid}
+            sqlConsoleEnabled={Boolean(projSettingsQuery.data?.admin_sql_console_enabled)}
+          />
+        )}
 
-          {section === 'audit' && (
-            <Panel title="Security & Production Audit Log">
-              <Stack gap="2">
-                <div className="org-admin-toolbar">
-                  <TextField
-                    value={auditFilter}
-                    onChange={(e) => setAuditFilter(e.target.value)}
-                    placeholder="Filter by action (e.g. auth.login)"
-                  />
-                  <Button size="sm" onClick={() => void auditQuery.refetch()}>
-                    Refresh
-                  </Button>
-                </div>
-                <div className="org-admin-table-wrap">
-                  <table className="org-admin-matrix" aria-label="Audit log">
-                    <thead>
-                      <tr>
-                        <th>Timestamp (UTC)</th>
-                        <th>User</th>
-                        <th>Action</th>
-                        <th>Target</th>
-                        <th>IP</th>
-                        <th>Detail</th>
+        {currentSection === 'audit' && (
+          <Panel title="Security & Production Audit Log">
+            <Stack gap="2">
+              <div className="org-admin-toolbar">
+                <TextField
+                  value={auditFilter}
+                  onChange={(e) => setAuditFilter(e.target.value)}
+                  placeholder="Filter by action (e.g. auth.login)"
+                />
+                <Button size="sm" onClick={() => void auditQuery.refetch()}>
+                  Refresh
+                </Button>
+              </div>
+              <div className="org-admin-table-wrap">
+                <table className="org-admin-matrix" aria-label="Audit log">
+                  <thead>
+                    <tr>
+                      <th>Timestamp (UTC)</th>
+                      <th>User</th>
+                      <th>Action</th>
+                      <th>Target</th>
+                      <th>IP</th>
+                      <th>Detail</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(auditQuery.data ?? []).map((row) => (
+                      <tr key={row.id}>
+                        <td>{new Date(row.at).toISOString()}</td>
+                        <td>{row.username ?? '—'}</td>
+                        <td>{row.action}</td>
+                        <td>{row.target_type ? `${row.target_type}:${row.target_id}` : '—'}</td>
+                        <td>{row.ip ?? '—'}</td>
+                        <td>{JSON.stringify(row.detail_json)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -581,4 +574,27 @@ export function AdminConsoleContent({ section }: { section: AdminSection }) {
       </section>
     </div>
   );
+
+  if (theme && onToggleTheme) {
+    return (
+      <AuthenticatedShell
+        theme={theme}
+        onToggleTheme={onToggleTheme}
+        statusText={`Admin Console — ${auth?.project_status ?? 'active'}`}
+      >
+        {content}
+      </AuthenticatedShell>
+    );
+  }
+  return content;
+}
+
+export function AdminPage({
+  theme,
+  onToggleTheme,
+}: {
+  theme: ThemeMode;
+  onToggleTheme: () => void;
+}) {
+  return <AdminConsoleContent theme={theme} onToggleTheme={onToggleTheme} />;
 }

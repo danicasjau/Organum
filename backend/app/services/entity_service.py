@@ -529,6 +529,7 @@ async def rename_task(
         .options(
             selectinload(Task.entity_department).selectinload(EntityDepartment.entity),
             selectinload(Task.entity_department).selectinload(EntityDepartment.department),
+            selectinload(Task.product),
         )
     )
     task = task_res.scalar_one_or_none()
@@ -551,6 +552,8 @@ async def rename_task(
         await _rewrite_entity_rel_prefixes(db, ed.entity_id, old_prefix, new_prefix)
     task.name = clean
     task.folder_name = clean
+    if task.product is not None:
+        task.product.name = f"{ed.department.folder_name}/{clean}"
     await db.commit()
     return task
 

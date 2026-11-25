@@ -70,10 +70,11 @@ async def test_project_lifecycle_departments_reconcile_and_launchers(
     added_dept = (
         await client.post(
             f"/api/v1/projects/{proj_uuid}/departments",
-            json={"name": "Simulation FX"},
+            json={"name": "Simulation FX", "short_code": "SFX"},
         )
     ).json()
     assert added_dept["folder_name"] == "Simulation_FX"
+    assert added_dept["short_code"] == "SFX"
     assert added_dept["default_tasks"][0]["name"] == "main"
 
     new_dt = (

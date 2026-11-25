@@ -806,10 +806,10 @@ export const apiClient = {
   // Project-scoped departments catalog
   listDepartments: (projectUuid?: string | null) =>
     apiFetch<DepartmentOut[]>(`${getProjBase(projectUuid)}/departments`),
-  createDepartment: (name: string, projectUuid?: string | null) =>
+  createDepartment: (name: string, projectUuid?: string | null, shortCode?: string) =>
     apiFetch<DepartmentOut>(`${getProjBase(projectUuid)}/departments`, {
       method: 'POST',
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name, short_code: shortCode?.trim() || undefined }),
     }),
   updateDepartment: (
     deptId: string,
