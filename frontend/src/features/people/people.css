@@ -59,9 +59,10 @@
   .org-wh__time {
     height: var(--ctl-h);
     padding: 0 var(--space-1);
-    border: var(--border-w) solid var(--border-control);
-    border-radius: var(--radius-1);
+    border: var(--border-w) solid var(--groove-dark);
+    border-radius: var(--radius-well);
     background: var(--surface-field);
+    box-shadow: var(--sh-inset);
     color: var(--text);
     font-family: var(--font-mono);
   }

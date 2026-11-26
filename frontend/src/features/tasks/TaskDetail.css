@@ -467,3 +467,13 @@
     padding-left: var(--space-4);
   }
 }
+
+@layer components {
+  .org-tdet__thread-extra {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: var(--space-1);
+  }
+}

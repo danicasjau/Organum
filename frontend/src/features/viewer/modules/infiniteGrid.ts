@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { readCssToken } from '../../../components/ui/Theme/readCssToken';
 
 const GRID_VERT = `
 varying vec3 vWorldPos;
@@ -85,14 +86,16 @@ export function createInfiniteGrid(): {
     uniforms: {
       uCameraPos: { value: new THREE.Vector3() },
       uGridFadeDist: { value: 250.0 },
-      uMinorColor: { value: new THREE.Color('#475569') },
-      uMajorColor: { value: new THREE.Color('#94A3B8') },
+      uMinorColor: { value: new THREE.Color(readCssToken('--vp-grid-minor', '#333333')) },
+      uMajorColor: { value: new THREE.Color(readCssToken('--vp-grid-major', '#4f4f4f')) },
     },
   });
 
   const mesh = new THREE.Mesh(geom, mat);
   mesh.frustumCulled = false;
   mesh.renderOrder = -10;
+
+  let lastDark: boolean | null = null;
 
   return {
     mesh,
@@ -102,8 +105,16 @@ export function createInfiniteGrid(): {
       mesh.scale.set(span, 1, span);
       mat.uniforms.uCameraPos!.value.copy(camera.position);
       mat.uniforms.uGridFadeDist!.value = span * 0.45;
-      (mat.uniforms.uMinorColor!.value as THREE.Color).set(isDark ? '#334155' : '#94A3B8');
-      (mat.uniforms.uMajorColor!.value as THREE.Color).set(isDark ? '#64748B' : '#475569');
+      if (lastDark !== isDark) {
+        lastDark = isDark;
+        // Grid colours come from tokens; re-read only when the theme flips.
+        (mat.uniforms.uMinorColor!.value as THREE.Color).set(
+          readCssToken('--vp-grid-minor', isDark ? '#333333' : '#c4bfb4'),
+        );
+        (mat.uniforms.uMajorColor!.value as THREE.Color).set(
+          readCssToken('--vp-grid-major', isDark ? '#4f4f4f' : '#9a9488'),
+        );
+      }
     },
     dispose() {
       geom.dispose();

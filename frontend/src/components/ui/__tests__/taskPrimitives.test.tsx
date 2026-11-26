@@ -33,8 +33,8 @@ describe('CR03 Phase 7C task UI primitives', () => {
       </div>,
     );
     expect(container.querySelectorAll('[data-ui="priority-marker"]')).toHaveLength(2);
-    expect(screen.getByLabelText('High priority')).toHaveTextContent('▲');
-    expect(screen.getByLabelText('Stopper priority')).toHaveTextContent('STOP');
+    expect(screen.getByLabelText('High priority')).toHaveTextContent('High');
+    expect(screen.getByLabelText('Stopper priority')).toHaveTextContent('Critical');
   });
 
   it('switches views via ViewSwitcher', () => {

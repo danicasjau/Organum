@@ -23,7 +23,7 @@ import {
   CapacityBadgeList,
   Checkbox,
   Popover,
-  PriorityMarker,
+  PriorityFlag,
   Select,
   StatusChip,
   Text,
@@ -166,11 +166,13 @@ function VirtualTableBody({ height, children }: { height: number; children: Reac
 function VirtualTableRow({
   start,
   selected,
+  status,
   onClick,
   children,
 }: {
   start: number;
   selected: boolean;
+  status?: string;
   onClick: () => void;
   children: React.ReactNode;
 }) {
@@ -181,6 +183,7 @@ function VirtualTableRow({
       ref={ref}
       role="row"
       data-selected={selected ? 'true' : undefined}
+      data-status={status}
       className="org-tgrid__row"
       onClick={onClick}
     >
@@ -296,6 +299,28 @@ export function TaskGridView({
 
     return [
       {
+        id: 'priority',
+        header: 'Priority',
+        accessorFn: (r) => (isFullTaskItem(r) ? r.priority : 'normal'),
+        size: 86,
+        cell: ({ row }) => {
+          const t = row.original;
+          if (!isFullTaskItem(t)) return null;
+          const canEdit = canPerformOnTask(auth, 'task.edit_fields', t.my_capacities ?? []);
+          if (!canEdit) return <PriorityFlag priority={t.priority ?? 'normal'} />;
+          return (
+            <div onClick={(e) => e.stopPropagation()}>
+              <Select
+                ariaLabel={`Priority for ${t.task_code}`}
+                value={t.priority ?? 'normal'}
+                onChange={(v) => void inlinePatch(t, { priority: v })}
+                options={[...PRIORITY_OPTIONS]}
+              />
+            </div>
+          );
+        },
+      },
+      {
         id: 'task_code',
         header: 'Code',
         accessorKey: 'task_code',
@@ -349,28 +374,6 @@ export function TaskGridView({
         accessorKey: 'status',
         size: 105,
         cell: (ctx) => <StatusChip status={String(ctx.getValue())} compact />,
-      },
-      {
-        id: 'priority',
-        header: 'Priority',
-        accessorFn: (r) => (isFullTaskItem(r) ? r.priority : 'normal'),
-        size: 115,
-        cell: ({ row }) => {
-          const t = row.original;
-          if (!isFullTaskItem(t)) return null;
-          const canEdit = canPerformOnTask(auth, 'task.edit_fields', t.my_capacities ?? []);
-          if (!canEdit) return <PriorityMarker priority={t.priority ?? 'normal'} />;
-          return (
-            <div onClick={(e) => e.stopPropagation()}>
-              <Select
-                ariaLabel={`Priority for ${t.task_code}`}
-                value={t.priority ?? 'normal'}
-                onChange={(v) => void inlinePatch(t, { priority: v })}
-                options={[...PRIORITY_OPTIONS]}
-              />
-            </div>
-          );
-        },
       },
       {
         id: 'artists',
@@ -811,6 +814,7 @@ export function TaskGridView({
                 key={original.id}
                 start={vRow.start}
                 selected={original.id === selectedTaskId}
+                status={original.status}
                 onClick={() => onSelectTask(original.id)}
               >
                 {row.getVisibleCells().map((cell, cIdx) => {

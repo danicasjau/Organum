@@ -38,7 +38,7 @@ test.describe('Phase 7C — Tasks Panel Core, Matrix, Kanban, Review Queue, Link
 
     // Post internal comment + log time in TaskDetail
     await dock.getByLabel('New task comment').fill('Producer E2E check for @art_sam');
-    await dock.getByRole('button', { name: 'Post Comment' }).click();
+    await dock.getByRole('button', { name: 'Comment', exact: true }).click();
     await expect(dock.getByText('Producer E2E check for')).toBeVisible({ timeout: 10000 });
 
     await page.screenshot({ path: path.join(SCREENSHOTS_DIR, 'phase7c-grid-dark.png') });

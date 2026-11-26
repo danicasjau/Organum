@@ -1,4 +1,7 @@
 @layer components {
+  /* v1 switch: 50x22 INSET track, 23x16 RAISED knob sliding 140ms.
+     ON tints the track and lights a 9x2 production-blue LED on the empty side;
+     etched mono "I" / "O" glyphs sit at the track ends. */
   .org-switch {
     display: inline-flex;
     align-items: center;
@@ -9,62 +12,149 @@
     border: 0;
     background: transparent;
     color: var(--text);
+    font-size: var(--font-size);
     cursor: pointer;
+  }
+
+  .org-switch:focus-visible {
+    outline: none;
   }
 
   .org-switch:disabled {
     cursor: not-allowed;
-    color: var(--text-disabled);
+    color: var(--text-off);
   }
 
   .org-switch__track {
-    display: inline-flex;
-    align-items: center;
-    justify-content: flex-start;
+    position: relative;
+    display: inline-block;
+    flex-shrink: 0;
     width: var(--switch-w);
     height: var(--switch-h);
-    padding: var(--space-0);
-    border: 1px solid var(--border-control);
-    border-radius: var(--radius-1);
-    background: var(--surface-field);
+    border: 1px solid var(--groove-dark);
+    border-radius: var(--radius-well);
+    background: var(--bg-input);
+    box-shadow: var(--sh-inset);
+    transition: background-color var(--motion-switch);
   }
 
-  .org-switch[data-checked='true'] .org-switch__track {
-    justify-content: flex-end;
-    background: var(--accent-soft);
-    border-color: var(--accent);
+  .org-switch__glyph {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-glyph);
+    font-weight: 700;
+    line-height: 1;
+    color: var(--text-off);
+    text-shadow: 0 1px 0 var(--groove-light);
+    transition: opacity var(--motion-switch);
+  }
+
+  .org-switch__glyph--on {
+    left: var(--space-6px);
+  }
+
+  .org-switch__glyph--off {
+    right: var(--space-6px);
+  }
+
+  .org-switch__led {
+    position: absolute;
+    top: 50%;
+    left: var(--space-2);
+    width: var(--switch-led-w);
+    height: var(--switch-led-h);
+    transform: translateY(-50%);
+    background: var(--zone-production);
+    box-shadow: 0 0 var(--led-glow) color-mix(in srgb, var(--zone-production) 70%, transparent);
+    opacity: 0;
+    transition: opacity var(--motion-switch);
   }
 
   .org-switch__thumb {
-    width: var(--switch-thumb);
-    height: var(--switch-thumb);
-    margin: 1px;
-    border: 1px solid var(--border-dark);
-    border-radius: var(--radius-1);
-    background: var(--bevel-raised-bg);
-    box-shadow: var(--bevel-inset);
+    position: absolute;
+    top: calc((var(--switch-h) - 2 * var(--border-w) - var(--switch-knob-h)) / 2);
+    left: var(--switch-inset);
+    width: var(--switch-knob-w);
+    height: var(--switch-knob-h);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-raised);
+    box-shadow: var(--sh-raised);
+    transition:
+      transform var(--motion-switch),
+      filter var(--motion-fast);
   }
 
-  .org-switch:hover:not(:disabled) .org-switch__track,
-  .org-switch[data-force-state='hover']:not(:disabled) .org-switch__track {
-    border-color: var(--accent);
+  /* Centre grip on the knob */
+  .org-switch__thumb::after {
+    content: '';
+    position: absolute;
+    top: var(--space-1);
+    bottom: var(--space-1);
+    left: 50%;
+    border-left: 1px solid var(--text-off);
+    box-shadow: 1px 0 0 var(--groove-light);
   }
 
-  .org-switch[data-force-state='pressed']:not(:disabled) .org-switch__thumb {
-    background: var(--bevel-pressed-bg);
+  .org-switch[data-checked='true'] .org-switch__track {
+    background: var(--switch-on-track);
   }
 
+  .org-switch[data-checked='true'] .org-switch__thumb {
+    transform: translateX(
+      calc(var(--switch-w) - 2 * var(--border-w) - var(--switch-knob-w) - 2 * var(--switch-inset))
+    );
+  }
+
+  .org-switch[data-checked='true'] .org-switch__led {
+    opacity: 1;
+  }
+
+  .org-switch[data-checked='true'] .org-switch__glyph--on {
+    opacity: 0;
+  }
+
+  .org-switch:hover:not(:disabled) .org-switch__thumb,
+  .org-switch[data-force-state='hover']:not(:disabled) .org-switch__thumb {
+    filter: brightness(var(--hover-brightness));
+  }
+
+  .org-switch[data-force-state='pressed']:not(:disabled) .org-switch__thumb,
+  .org-switch:active:not(:disabled) .org-switch__thumb {
+    background: var(--bg-raised-bottom);
+    box-shadow: var(--sh-pressed);
+    filter: none;
+  }
+
+  .org-switch:focus-visible .org-switch__track,
   .org-switch[data-force-state='focus']:not(:disabled) .org-switch__track {
     outline: var(--focus-w) solid var(--focus-ring);
-    outline-offset: var(--focus-w);
+    outline-offset: var(--focus-offset);
   }
 
   .org-switch[data-error='true'] .org-switch__track {
-    border-color: var(--red-500);
+    border-color: var(--st-rejected);
+    box-shadow: var(--sh-inset), inset 0 0 var(--led-glow) color-mix(in srgb, var(--st-rejected) 35%, transparent);
+  }
+
+  .org-switch:disabled .org-switch__track {
+    background: var(--bg-panel);
+    box-shadow: none;
+    border-color: var(--border);
+  }
+
+  .org-switch:disabled .org-switch__thumb {
+    background: var(--bg-panel);
+    box-shadow: none;
+  }
+
+  .org-switch:disabled .org-switch__led {
+    opacity: 0;
   }
 
   .org-switch[data-dirty='true'] .org-switch__label {
     color: var(--accent-text);
   }
 }
-

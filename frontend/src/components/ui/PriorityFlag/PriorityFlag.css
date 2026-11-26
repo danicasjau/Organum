@@ -1,0 +1,58 @@
+@layer components {
+  .org-prioflag {
+    --prio: var(--prio-normal);
+
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-width: 0;
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .org-prioflag[data-priority='low'] {
+    --prio: var(--prio-low);
+  }
+  .org-prioflag[data-priority='high'] {
+    --prio: var(--prio-high);
+  }
+  .org-prioflag[data-priority='urgent'] {
+    --prio: var(--prio-urgent);
+  }
+  .org-prioflag[data-priority='critical'] {
+    --prio: var(--prio-critical);
+  }
+
+  .org-prioflag__glyph {
+    flex-shrink: 0;
+    width: var(--flag-size);
+    height: var(--flag-size);
+    stroke: var(--prio);
+  }
+
+  .org-prioflag__cloth {
+    fill: color-mix(in srgb, var(--prio) 40%, transparent);
+  }
+
+  .org-prioflag__pole {
+    fill: none;
+  }
+
+  .org-prioflag__sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* Tag variant: <Tag priority="high"> */
+  .org-tag[data-priority] .org-prioflag {
+    font-size: var(--font-size-label);
+  }
+}

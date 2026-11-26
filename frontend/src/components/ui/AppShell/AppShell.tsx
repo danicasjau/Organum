@@ -34,8 +34,20 @@ export interface AppShellProps {
   onOpenAdmin?: () => void;
   onLogout?: () => void;
   jobsActive?: number;
+  /** v1 zone accent for the top bar underline and accent controls. Derived from the active panel when omitted. */
+  zone?: 'production' | 'management' | 'settings';
   statusBar: ReactNode;
   children: ReactNode;
+}
+
+const MANAGEMENT_PANELS = new Set(['users', 'admin', 'people', 'schedule']);
+
+function deriveZone(activePanelId: string | undefined): 'production' | 'management' | 'settings' {
+  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/settings')) {
+    return 'settings';
+  }
+  if (activePanelId && MANAGEMENT_PANELS.has(activePanelId)) return 'management';
+  return 'production';
 }
 
 export function AppShell({
@@ -54,14 +66,16 @@ export function AppShell({
   onOpenAdmin,
   onLogout,
   jobsActive = 0,
+  zone,
   statusBar,
   children,
 }: AppShellProps) {
+  const activeZone = zone ?? deriveZone(panels.find((p) => p.active)?.id);
   const hasInteractiveUserMenu = Boolean(onOpenMyUser || onOpenAdmin || onLogout);
   const displayName = userFullName || userName;
 
   return (
-    <div data-ui="app-shell" className="org-shell">
+    <div data-ui="app-shell" data-zone={activeZone} className="org-shell">
       <Topbar
         left={
           <>
@@ -111,7 +125,7 @@ export function AppShell({
               title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
               onClick={onToggleTheme}
             >
-              <Icon name={theme === 'dark' ? 'sun' : 'moon'} size="sm" />
+              <Icon name={theme === 'dark' ? 'sun' : 'moon'} size="lg" />
             </Button>
             {onOpenSettings && (
               <Button
@@ -121,7 +135,7 @@ export function AppShell({
                 title="Preferences & Project Settings"
                 onClick={onOpenSettings}
               >
-                <Icon name="settings" size="sm" />
+                <Icon name="settings" size="lg" />
               </Button>
             )}
             {hasInteractiveUserMenu ? (
@@ -137,34 +151,67 @@ export function AppShell({
                       username={userName}
                       fullName={displayName}
                       avatarUrl={userAvatarUrl}
-                      size="sm"
+                      size={24}
                     />
                     <span className="org-usermenu__name">{displayName}</span>
                     {userRoleLabel && <Badge tone="neutral">{userRoleLabel}</Badge>}
+                    <Icon name="chevron-down" size="sm" />
                   </button>
                 </DropdownMenu.Trigger>
                 <DropdownMenu.Portal>
-                  <DropdownMenu.Content align="end" sideOffset={2} className="org-menu__content">
+                  <DropdownMenu.Content
+                    align="end"
+                    sideOffset={4}
+                    className="org-menu__content org-usermenu__content"
+                  >
+                    <div className="org-usermenu__header">
+                      <Avatar
+                        username={userName}
+                        fullName={displayName}
+                        avatarUrl={userAvatarUrl}
+                        size={40}
+                      />
+                      <div className="org-usermenu__who">
+                        <span className="org-usermenu__who-name">{displayName}</span>
+                        {userRoleLabel && (
+                          <span className="org-usermenu__who-role">{userRoleLabel}</span>
+                        )}
+                      </div>
+                      <StatusDot tone="success" label="Online" />
+                    </div>
+                    <DropdownMenu.Separator className="org-menu__sep" />
                     {onOpenMyUser && (
                       <DropdownMenu.Item className="org-menu__item" onSelect={onOpenMyUser}>
-                        <span>My User</span>
+                        <span className="org-menu__label">
+                          <Icon name="user" size="md" />
+                          <span>My User</span>
+                        </span>
                       </DropdownMenu.Item>
                     )}
                     {onOpenSettings && (
                       <DropdownMenu.Item className="org-menu__item" onSelect={onOpenSettings}>
-                        <span>Settings</span>
+                        <span className="org-menu__label">
+                          <Icon name="sliders" size="md" />
+                          <span>Settings</span>
+                        </span>
                       </DropdownMenu.Item>
                     )}
                     {canAdmin && onOpenAdmin && (
                       <DropdownMenu.Item className="org-menu__item" onSelect={onOpenAdmin}>
-                        <span>Users &amp; Admin</span>
+                        <span className="org-menu__label">
+                          <Icon name="users" size="md" />
+                          <span>Users &amp; Admin</span>
+                        </span>
                       </DropdownMenu.Item>
                     )}
                     {onLogout && (
                       <>
                         <DropdownMenu.Separator className="org-menu__sep" />
                         <DropdownMenu.Item className="org-menu__item" onSelect={onLogout}>
-                          <span>Sign Out</span>
+                          <span className="org-menu__label">
+                            <Icon name="log-out" size="md" />
+                            <span>Sign Out</span>
+                          </span>
                         </DropdownMenu.Item>
                       </>
                     )}

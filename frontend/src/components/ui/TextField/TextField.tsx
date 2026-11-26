@@ -21,6 +21,7 @@ export function TextField({
     <div
       data-ui="text-field"
       data-error={error ? 'true' : undefined}
+      data-error-text={typeof error === 'string' ? error : undefined}
       data-dirty={dirty ? 'true' : undefined}
       data-disabled={disabled ? 'true' : undefined}
       data-force-state={forceState}

@@ -13,17 +13,24 @@
     min-height: var(--min-hit);
     padding: 0 var(--space-2);
     border: 1px solid transparent;
-    border-radius: var(--radius-1);
+    border-radius: var(--radius-sm);
     background: transparent;
-    color: var(--text);
+    color: var(--text-dim);
     font-size: var(--font-size);
     cursor: pointer;
   }
 
-  .org-menubar__trigger:hover,
+  .org-menubar__trigger:hover {
+    background: var(--hover);
+    border-color: var(--border);
+    color: var(--text);
+  }
+
   .org-menubar__trigger[data-state='open'] {
-    background: var(--surface-raised);
-    border-color: var(--border-dark);
+    background: var(--bg-input);
+    border-color: var(--groove-dark);
+    box-shadow: var(--sh-pressed);
+    color: var(--text);
   }
 
   .org-menu__content {
@@ -31,9 +38,9 @@
     min-width: var(--popover-min-w);
     padding: var(--space-1);
     border: 1px solid var(--border-dark);
-    border-radius: var(--radius-0);
-    background: var(--surface-window);
-    box-shadow: var(--shadow-popup);
+    border-radius: var(--radius-md);
+    background: var(--bg-raised);
+    box-shadow: var(--elev-5);
   }
 
   .org-menu__item {
@@ -41,8 +48,9 @@
     align-items: center;
     justify-content: space-between;
     gap: var(--space-4);
-    height: var(--menubar-h);
-    padding: 0 var(--space-5) 0 var(--space-4);
+    height: var(--menu-item-h);
+    padding: 0 var(--space-4) 0 var(--space-3);
+    border-radius: var(--radius-xs);
     color: var(--text);
     font-size: var(--font-size);
     cursor: pointer;
@@ -51,7 +59,21 @@
   }
 
   .org-menu__item[data-highlighted] {
-    background: var(--accent-soft);
+    background: var(--hover);
+  }
+
+  .org-menu__label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .org-menu__label > svg {
+    color: var(--text-dim);
+  }
+
+  .org-menu__item[data-highlighted] .org-menu__label > svg {
+    color: var(--text);
   }
 
   .org-menu__item[data-disabled] {
@@ -63,14 +85,15 @@
     min-width: var(--shortcut-col-w);
     text-align: right;
     font-family: var(--font-mono);
-    font-size: var(--font-size-sm);
-    color: var(--text-muted);
+    font-size: var(--font-size-label);
+    color: var(--text-dim);
   }
 
   .org-menu__sep {
-    height: 1px;
+    height: 0;
     margin: var(--space-1) 0;
-    background: var(--border-dark);
+    border-top: 1px solid var(--groove-dark);
+    box-shadow: var(--sh-groove);
   }
 }
 

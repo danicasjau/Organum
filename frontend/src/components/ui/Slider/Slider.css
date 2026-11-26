@@ -1,8 +1,11 @@
 @layer components {
+  /* v1 slider: 8px INSET trough, zone-accent fill (90%) with a light top edge,
+     14x20 RAISED thumb with a centre grip line, ticks every 10% and mono
+     labels at 0/25/50/75/100 beneath. */
   .org-slider {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: var(--space-4);
     width: 100%;
   }
 
@@ -17,35 +20,46 @@
     outline: none;
   }
 
+  .org-slider[data-ticks='true'] {
+    align-items: flex-start;
+  }
+
+  .org-slider[data-ticks='true'] .org-slider__track-area {
+    align-items: flex-start;
+    height: calc(var(--thumb-h) + var(--tick-h) + var(--tick-label-h) + var(--space-1));
+    padding-top: calc((var(--thumb-h) - var(--groove-h)) / 2);
+  }
+
   .org-slider__track-area:focus-visible .org-slider__thumb,
   .org-slider[data-force-state='focus'] .org-slider__thumb {
     outline: var(--focus-w) solid var(--focus-ring);
-    outline-offset: var(--focus-w);
-    border-color: var(--accent);
+    outline-offset: var(--focus-offset);
   }
 
   .org-slider__groove {
     position: relative;
     width: 100%;
     height: var(--groove-h);
-    border: 1px solid var(--border-dark);
-    border-radius: var(--radius-1);
-    background: var(--surface-field);
-    box-shadow: var(--bevel-inset-pressed);
+    border: 1px solid var(--groove-dark);
+    border-radius: var(--radius-well);
+    background: var(--bg-input);
+    box-shadow: var(--sh-inset);
     overflow: hidden;
   }
 
   .org-slider__fill {
     height: 100%;
     width: var(--slider-pct, 0%);
-    background: var(--accent);
+    background: color-mix(in srgb, var(--zone-accent) 90%, transparent);
+    box-shadow: inset 0 1px 0 var(--send-hi);
   }
 
   .org-slider__ticks {
     position: absolute;
     left: 0;
     right: 0;
-    bottom: 0;
+    top: calc((var(--thumb-h) - var(--groove-h)) / 2 + var(--groove-h) + var(--space-1));
+    height: var(--tick-h);
     display: flex;
     justify-content: space-between;
     pointer-events: none;
@@ -53,8 +67,47 @@
 
   .org-slider__tick {
     width: 1px;
-    height: var(--space-1);
-    background: var(--text-muted);
+    height: var(--tick-h);
+    background: var(--text-off);
+  }
+
+  .org-slider__tick-labels {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc((var(--thumb-h) - var(--groove-h)) / 2 + var(--groove-h) + var(--space-1) + var(--tick-h) + var(--space-half));
+    height: var(--tick-label-h);
+    pointer-events: none;
+  }
+
+  .org-slider__tick-label {
+    position: absolute;
+    transform: translateX(-50%);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-label);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+
+  .org-slider__tick-label[data-pos='0'] {
+    left: 0;
+    transform: none;
+  }
+  .org-slider__tick-label[data-pos='25'] {
+    left: 25%;
+  }
+  .org-slider__tick-label[data-pos='50'] {
+    left: 50%;
+  }
+  .org-slider__tick-label[data-pos='75'] {
+    left: 75%;
+  }
+  .org-slider__tick-label[data-pos='100'] {
+    left: auto;
+    right: 0;
+    transform: none;
   }
 
   .org-slider__thumb {
@@ -64,20 +117,42 @@
     transform: translate(-50%, -50%);
     width: var(--thumb-w);
     height: var(--thumb-h);
-    border: 1px solid var(--border-dark);
-    border-radius: var(--radius-1);
-    background: var(--bevel-raised-bg);
-    box-shadow: var(--bevel-inset);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-raised);
+    box-shadow: var(--sh-raised);
+    transition:
+      filter var(--motion-fast),
+      box-shadow var(--motion-fast);
+  }
+
+  .org-slider[data-ticks='true'] .org-slider__thumb {
+    top: 0;
+    transform: translateX(-50%);
+  }
+
+  /* centre grip: dark line with a light line to its right */
+  .org-slider__thumb::after {
+    content: '';
+    position: absolute;
+    top: var(--space-1);
+    bottom: var(--space-1);
+    left: 50%;
+    border-left: 1px solid var(--text-off);
+    box-shadow: 1px 0 0 var(--groove-light);
   }
 
   .org-slider:hover:not([data-disabled='true']) .org-slider__thumb,
   .org-slider[data-force-state='hover']:not([data-disabled='true']) .org-slider__thumb {
-    background: var(--bevel-hover-bg);
-    border-color: var(--accent);
+    filter: brightness(var(--hover-brightness));
+    box-shadow: var(--sh-raised-hover);
   }
 
-  .org-slider[data-force-state='pressed']:not([data-disabled='true']) .org-slider__thumb {
-    background: var(--bevel-pressed-bg);
+  .org-slider[data-force-state='pressed']:not([data-disabled='true']) .org-slider__thumb,
+  .org-slider__track-area:active .org-slider__thumb {
+    background: var(--bg-raised-bottom);
+    box-shadow: var(--sh-pressed);
+    filter: none;
   }
 
   .org-slider[data-disabled='true'] .org-slider__track-area {
@@ -85,11 +160,17 @@
   }
 
   .org-slider[data-disabled='true'] .org-slider__fill {
-    background: var(--text-disabled);
+    background: var(--text-off);
+    box-shadow: none;
+  }
+
+  .org-slider[data-disabled='true'] .org-slider__thumb {
+    background: var(--bg-panel);
+    box-shadow: none;
   }
 
   .org-slider[data-error='true'] .org-slider__groove {
-    border-color: var(--red-500);
+    border-color: var(--st-rejected);
   }
 
   .org-slider__field {
@@ -97,6 +178,7 @@
     min-width: 0;
   }
 
+  /* RangeSlider: one INSET trough with two RAISED thumbs, tinted range */
   .org-rangeslider {
     display: flex;
     align-items: center;
@@ -108,10 +190,10 @@
     position: relative;
     flex: 1;
     height: var(--timebar-h);
-    border: 1px solid var(--border-control);
-    border-radius: var(--radius-0);
-    background: var(--surface-field);
-    box-shadow: var(--bevel-inset-pressed);
+    border: 1px solid var(--groove-dark);
+    border-radius: var(--radius-well);
+    background: var(--bg-input);
+    box-shadow: var(--sh-inset);
     cursor: ew-resize;
     overflow: hidden;
     user-select: none;
@@ -126,19 +208,20 @@
   }
 
   .org-rangeslider__tick-minor {
-    stroke: var(--border-control);
+    stroke: var(--text-off);
     stroke-width: 1;
+    opacity: 0.6;
   }
 
   .org-rangeslider__tick-major {
-    stroke: var(--text-muted);
+    stroke: var(--text-off);
     stroke-width: 1;
   }
 
   .org-rangeslider__tick-label {
-    fill: var(--text-muted);
+    fill: var(--text-dim);
     font-family: var(--font-mono);
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-label);
     text-anchor: middle;
   }
 
@@ -148,29 +231,42 @@
     bottom: 0;
     left: var(--range-start, 0%);
     width: var(--range-width, 0%);
-    background: var(--accent-soft);
-    border-left: 1px solid var(--accent);
-    border-right: 1px solid var(--accent);
+    background: color-mix(in srgb, var(--zone-accent) 22%, transparent);
+    border-top: 1px solid color-mix(in srgb, var(--zone-accent) 70%, transparent);
     pointer-events: none;
   }
 
   .org-rangeslider__handle {
     position: absolute;
-    top: 0;
-    bottom: 0;
+    top: 50%;
     left: var(--slider-pct, 0%);
-    transform: translateX(-50%);
-    width: var(--space-2);
-    border: 1px solid var(--border-dark);
-    background: var(--bevel-raised-bg);
-    box-shadow: var(--bevel-inset);
+    transform: translate(-50%, -50%);
+    width: var(--thumb-w);
+    height: var(--thumb-h);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-raised);
+    box-shadow: var(--sh-raised);
     cursor: ew-resize;
+  }
+
+  .org-rangeslider__handle::after {
+    content: '';
+    position: absolute;
+    top: var(--space-1);
+    bottom: var(--space-1);
+    left: 50%;
+    border-left: 1px solid var(--text-off);
+    box-shadow: 1px 0 0 var(--groove-light);
+  }
+
+  .org-rangeslider__handle:hover {
+    filter: brightness(var(--hover-brightness));
   }
 
   .org-rangeslider__handle:focus-visible {
     outline: var(--focus-w) solid var(--focus-ring);
-    outline-offset: calc(-1 * var(--focus-w));
-    border-color: var(--accent);
+    outline-offset: var(--focus-offset);
   }
 
   .org-rangeslider__readout {
@@ -179,7 +275,6 @@
     font-family: var(--font-mono);
     font-size: var(--font-size);
     font-variant-numeric: tabular-nums;
-    color: var(--text-muted);
+    color: var(--text-dim);
   }
 }
-

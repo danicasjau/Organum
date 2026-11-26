@@ -1,9 +1,14 @@
 @layer components {
+  /* v1 table: RAISED header strip with etched small-caps labels over an INSET
+     body. 26px header and rows; 14px left / 10px right cell padding; a 3px
+     status bar at the left edge; light groove row separators. */
   .org-table-wrap {
     width: 100%;
     overflow-x: auto;
-    border: 1px solid var(--border-dark);
-    background: var(--surface-field);
+    border: 1px solid var(--groove-dark);
+    border-radius: var(--radius-well);
+    background: var(--bg-input);
+    box-shadow: var(--sh-inset);
   }
 
   .org-table {
@@ -14,21 +19,24 @@
 
   .org-table__th {
     height: var(--header-h);
-    padding: 0 var(--space-2);
-    border-bottom: 1px solid var(--border-dark);
-    border-right: 1px solid var(--border-dark);
-    background: var(--surface-raised);
-    color: var(--text);
+    padding: 0 var(--space-cell-r) 0 var(--space-cell-l);
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-raised);
+    box-shadow: inset 0 1px 0 var(--hi);
+    color: var(--text-dim);
+    font-size: var(--font-size-label);
     font-weight: 600;
+    letter-spacing: var(--label-tracking);
+    text-transform: uppercase;
+    text-shadow: 0 1px 0 var(--groove-light);
     text-align: left;
     white-space: nowrap;
   }
 
   .org-table__td {
     height: var(--row-h);
-    padding: var(--space-1) var(--space-2);
-    border-bottom: 1px solid var(--border-dark);
-    border-right: 1px solid var(--border-dark);
+    padding: 0 var(--space-cell-r) 0 var(--space-cell-l);
+    border-bottom: 1px solid var(--groove-light);
     vertical-align: middle;
   }
 
@@ -37,13 +45,45 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .org-table__th:last-child,
-  .org-table__td:last-child {
-    border-right: 0;
+  .org-table__tr:hover .org-table__td {
+    background: var(--hover);
+  }
+
+  .org-table__tr[data-selected='true'] .org-table__td {
+    background: var(--selected);
   }
 
   .org-table__tr:last-child .org-table__td {
     border-bottom: 0;
   }
-}
 
+  /* 3px status bar at the left edge + ~15% tint is reserved for status */
+  .org-table__tr[data-status] .org-table__td:first-child {
+    box-shadow: inset var(--status-bar-w) 0 0 var(--row-status);
+  }
+
+  .org-table__tr[data-status='wip'],
+  .org-datagrid__row[data-status='wip'] {
+    --row-status: var(--st-wip);
+  }
+  .org-table__tr[data-status='review'],
+  .org-datagrid__row[data-status='review'] {
+    --row-status: var(--st-review);
+  }
+  .org-table__tr[data-status='approved'],
+  .org-datagrid__row[data-status='approved'] {
+    --row-status: var(--st-approved);
+  }
+  .org-table__tr[data-status='rejected'],
+  .org-datagrid__row[data-status='rejected'] {
+    --row-status: var(--st-rejected);
+  }
+  .org-table__tr[data-status='idle'],
+  .org-datagrid__row[data-status='idle'] {
+    --row-status: var(--st-idle);
+  }
+  .org-table__tr[data-status='hold'],
+  .org-datagrid__row[data-status='hold'] {
+    --row-status: var(--st-hold);
+  }
+}

@@ -7,9 +7,9 @@
     width: var(--scene-icon-size);
     height: var(--scene-icon-size);
     flex-shrink: 0;
-    border: 1px solid var(--border-dark);
-    border-radius: var(--radius-1);
-    box-shadow: var(--bevel-inset);
+    border: 1px solid var(--groove-dark);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--sh-bevel);
     background: var(--fam-unknown);
     color: var(--white);
     font-family: var(--font-mono);

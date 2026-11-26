@@ -1,76 +1,127 @@
 @layer components {
+  /* ButtonGroup: keys share one RAISED plate (2px padding), separated by
+     hairline grooves; a pressed key sinks into the plate. */
   .org-btn-group {
     display: inline-flex;
     align-items: center;
     flex-shrink: 0;
+    padding: var(--space-half);
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--sh-raised);
   }
 
   .org-btn-group > .org-btn {
-    border-radius: var(--radius-0);
+    height: calc(var(--ctl-h) - 2 * var(--space-half) - 2 * var(--border-w));
+    border-color: transparent;
+    border-radius: var(--radius-xs);
+    background: transparent;
+    box-shadow: none;
   }
 
   .org-btn-group > .org-btn:not(:first-child) {
-    margin-left: calc(-1 * var(--border-w));
+    margin-left: 0;
+    border-left: 1px solid var(--groove-dark);
+    border-top-left-radius: var(--radius-0);
+    border-bottom-left-radius: var(--radius-0);
   }
 
-  .org-btn-group > .org-btn:first-child {
-    border-top-left-radius: var(--radius-1);
-    border-bottom-left-radius: var(--radius-1);
+  .org-btn-group > .org-btn:not(:last-child) {
+    border-top-right-radius: var(--radius-0);
+    border-bottom-right-radius: var(--radius-0);
   }
 
-  .org-btn-group > .org-btn:last-child {
-    border-top-right-radius: var(--radius-1);
-    border-bottom-right-radius: var(--radius-1);
+  .org-btn-group > .org-btn:hover:not(:disabled) {
+    background: var(--hover);
+    box-shadow: none;
+    filter: none;
   }
 
+  .org-btn-group > .org-btn:active:not(:disabled),
+  .org-btn-group > .org-btn[data-selected='true']:not(:disabled) {
+    background: var(--bg-input);
+    border-color: var(--groove-dark);
+    box-shadow: var(--sh-pressed);
+  }
+
+  .org-btn-group > .org-btn:disabled {
+    background: transparent;
+  }
+
+  /* SegmentedControl: same plate; the active key uses PRESSED */
   .org-segmented {
     display: inline-flex;
     align-items: stretch;
     flex-shrink: 0;
-    border: 1px solid var(--border-dark);
-    border-radius: var(--radius-1);
-    background: var(--surface-field);
-    overflow: hidden;
+    padding: var(--space-half);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-raised);
+    box-shadow: var(--sh-raised);
   }
 
   .org-segmented__item {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: var(--ctl-h);
-    min-height: var(--min-hit);
-    padding: 0 var(--space-3);
-    border: 0;
-    border-right: 1px solid var(--border-dark);
-    background: var(--bevel-raised-bg);
-    color: var(--text-muted);
+    gap: var(--space-6px);
+    height: calc(var(--ctl-h) - 2 * var(--space-half) - 2 * var(--border-w));
+    min-height: calc(var(--min-hit) - 2 * var(--space-half));
+    padding: 0 var(--space-4);
+    border: 1px solid transparent;
+    border-radius: var(--radius-xs);
+    background: transparent;
+    color: var(--text-dim);
     font-size: var(--font-size);
+    font-weight: 500;
     cursor: pointer;
+    transition:
+      background-color var(--motion-fast),
+      box-shadow var(--motion-fast),
+      transform var(--motion-fast);
+  }
+
+  .org-segmented__item + .org-segmented__item {
+    position: relative;
+  }
+
+  .org-segmented__item + .org-segmented__item::before {
+    content: '';
+    position: absolute;
+    left: calc(-1 * var(--border-w));
+    top: var(--space-1);
+    bottom: var(--space-1);
+    border-left: 1px solid var(--groove-dark);
+    box-shadow: 1px 0 0 var(--groove-light);
+  }
+
+  .org-segmented__item[data-selected='true']::before,
+  .org-segmented__item[data-selected='true'] + .org-segmented__item::before {
+    display: none;
   }
 
   .org-segmented[data-size='sm'] .org-segmented__item {
-    height: var(--ctl-h-sm);
+    height: calc(var(--ctl-h-sm) - 2 * var(--space-half) - 2 * var(--border-w));
     padding: 0 var(--space-2);
   }
 
-  .org-segmented__item:last-child {
-    border-right: 0;
-  }
-
   .org-segmented__item:hover:not(:disabled) {
-    background: var(--surface-hover);
+    background: var(--hover);
     color: var(--text);
   }
 
-  .org-segmented__item[data-selected='true'] {
-    background: var(--accent-soft);
+  .org-segmented__item[data-selected='true'],
+  .org-segmented__item[data-selected='true']:hover:not(:disabled) {
+    background: var(--bg-input);
+    border-color: var(--groove-dark);
     color: var(--text);
-    box-shadow: var(--bevel-inset-pressed);
+    box-shadow: var(--sh-pressed);
+    transform: translateY(var(--press-y));
   }
 
   .org-segmented__item:disabled {
-    color: var(--text-disabled);
+    color: var(--text-off);
     cursor: not-allowed;
   }
 }
-

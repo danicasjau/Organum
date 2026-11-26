@@ -1,6 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState, type MouseEvent, type PointerEvent } from 'react';
-import { Button, Icon, Inline, SearchField, SegmentedControl, Spinner, Text } from '../../components/ui';
+import {
+  Button,
+  Icon,
+  Inline,
+  SearchField,
+  SegmentedControl,
+  Spinner,
+  Text,
+  readCssToken,
+} from '../../components/ui';
 import { useCssVarRef } from '../../components/ui/_internal/useCssVar';
 import {
   apiClient,
@@ -38,9 +47,11 @@ function AtlasTileCanvas({
 
     // Subtle checker background for alpha tiles
     const cell = 8;
+    const checkA = readCssToken('--vp-checker-a', '#1d1d1d');
+    const checkB = readCssToken('--vp-checker-b', '#262626');
     for (let y = 0; y < sizePx; y += cell) {
       for (let x = 0; x < sizePx; x += cell) {
-        ctx.fillStyle = ((x / cell + y / cell) | 0) % 2 === 0 ? '#182234' : '#223047';
+        ctx.fillStyle = ((x / cell + y / cell) | 0) % 2 === 0 ? checkA : checkB;
         ctx.fillRect(x, y, cell, cell);
       }
     }

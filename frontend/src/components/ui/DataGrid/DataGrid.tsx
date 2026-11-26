@@ -1,3 +1,4 @@
+import { toRowStatus } from '../_internal/rowStatus';
 import {
   flexRender,
   type ColumnFiltersState,
@@ -110,6 +111,8 @@ export interface DataGridProps {
   toolbarExtra?: ReactNode;
   /** Receives the filtered, visible data in display order (for exports). */
   visibleDataRef?: MutableRefObject<DataGridVisibleData | null>;
+  /** v1: status for the 3px left row bar (family name or task status code). */
+  getRowStatus?: (row: Row) => string | null | undefined;
 }
 
 export function dataGridCellKey(rowId: string, colKey: string): string {
@@ -287,11 +290,13 @@ function VirtualGridRow({
   odd,
   children,
   rowId,
+  status,
 }: {
   offsetY: number;
   odd: boolean;
   children: ReactNode;
   rowId?: string;
+  status?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   useCssVarRef(ref, '--dg-row-y', `${offsetY}px`);
@@ -303,6 +308,7 @@ function VirtualGridRow({
       className="org-datagrid__row"
       data-odd={odd ? 'true' : undefined}
       data-row-id={rowId}
+      data-status={status}
     >
       {children}
     </div>
@@ -370,6 +376,7 @@ export function DataGrid({
   enableLayoutTools = false,
   toolbarExtra,
   visibleDataRef,
+  getRowStatus,
 }: DataGridProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -1014,6 +1021,7 @@ export function DataGrid({
                   rowId={row.id}
                   offsetY={vItem.start}
                   odd={navIdx % 2 === 1}
+                  status={getRowStatus ? toRowStatus(getRowStatus(row.original)) : undefined}
                 >
                   <div
                     className="org-datagrid__gutter-cell"

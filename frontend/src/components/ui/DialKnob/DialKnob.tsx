@@ -1,8 +1,83 @@
-import { useRef, type PointerEvent } from 'react';
+import { useId, useRef, type PointerEvent } from 'react';
 import { Button } from '../Button/Button';
 import { Icon } from '../Icon/Icon';
 import { NumberField } from '../NumberField/NumberField';
 import './DialKnob.css';
+
+
+/* ---- v1 knob face -------------------------------------------------------
+   Round RAISED dial with a knurled edge (dash-array ribs), soft cast shadow,
+   a 3px amber indicator and a tick ring. All colours come from tokens (CSS
+   classes), so the Paper theme restyles it without edits. */
+const C = 24;
+function polar(r: number, deg: number): [number, number] {
+  const rad = ((deg - 90) * Math.PI) / 180;
+  return [C + Math.cos(rad) * r, C + Math.sin(rad) * r];
+}
+
+interface KnobFaceProps {
+  angleDeg: number;
+  /** 'arc' = 11 ticks over 270°; 'full' = 12 ticks over 360°. */
+  ring: 'arc' | 'full';
+  minLabel?: string;
+  maxLabel?: string;
+}
+
+function KnobFace({ angleDeg, ring, minLabel, maxLabel }: KnobFaceProps) {
+  const gid = useId().replace(/:/g, '');
+  const ticks =
+    ring === 'arc'
+      ? Array.from({ length: 11 }, (_, i) => ({ deg: -135 + i * 27, long: i === 0 || i === 5 || i === 10 }))
+      : Array.from({ length: 12 }, (_, i) => ({ deg: i * 30, long: i % 3 === 0 }));
+  const [ix1, iy1] = polar(4.5, angleDeg);
+  const [ix2, iy2] = polar(11.5, angleDeg);
+  const [lx, ly] = polar(21, -135);
+  const [rx, ry] = polar(21, 135);
+  return (
+    <>
+      <defs>
+        <linearGradient id={`kf-${gid}`} x1="0" y1="0" x2="0.6" y2="1">
+          <stop offset="0" className="org-knob__stop-top" />
+          <stop offset="1" className="org-knob__stop-bottom" />
+        </linearGradient>
+      </defs>
+      {ticks.map((t) => {
+        const [x1, y1] = polar(t.long ? 18.5 : 19.5, t.deg);
+        const [x2, y2] = polar(22, t.deg);
+        return (
+          <line
+            key={t.deg}
+            x1={x1}
+            y1={y1}
+            x2={x2}
+            y2={y2}
+            className={t.long ? 'org-knob__tick org-knob__tick--long' : 'org-knob__tick'}
+          />
+        );
+      })}
+      <circle cx={C + 1} cy={C + 2} r="15" className="org-knob__shadow" />
+      <circle cx={C} cy={C} r="15" className="org-knob__rim" />
+      <circle cx={C} cy={C} r="15" className="org-knob__knurl" />
+      <circle cx={C} cy={C} r="12.5" fill={`url(#kf-${gid})`} className="org-knob__face" />
+      <circle cx={C} cy={C} r="12" className="org-knob__hi" />
+      <line x1={ix1} y1={iy1} x2={ix2} y2={iy2} className="org-dial__needle" />
+      {minLabel !== undefined && (
+        <text x={lx} y={ly + 5} className="org-knob__label" textAnchor="middle">
+          {minLabel}
+        </text>
+      )}
+      {maxLabel !== undefined && (
+        <text x={rx} y={ry + 5} className="org-knob__label" textAnchor="middle">
+          {maxLabel}
+        </text>
+      )}
+    </>
+  );
+}
+
+function fmtLimit(v: number): string {
+  return Number.isInteger(v) ? String(v) : String(Number(v.toFixed(2)));
+}
 
 export interface AngleDialProps {
   value: number;
@@ -32,15 +107,11 @@ export function AngleDial({
     onChange(Math.round(deg * 10) / 10);
   };
 
-  const rad = ((value - 90) * Math.PI) / 180;
-  const x2 = 14 + Math.cos(rad) * 10;
-  const y2 = 14 + Math.sin(rad) * 10;
-
   return (
     <div data-ui="angle-dial" className="org-dial-wrap">
       <svg
         ref={svgRef}
-        viewBox="0 0 28 28"
+        viewBox="0 0 48 48"
         role="slider"
         tabIndex={disabled ? -1 : 0}
         aria-label={ariaLabel}
@@ -67,9 +138,7 @@ export function AngleDial({
           if (!disabled && baselineValue !== undefined) onChange(baselineValue);
         }}
       >
-        <circle cx="14" cy="14" r="12" className="org-dial__face" />
-        <line x1="14" y1="14" x2={x2} y2={y2} className="org-dial__needle" />
-        <circle cx="14" cy="14" r="2" className="org-dial__center" />
+        <KnobFace angleDeg={value} ring="full" />
       </svg>
       <div className="org-dial__field">
         <NumberField
@@ -112,14 +181,11 @@ export function Knob({
   const dragRef = useRef<{ y: number; startVal: number } | null>(null);
   const norm = max > min ? (value - min) / (max - min) : 0;
   const angleDeg = -135 + norm * 270;
-  const rad = ((angleDeg - 90) * Math.PI) / 180;
-  const x2 = 14 + Math.cos(rad) * 10;
-  const y2 = 14 + Math.sin(rad) * 10;
 
   return (
     <div data-ui="knob" className="org-knob-wrap">
       <svg
-        viewBox="0 0 28 28"
+        viewBox="0 0 48 52"
         role="slider"
         tabIndex={disabled ? -1 : 0}
         aria-label={label ?? 'Knob'}
@@ -150,9 +216,7 @@ export function Knob({
           if (!disabled && baselineValue !== undefined) onChange(baselineValue);
         }}
       >
-        <circle cx="14" cy="14" r="12" className="org-dial__face" />
-        <line x1="14" y1="14" x2={x2} y2={y2} className="org-dial__needle" />
-        <circle cx="14" cy="14" r="2" className="org-dial__center" />
+        <KnobFace angleDeg={angleDeg} ring="arc" minLabel={fmtLimit(min)} maxLabel={fmtLimit(max)} />
       </svg>
       <span className="org-knob__val">{value}</span>
       {baselineValue !== undefined && value !== baselineValue && !disabled && (

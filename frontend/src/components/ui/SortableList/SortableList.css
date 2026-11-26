@@ -5,8 +5,10 @@
     margin: 0;
     padding: 0;
     list-style: none;
-    border: var(--border-w) solid var(--border-dark);
-    background: var(--surface-field);
+    border: 1px solid var(--groove-dark);
+    border-radius: var(--radius-well);
+    background: var(--bg-input);
+    box-shadow: var(--sh-inset);
   }
 
   .org-sortable__row {
@@ -16,7 +18,7 @@
     gap: var(--space-1);
     min-height: var(--min-hit);
     padding: 0 var(--space-1);
-    border-bottom: var(--border-w) solid var(--border-dark);
+    border-bottom: var(--border-w) solid var(--groove-light);
   }
 
   .org-sortable__row:last-child {
@@ -51,7 +53,7 @@
     padding: 0;
     border: none;
     background: transparent;
-    color: var(--text-muted);
+    color: var(--text-dim);
     cursor: grab;
   }
 

@@ -4,9 +4,10 @@
     flex-shrink: 0;
     width: var(--unread-dot);
     height: var(--unread-dot);
-    border: 1px solid var(--surface-window);
+    border: 1px solid var(--groove-dark);
     border-radius: 50%;
-    background: var(--danger);
+    background: var(--st-rejected);
+    box-shadow: 0 0 var(--led-glow) color-mix(in srgb, var(--st-rejected) 55%, transparent);
     vertical-align: middle;
   }
 }

@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Avatar } from '../Avatar/Avatar';
-import { Button } from '../Button/Button';
+import { Icon } from '../Icon/Icon';
 import { Checkbox } from '../Checkbox/Checkbox';
 import { Popover } from '../Overlays/Overlays';
 import { SearchField } from '../TextField/TextField';
@@ -85,20 +85,47 @@ export function UserPicker({
   const triggerLabel =
     selectedUsers.length === 0 ? placeholder : selectedUsers.map((u) => u.fullName).join(', ');
 
+  const removeUser = (id: string) => onChange(selectedIds.filter((x) => x !== id));
+
   return (
     <Popover
       open={open}
       onOpenChange={setOpen}
       trigger={
         trigger ?? (
-          <Button
-            size="sm"
+          <button
+            type="button"
+            data-ui="user-picker-field"
             disabled={disabled}
             aria-label={ariaLabel}
-            className="org-userpicker__trigger"
+            title={selectedUsers.length ? triggerLabel : undefined}
+            className="org-userpicker__trigger org-userpicker__field"
           >
-            <span className="org-userpicker__trigger-text">{triggerLabel}</span>
-          </Button>
+            {selectedUsers.map((u) => (
+              <span key={u.id} className="org-userpicker__chip">
+                <Avatar username={u.username} fullName={u.fullName} avatarUrl={u.avatarUrl} size={18} />
+                <span className="org-userpicker__chip-name">{u.fullName}</span>
+                {!disabled && (
+                  <span
+                    className="org-userpicker__chip-x"
+                    aria-hidden="true"
+                    title={`Remove ${u.fullName}`}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      removeUser(u.id);
+                    }}
+                  >
+                    <Icon name="close" size="sm" />
+                  </span>
+                )}
+              </span>
+            ))}
+            <span className="org-userpicker__trigger-text org-userpicker__placeholder">
+              {selectedUsers.length === 0 ? placeholder : multi ? 'Add user...' : ''}
+            </span>
+          </button>
         )
       }
     >
@@ -134,7 +161,7 @@ export function UserPicker({
                     username={u.username}
                     fullName={u.fullName}
                     avatarUrl={u.avatarUrl}
-                    size="sm"
+                    size={24}
                   />
                   <span className="org-userpicker__meta">
                     <span className="org-userpicker__name">{u.fullName}</span>

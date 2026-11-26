@@ -6,8 +6,10 @@
     flex-direction: column;
     gap: var(--space-4);
     padding: var(--space-4) var(--space-3);
-    background: var(--surface-panel);
-    border-right: var(--border-w) solid var(--border-dark);
+    background-color: var(--bg-panel);
+    background-image: var(--grain);
+    border-right: var(--border-w) solid var(--groove-dark);
+    box-shadow: 1px 0 0 var(--groove-light);
     overflow-y: auto;
   }
 
@@ -22,7 +24,7 @@
     font-size: var(--font-size-sm);
     font-weight: 700;
     text-transform: uppercase;
-    color: var(--text-muted);
+    color: var(--text-dim);
   }
 
   .org-sidenav__item {
@@ -33,7 +35,7 @@
     min-height: var(--row-h);
     padding: var(--space-1) var(--space-3);
     border: var(--border-w) solid transparent;
-    border-radius: var(--radius-1);
+    border-radius: var(--radius-sm);
     background: transparent;
     color: var(--text);
     font: inherit;
@@ -42,17 +44,18 @@
   }
 
   .org-sidenav__item:hover {
-    background: var(--surface-hover);
+    background: var(--hover);
   }
 
   .org-sidenav__item[data-active='true'] {
-    background: var(--accent-soft);
-    border-color: var(--accent);
+    background: var(--bg-input);
+    border-color: var(--groove-dark);
+    box-shadow: inset var(--status-bar-w) 0 0 var(--zone-accent), var(--sh-pressed);
     font-weight: 700;
   }
 
   .org-sidenav__count {
-    color: var(--text-muted);
+    color: var(--text-dim);
     font-size: var(--font-size-sm);
     font-weight: 400;
   }

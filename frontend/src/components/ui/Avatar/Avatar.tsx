@@ -4,9 +4,15 @@ export interface AvatarProps {
   username: string;
   fullName?: string;
   avatarUrl?: string | null;
-  size?: 'sm' | 'md' | 'lg';
+  /** Named sizes (sm 20, md 32, lg 40) or an exact v1 size in px. */
+  size?: 'sm' | 'md' | 'lg' | AvatarPx;
   title?: string;
+  /** Optional presence LED anchored bottom-right. */
+  presence?: 'online' | 'away' | 'offline';
+  className?: string;
 }
+
+export type AvatarPx = 18 | 20 | 24 | 32 | 40 | 56 | 72;
 
 function hashTone(username: string): number {
   let hash = 0;
@@ -25,7 +31,15 @@ function initialsFor(fullName: string | undefined, username: string): string {
   return source.slice(0, 2).toUpperCase();
 }
 
-export function Avatar({ username, fullName, avatarUrl, size = 'sm', title }: AvatarProps) {
+export function Avatar({
+  username,
+  fullName,
+  avatarUrl,
+  size = 'sm',
+  title,
+  presence,
+  className,
+}: AvatarProps) {
   const tone = hashTone(username || fullName || 'u');
   const label = title ?? (fullName ? `${fullName} (@${username})` : username);
   const initials = initialsFor(fullName, username);
@@ -35,7 +49,8 @@ export function Avatar({ username, fullName, avatarUrl, size = 'sm', title }: Av
       data-ui="avatar"
       data-size={size}
       data-avatar-tone={tone}
-      className="org-avatar"
+      data-presence={presence}
+      className={className ? `org-avatar ${className}` : 'org-avatar'}
       title={label}
       aria-label={label}
     >
@@ -44,6 +59,7 @@ export function Avatar({ username, fullName, avatarUrl, size = 'sm', title }: Av
       ) : (
         <span className="org-avatar__initials">{initials}</span>
       )}
+      {presence && <span className="org-avatar__presence" aria-hidden="true" />}
     </span>
   );
 }

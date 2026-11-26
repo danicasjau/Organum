@@ -6,29 +6,31 @@ import type { DepartmentOut } from '../../lib/api/client';
  * (e.g. "--series-3") or as a hex value chosen in Settings (e.g. "#E06C75").
  */
 export const DEPT_PALETTE: ReadonlyArray<{ label: string; value: string }> = [
-  { label: 'Purple', value: '#8B5CF6' },
-  { label: 'Green', value: '#10B981' },
-  { label: 'Sky', value: '#38BDF8' },
-  { label: 'Amber', value: '#F59E0B' },
-  { label: 'Red', value: '#EF4444' },
-  { label: 'Lavender', value: '#A78BFA' },
-  { label: 'Mint', value: '#34D399' },
-  { label: 'Pink', value: '#F472B6' },
-  { label: 'Teal', value: '#2DD4BF' },
-  { label: 'Orange', value: '#FB923C' },
-  { label: 'Indigo', value: '#818CF8' },
-  { label: 'Lime', value: '#A3E635' },
+  // v1 department palette: desaturated, similar luminance.
+  { label: 'Modeling', value: '#7A9CC6' },
+  { label: 'Rigging', value: '#9B86C4' },
+  { label: 'Animation', value: '#6FB3A0' },
+  { label: 'Lookdev', value: '#C79B6A' },
+  { label: 'Lighting', value: '#C4C06A' },
+  { label: 'FX', value: '#C77A7A' },
+  { label: 'Comp', value: '#8FB86A' },
+  { label: 'Steel', value: '#8A9AAE' },
+  { label: 'Teal', value: '#6AA8B3' },
+  { label: 'Clay', value: '#B58A7A' },
+  { label: 'Mauve', value: '#B07FA6' },
+  { label: 'Sand', value: '#B8A882' },
 ];
 
+/** Dark-theme hex of each --series-N token (kept in sync with tokens.css). */
 const SERIES_HEX: Record<string, string> = {
-  '--series-1': '#8B5CF6',
-  '--series-2': '#10B981',
-  '--series-3': '#38BDF8',
-  '--series-4': '#F59E0B',
-  '--series-5': '#EF4444',
-  '--series-6': '#A78BFA',
-  '--series-7': '#34D399',
-  '--series-8': '#E2E8F0',
+  '--series-1': '#7A9CC6',
+  '--series-2': '#6FB3A0',
+  '--series-3': '#C79B6A',
+  '--series-4': '#9B86C4',
+  '--series-5': '#C77A7A',
+  '--series-6': '#C4C06A',
+  '--series-7': '#8FB86A',
+  '--series-8': '#A8A8A8',
 };
 
 export const DEFAULT_DEPT_COLOR = '--series-1';

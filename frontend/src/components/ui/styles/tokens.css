@@ -1,140 +1,506 @@
 @layer tokens {
+  /* =====================================================================
+     ORGANUM v1 "matte control panel" tokens.
+     Dark theme is the default. The Paper theme ([data-theme='paper'], with
+     [data-theme='light'] kept as an alias) swaps tokens only: components
+     never branch on the theme.
+     Section 1: base palette   Section 2: semantic / zones / status
+     Section 3: legacy aliases (existing names, re-pointed)   Section 4: geometry
+     ===================================================================== */
   :root,
   [data-theme='dark'] {
-    /* Palette primitives (§8.1) */
-    --purple-300: #c4b5fd;
-    --purple-400: #a78bfa;
-    --purple-500: #8b5cf6;
-    --purple-600: #7c3aed;
-    --purple-700: #6d28d9;
-    --purple-900: #3b1d8a;
+    color-scheme: dark;
 
-    --green-400: #34d399;
-    --green-500: #10b981;
-    --green-600: #059669;
-    --green-700: #047857;
-    --green-800: #065f46;
-    --green-900: #064e3b;
+    /* ---- 1. Base surfaces --------------------------------------------- */
+    --bg-canvas: #1a1a1a;
+    --bg-app: #232323;
+    --bg-panel: #2b2b2b;
+    --bg-raised-top: #363636;
+    --bg-raised-bottom: #2f2f2f;
+    --bg-input: #1f1f1f;
+    --border: #3f3f3f;
+    --hover: #3a3a3a;
+    --selected: #3d4a5c;
 
-    --amber-400: #fbbf24;
-    --amber-500: #f59e0b;
-    --amber-700: #b45309;
-    --red-300: #fca5a5;
-    --red-400: #f87171;
-    --red-500: #ef4444;
-    --red-600: #dc2626;
-    --red-700: #b91c1c;
-    --sky-400: #38bdf8;
-    --sky-600: #0284c7;
+    --text: #d4d4d4;
+    --text-dim: #9a9a9a;
+    --text-off: #5e5e5e;
+    --text-on-fill: #ffffff;
+
+    /* Light / shadow helpers (light comes from the top-left) */
+    --hi: rgba(255, 255, 255, 0.05);
+    --lo: rgba(0, 0, 0, 0.25);
+    --drop: rgba(0, 0, 0, 0.35);
+    --inset-dark: rgba(0, 0, 0, 0.55);
+    --inset-light: rgba(255, 255, 255, 0.04);
+    --groove-dark: #161616;
+    --groove-light: rgba(255, 255, 255, 0.05);
+    --etch: rgba(0, 0, 0, 0.6);
+    --modal-shade: rgba(0, 0, 0, 0.45);
+    --popover-shade: rgba(0, 0, 0, 0.5);
+    --scrim: rgba(0, 0, 0, 0.5);
+    --chart-grid: rgba(255, 255, 255, 0.05);
+    --tooltip-bg: #1a1a1a;
+    --switch-on-track: #24303c;
+
+    /* ---- 2. Zones (muted, used only as signal) -------------------------- */
+    --zone-management: #d98a4e;
+    --zone-management-hover: #e39c66;
+    --zone-management-tint: #3a2e25;
+    --zone-production: #5b93c7;
+    --zone-production-hover: #74a6d4;
+    --zone-production-tint: #24303c;
+    --zone-settings: #8a8f96;
+    --zone-settings-hover: #9ea3aa;
+    --zone-settings-tint: #2e3033;
+    --zone-focus: #e8a33d;
+
+    /* Active zone accent (AppShell sets data-zone; production is the default) */
+    --zone-accent: var(--zone-production);
+    --zone-accent-hover: var(--zone-production-hover);
+    --zone-accent-tint: var(--zone-production-tint);
+
+    /* Status hues (bars, dots, LEDs, tinted fills) */
+    --st-wip: #e0b341;
+    --st-review: #4fa3d9;
+    --st-approved: #5fb36b;
+    --st-rejected: #d95b5b;
+    --st-idle: #6b7280;
+    --st-hold: #8a93a0;
+
+    /* Priority */
+    --prio-low: #7b8794;
+    --prio-normal: #4fb3a9;
+    --prio-high: #e0b341;
+    --prio-urgent: #e5484d;
+    --prio-critical: #d13f8c;
+
+    /* Departments (desaturated, similar luminance) */
+    --dept-modeling: #7a9cc6;
+    --dept-rigging: #9b86c4;
+    --dept-animation: #6fb3a0;
+    --dept-lookdev: #c79b6a;
+    --dept-lighting: #c4c06a;
+    --dept-fx: #c77a7a;
+    --dept-comp: #8fb86a;
+
+    /* Presence */
+    --presence-online: #5fb36b;
+    --presence-away: #e0b341;
+    --presence-offline: #6b7280;
+
+    /* Review "Send" (the one filled button) */
+    --send-top: #52a0ea;
+    --send-bottom: #3a82cc;
+    --send-border: #2c67a6;
+    --send-active: #3274b8;
+    --send-text-shadow: rgba(0, 0, 0, 0.25);
+    --send-hi: rgba(255, 255, 255, 0.3);
+    --send-lo: rgba(0, 0, 0, 0.2);
+    --send-press: rgba(0, 0, 0, 0.4);
+
+    /* Meters: green → amber → red ramp */
+    --meter-ok: #5fb36b;
+    --meter-warn: #e0b341;
+    --meter-hot: #d95b5b;
+
+    /* Text-safe variants (WCAG AA on panel/field) */
+    --text-production: #74a6d4;
+    --text-approved: #6fc07b;
+    --text-rejected: #e88080;
+    --text-wip: #e0b341;
+    --text-review: #5fb0e3;
+    --text-idle: #9aa0aa;
+
+    /* ---- 3. Legacy aliases (existing names re-pointed to v1) ------------- */
+    --purple-300: #9fc6e8;
+    --purple-400: var(--zone-production-hover);
+    --purple-500: var(--zone-production);
+    --purple-600: #4a82b6;
+    --purple-700: #3c6f9f;
+    --purple-900: #24303c;
+    --green-400: #6fc07b;
+    --green-500: var(--st-approved);
+    --green-600: #4fa05b;
+    --green-700: #3f8a4a;
+    --green-800: #33733c;
+    --green-900: #234f29;
+    --amber-400: #e8c460;
+    --amber-500: var(--st-wip);
+    --amber-700: #a37f22;
+    --red-300: #f0a8a8;
+    --red-400: #e88080;
+    --red-500: var(--st-rejected);
+    --red-600: #c44848;
+    --red-700: #a83a3a;
+    --sky-400: var(--st-review);
+    --sky-600: #3a87bd;
     --white: #ffffff;
     --black: #000000;
 
-    /* 60 / 30 / 10 surfaces & semantics (Dark default) */
-    --surface-panel: #1e293b;
-    --surface-window: #172033;
-    --surface-field: #0f172a;
-    --surface-raised: #2a374c;
-    --surface-hover: #334155;
-    --surface-pressed: #172033;
-    --border-dark: #0b1120;
-    --grid-line: #334155;
-    --grid-line-strong: #475569;
-    --bevel-light: #3b4a63;
-    --border-control: #64748b;
+    --surface-panel: var(--bg-panel);
+    --surface-window: var(--bg-app);
+    --surface-field: var(--bg-input);
+    --surface-raised: var(--bg-raised-top);
+    --surface-hover: var(--hover);
+    --surface-pressed: var(--bg-input);
+    --surface-canvas: var(--bg-canvas);
+    --border-dark: var(--border);
+    --grid-line: #353535;
+    --grid-line-strong: #454545;
+    --bevel-light: #424242;
+    --border-control: #777777;
 
-    --text: #e2e8f0;
-    --text-muted: #94a3b8;
-    --text-disabled: #64748b;
+    --text-muted: var(--text-dim);
+    --text-disabled: var(--text-off);
 
-    --accent: #8b5cf6;
-    --accent-text: #a78bfa;
-    --accent-soft: rgba(139, 92, 246, 0.25);
-    --success: #10b981;
-    --success-soft: rgba(16, 185, 129, 0.16);
-    --warning: #f59e0b;
-    /* CR04: selection / linked-item state colour (borders only, never large fills). */
-    --highlight: #facc15;
-    /* CR04 §7: milestone / deliver date rhombus. */
-    --milestone: #facc15;
-    --milestone-text: #1e293b;
-    --warning-soft: rgba(245, 158, 11, 0.16);
-    --danger: #ef4444;
-    --danger-soft: rgba(239, 68, 68, 0.16);
-    --info: #38bdf8;
-    --info-soft: rgba(56, 189, 248, 0.16);
-    --focus-ring: #a78bfa;
+    --accent: var(--zone-accent);
+    --accent-text: var(--text-production);
+    --accent-soft: var(--zone-accent-tint);
+    --success: var(--st-approved);
+    --success-soft: color-mix(in srgb, var(--st-approved) 15%, transparent);
+    --warning: var(--st-wip);
+    --highlight: var(--zone-focus);
+    --milestone: var(--zone-focus);
+    --milestone-text: #1a1a1a;
+    --warning-soft: color-mix(in srgb, var(--st-wip) 15%, transparent);
+    --danger: var(--st-rejected);
+    --danger-soft: color-mix(in srgb, var(--st-rejected) 15%, transparent);
+    --info: var(--st-review);
+    --info-soft: color-mix(in srgb, var(--st-review) 15%, transparent);
+    --focus-ring: var(--zone-focus);
 
-    /* WCAG AA text/fill semantic tokens */
-    --danger-text: #fca5a5;
-    --warning-text: #fbbf24;
-    --success-text: #34d399;
-    --info-text: #38bdf8;
+    --danger-text: var(--text-rejected);
+    --warning-text: var(--text-wip);
+    --success-text: var(--text-approved);
+    --info-text: var(--text-review);
 
-    --btn-primary-bg: var(--purple-600);
-    --btn-primary-hover: var(--purple-700);
-    --btn-primary-fg: var(--white);
-    --btn-success-bg: var(--green-700);
-    --btn-success-hover: var(--green-600);
-    --btn-success-fg: var(--white);
-    --btn-danger-bg: var(--red-600);
-    --btn-danger-hover: var(--red-700);
-    --btn-danger-fg: var(--white);
+    /* Filled-button tokens: only the review Send button is filled. */
+    --btn-primary-bg: var(--send-active);
+    --btn-primary-hover: var(--send-bottom);
+    --btn-primary-fg: var(--text-on-fill);
+    --btn-success-bg: #3a7a44;
+    --btn-success-hover: #438a4e;
+    --btn-success-fg: var(--text-on-fill);
+    --btn-danger-bg: #a83a3a;
+    --btn-danger-hover: #b84444;
+    --btn-danger-fg: var(--text-on-fill);
 
-    /* Subtle 2-stop bevel gradients (~6% lightness delta) */
-    --bevel-raised-bg: linear-gradient(180deg, #313f57 0%, #263246 100%);
-    --bevel-hover-bg: linear-gradient(180deg, #3b4b66 0%, #2f3c53 100%);
-    --bevel-pressed-bg: linear-gradient(180deg, #151e2e 0%, #1c273b 100%);
-    --bevel-inset: inset 1px 1px 0 var(--bevel-light);
-    --bevel-inset-pressed: inset 1px 1px 0 var(--border-dark);
-    --shadow-popup: 1px 1px 0 var(--border-dark);
+    --bevel-raised-bg: linear-gradient(180deg, var(--bg-raised-top) 0%, var(--bg-raised-bottom) 100%);
+    --bevel-hover-bg: linear-gradient(180deg, #3c3c3c 0%, #343434 100%);
+    --bevel-pressed-bg: var(--bg-input);
 
-    --vp-bg-default: #0f172a;
+    --vp-bg-default: var(--bg-canvas);
     --vp-bg-black: #000000;
     --vp-bg-white: #ffffff;
-    --vp-bg-gray: #4b5563;
-    --vp-bg-gradient: linear-gradient(180deg, #263449 0%, #090d16 100%);
+    --vp-bg-gray: #4b4b4b;
+    --vp-bg-gradient: linear-gradient(180deg, #2e2e2e 0%, #121212 100%);
+    --vp-wire: #74a6d4;
+    --vp-gizmo: #5b93c7;
+    --vp-checker-a: #1d1d1d;
+    --vp-checker-b: #262626;
+    --vp-grid-minor: #333333;
+    --vp-grid-major: #4f4f4f;
+    --vp-grad-top: #2e2e2e;
+    --vp-grad-bottom: #121212;
 
-    /* Axis & series tokens */
-    --axis-x: #e06c75;
-    --axis-y: #98c379;
-    --axis-z: #61afef;
-    --axis-w: #c4b5fd;
+    --axis-x: #c77a7a;
+    --axis-y: #8fb86a;
+    --axis-z: #7a9cc6;
+    --axis-w: #9b86c4;
 
-    --series-1: #8b5cf6;
-    --series-2: #10b981;
-    --series-3: #38bdf8;
-    --series-4: #f59e0b;
-    --series-5: #ef4444;
-    --series-6: #a78bfa;
-    --series-7: #34d399;
-    --series-8: #e2e8f0;
+    --series-1: #7a9cc6;
+    --series-2: #6fb3a0;
+    --series-3: #c79b6a;
+    --series-4: #9b86c4;
+    --series-5: #c77a7a;
+    --series-6: #c4c06a;
+    --series-7: #8fb86a;
+    --series-8: #a8a8a8;
 
-    /* Spacing & sizing (§8.2) */
+    --capacity-do: var(--st-review);
+    --capacity-do-bg: #24303c;
+    --capacity-do-text: #8ec2e8;
+    --capacity-lead: #9b86c4;
+    --capacity-lead-bg: #2f2a3a;
+    --capacity-lead-text: #c3b6e0;
+    --capacity-sup: var(--st-wip);
+    --capacity-sup-bg: #3a3222;
+    --capacity-sup-text: #e8cc7a;
+
+    /* Task statuses → v1 status families (text-safe hues) */
+    --status-wtg: var(--text-idle);
+    --status-rdy: #b4bac3;
+    --status-ip: var(--text-wip);
+    --status-rtk: var(--text-rejected);
+    --status-p-lead: var(--text-review);
+    --status-p-sup: #7fbbe6;
+    --status-p-client: #9fcbec;
+    --status-app: var(--text-approved);
+    --status-hld: #a6adb8;
+    /* Bar / dot hues for the same statuses */
+    --status-bar-wtg: var(--st-idle);
+    --status-bar-rdy: var(--st-idle);
+    --status-bar-ip: var(--st-wip);
+    --status-bar-rtk: var(--st-rejected);
+    --status-bar-p-lead: var(--st-review);
+    --status-bar-p-sup: var(--st-review);
+    --status-bar-p-client: var(--st-review);
+    --status-bar-app: var(--st-approved);
+    --status-bar-hld: var(--st-hold);
+
+    --avatar-fg: #ffffff;
+    --avatar-hue-0: #3f5f80;
+    --avatar-hue-1: #3d6b5e;
+    --avatar-hue-2: #5e4f80;
+    --avatar-hue-3: #7a5a36;
+    --avatar-hue-4: #7a4545;
+    --avatar-hue-5: #4f6a34;
+    --avatar-hue-6: #6b6830;
+    --avatar-hue-7: #4a5260;
+
+    --heat-0: #262626;
+    --heat-1: #2f4a35;
+    --heat-2: #3d6b45;
+    --heat-3: #7a6a2c;
+    --heat-4: #7a3a3a;
+
+    --fam-houdini: #7a5a3c;
+    --fam-maya: #3c6466;
+    --fam-blender: #7a5e42;
+    --fam-max: #3c5a70;
+    --fam-c4d: #455272;
+    --fam-substance: #6a4a50;
+    --fam-adobe: #474f6c;
+    --fam-nuke: #66603a;
+    --fam-zbrush: #664c40;
+    --fam-doc: #4a4a4a;
+    --fam-folder: #474747;
+    --fam-unknown: #3d3d3d;
+
+    /* ---- Grain (feTurbulence, desaturated, ~4.5% opacity) --------------- */
+    --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.045'/></svg>");
+  }
+
+  /* ---- Paper theme ------------------------------------------------------ */
+  [data-theme='paper'],
+  [data-theme='light'] {
+    color-scheme: light;
+
+    --bg-canvas: #dedad2;
+    --bg-app: #ece8e1;
+    --bg-panel: #e6e2da;
+    --bg-raised-top: #f4f1eb;
+    --bg-raised-bottom: #ebe7df;
+    --bg-input: #e0dcd3;
+    --border: #cbc6bb;
+    --hover: #f7f4ee;
+    --selected: #c9d6e2;
+
+    --text: #2b2f33;
+    /* spec #6b6f73 nudged to #595d62 so dim text keeps WCAG AA on the input well */
+    --text-dim: #595d62;
+    --text-off: #a09e97;
+
+    --hi: rgba(255, 255, 255, 0.85);
+    --lo: rgba(120, 110, 95, 0.16);
+    --drop: rgba(110, 100, 85, 0.28);
+    --inset-dark: rgba(110, 100, 85, 0.38);
+    --inset-light: rgba(255, 255, 255, 0.75);
+    --groove-dark: #cdc8bc;
+    --groove-light: rgba(255, 255, 255, 0.8);
+    --etch: rgba(255, 255, 255, 0.8);
+    --modal-shade: rgba(90, 80, 65, 0.3);
+    --popover-shade: rgba(90, 80, 65, 0.34);
+    --scrim: rgba(60, 55, 45, 0.3);
+    --chart-grid: rgba(60, 55, 45, 0.08);
+    --tooltip-bg: #2b2f33;
+    --switch-on-track: #cddbe8;
+
+    --zone-management-tint: #efdccb;
+    --zone-production-tint: #d3e0ec;
+    --zone-settings-tint: #dcdcda;
+
+    --text-production: #2c5f8a;
+    --text-approved: #2f6b39;
+    --text-rejected: #a83c3c;
+    --text-wip: #7a5c00;
+    --text-review: #1f5f8a;
+    --text-idle: #5a606a;
+
+    --purple-300: #2c5f8a;
+    --purple-600: #3c6f9f;
+    --purple-700: #2c5f8a;
+    --purple-900: #d3e0ec;
+
+    --grid-line: #d6d1c7;
+    --grid-line-strong: #c2bcb0;
+    --bevel-light: #ffffff;
+    --border-control: #7a756b;
+    /* Focus amber darkened on paper: #e8a33d is 1.7:1 on paper surfaces */
+    --zone-focus: #a5680c;
+    --milestone: #96620e;
+    --milestone-text: #ffffff;
+
+    --bevel-hover-bg: linear-gradient(180deg, #f8f6f1 0%, #f0ece5 100%);
+
+    --vp-bg-default: var(--bg-canvas);
+    --vp-bg-gradient: linear-gradient(180deg, #ece8e1 0%, #c9c4b9 100%);
+    --vp-wire: #2c5f8a;
+    --vp-gizmo: #3c6f9f;
+    --vp-checker-a: #e4e0d8;
+    --vp-checker-b: #d6d1c7;
+    --vp-grid-minor: #c4bfb4;
+    --vp-grid-major: #9a9488;
+    --vp-grad-top: #ece8e1;
+    --vp-grad-bottom: #c9c4b9;
+
+    --series-1: #4f73a0;
+    --series-2: #3f8a76;
+    --series-3: #9a6e3c;
+    --series-4: #6f5a9c;
+    --series-5: #a04e4e;
+    --series-6: #8a852c;
+    --series-7: #5a8a36;
+    --series-8: #5e5e5e;
+
+    --capacity-do-bg: #d3e0ec;
+    --capacity-do-text: #1f4f75;
+    --capacity-lead-bg: #e0d9ec;
+    --capacity-lead-text: #4a3a75;
+    --capacity-sup-bg: #efe3c2;
+    --capacity-sup-text: #5c4500;
+
+    --status-rdy: #4a5058;
+    --status-p-sup: #22618c;
+    --status-p-client: #275f86;
+    --status-hld: #50565f;
+
+    --avatar-hue-0: #3f5f80;
+    --avatar-hue-1: #3d6b5e;
+    --avatar-hue-2: #5e4f80;
+    --avatar-hue-3: #7a5a36;
+    --avatar-hue-4: #7a4545;
+
+    --heat-0: #ebe7df;
+    --heat-1: #cfe0c8;
+    --heat-2: #a9cca6;
+    --heat-3: #e8d79c;
+    --heat-4: #e6b8b0;
+
+    --fam-houdini: #9a7652;
+    --fam-maya: #4f8285;
+    --fam-blender: #9a7a58;
+    --fam-max: #4f7690;
+    --fam-c4d: #5a6a92;
+    --fam-substance: #8a6268;
+    --fam-adobe: #5f688c;
+    --fam-nuke: #857d4e;
+    --fam-zbrush: #856456;
+    --fam-doc: #7a766c;
+    --fam-folder: #8f897d;
+    --fam-unknown: #8f897d;
+  }
+
+  /* ---- Zone switching (AppShell sets data-zone on the shell root) ------- */
+  [data-zone='management'] {
+    --zone-accent: var(--zone-management);
+    --zone-accent-hover: var(--zone-management-hover);
+    --zone-accent-tint: var(--zone-management-tint);
+  }
+  [data-zone='settings'] {
+    --zone-accent: var(--zone-settings);
+    --zone-accent-hover: var(--zone-settings-hover);
+    --zone-accent-tint: var(--zone-settings-tint);
+  }
+  [data-zone='production'] {
+    --zone-accent: var(--zone-production);
+    --zone-accent-hover: var(--zone-production-hover);
+    --zone-accent-tint: var(--zone-production-tint);
+  }
+
+  /* ---- Composite recipes. Declared on every themed element so they
+     re-resolve against the theme's helper colours. ------------------------ */
+  :root,
+  [data-theme],
+  [data-zone] {
+    /* Surface recipes (section 2) */
+    --sh-raised: inset 1px 1px 0 var(--hi), inset -1px -1px 0 var(--lo), 1px 2px 3px var(--drop),
+      -1px -1px 2px var(--inset-light);
+    --sh-raised-hover: inset 1px 1px 0 var(--hi), inset -1px -1px 0 var(--lo),
+      1px 2px 4px var(--drop), -1px -1px 2px var(--inset-light);
+    --sh-inset: inset 1px 2px 4px var(--inset-dark), inset -1px -1px 1px var(--inset-light);
+    --sh-pressed: inset 1px 2px 3px var(--inset-dark), inset -1px -1px 0 var(--inset-light);
+    --sh-plate: inset 1px 1px 0 var(--hi), 1px 2px 6px var(--drop);
+    --sh-groove: 0 1px 0 var(--groove-light);
+    --sh-bevel: inset 1px 1px 0 var(--hi), 1px 2px 3px var(--drop);
+    /* Elevation levels (L1 flat has no shadow) */
+    --elev-1: none;
+    --elev-2: 1px 2px 3px var(--drop);
+    --elev-3: var(--sh-raised);
+    --elev-4: inset 1px 1px 0 var(--hi), 0 8px 24px var(--modal-shade);
+    --elev-5: inset 1px 1px 0 var(--hi), 0 12px 30px var(--popover-shade);
+    /* Send button */
+    --sh-send: inset 1px 1px 0 var(--send-hi), inset -1px -1px 0 var(--send-lo), 1px 2px 3px var(--drop);
+    --sh-send-active: inset 1px 2px 3px var(--send-press);
+    --bg-raised: linear-gradient(180deg, var(--bg-raised-top) 0%, var(--bg-raised-bottom) 100%);
+    --bg-send: linear-gradient(180deg, var(--send-top) 0%, var(--send-bottom) 100%);
+
+    /* Zone-dependent aliases re-resolve inside a [data-zone] subtree */
+    --accent: var(--zone-accent);
+    --accent-soft: var(--zone-accent-tint);
+    --selection: var(--zone-accent);
+
+    /* Legacy shadow names → v1 recipes */
+    --bevel-inset: var(--sh-raised);
+    --bevel-inset-pressed: var(--sh-pressed);
+    --bevel-well: var(--sh-inset);
+    --shadow-popup: var(--elev-5);
+    --shadow-modal: var(--elev-4);
+  }
+
+  /* ---- 4. Geometry, type, motion (theme-independent) -------------------- */
+  :root {
+    /* Spacing (4px grid). Legacy steps keep their names. */
     --space-0: 0px;
-    --space-1: 3px;
-    --space-2: 6px;
+    --space-1: 4px;
+    --space-2: 8px;
     --space-3: 8px;
-    --space-4: 10px;
-    --space-5: 14px;
+    --space-4: 12px;
+    --space-5: 16px;
     --space-6: 20px;
+    --space-7: 24px;
+    --space-8: 32px;
+    --space-half: 2px;
+    --space-btn-x: 14px;
+    --space-cell-l: 14px;
+    --space-cell-r: 10px;
+    --space-sep-top: 10px;
+    --space-sep-bottom: 18px;
+    --space-6px: 6px;
+
+    --page-max-w: 1360px;
+    --page-pad-x: 32px;
+    --panel-pad: 20px;
+    --panel-gap: 24px;
 
     --ctl-h-sm: 22px;
-    --ctl-h: 26px;
-    --ctl-h-lg: 30px;
-    --row-h: 28px;
-    --header-h: 30px;
+    --ctl-h: 28px;
+    --ctl-h-lg: 32px;
+    --row-h: 26px;
+    --header-h: 26px;
     --panel-title-h: 24px;
     --tab-h: 28px;
     --menubar-h: 28px;
-    --toolbar-h: 38px;
+    --toolbar-h: 40px;
     --topbar-h: 46px;
     --panelswitch-h: 30px;
     --statusbar-h: 24px;
-    --toolstrip-w: 34px;
+    --toolstrip-w: 40px;
     --toolgroup-gap: 8px;
-    --toolwell-pad: 3px;
+    --toolwell-pad: 4px;
     --toolstrip-chev-h: 14px;
-    --tool-btn-size: 22px;
+    --tool-btn-size: 28px;
     --timebar-h: 28px;
     --audiostrip-h: 32px;
     --viewer-row-h: 24px;
@@ -156,22 +522,50 @@
     --scene-icon-size: 32px;
     --col-min-w: 140px;
 
+    /* Typography */
     --font-size: 12px;
     --font-size-sm: 11px;
     --font-size-lg: 14px;
     --font-size-xl: 18px;
     --font-size-logo: 20px;
-    --font-ui: Tahoma, 'Segoe UI', Verdana, 'DejaVu Sans', sans-serif;
-    --font-mono: Consolas, 'DejaVu Sans Mono', monospace;
+    --font-size-title: 26px;
+    --font-size-label: 10px;
+    --font-size-stat: 16px;
+    --font-size-name: 15px;
+    --font-size-glyph: 8px;
+    --font-size-xs: 11px;
+    --font-size-2xs: 10px;
+    --font-ui: Inter, 'Segoe UI', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Roboto Mono', ui-monospace, monospace;
+    --label-tracking: 0.09em;
+    --line-body: 1.5;
 
+    /* Radius scale 0 / 1 / 2 / 3 px. --radius-1 = default control (2px). */
     --radius-0: 0px;
+    --radius-xs: 1px;
+    --radius-sm: 2px;
+    --radius-md: 3px;
     --radius-1: 2px;
     --radius-2: 3px;
-    --radius-max: 4px;
+    --radius-max: 3px;
+    --radius-tile: 1px;
+    --radius-well: 1px;
+
+    /* Border widths: 1 thin, 2 regular, 4 thick */
     --border-w: 1px;
     --border-w-strong: 2px;
+    --border-w-thick: 4px;
     --border-double-w: 3px;
-    --focus-w: 1px;
+    --status-bar-w: 3px;
+    --focus-w: 2px;
+    --focus-offset: 1px;
+
+    /* Motion: 120 hover/press, 140 switch travel, 180 popovers, no bounce */
+    --motion-fast: 120ms ease-out;
+    --motion-switch: 140ms ease-out;
+    --motion-popover: 180ms ease-out;
+    --press-y: 1px;
+    --hover-brightness: 1.08;
 
     --label-col-w: 35%;
     --field-col-w: 65%;
@@ -181,49 +575,57 @@
     --panel-left-min: 180px;
     --panel-right-min: 260px;
 
-    /* SceneFileIcon family colors (muted, derived from palette) */
-    --fam-houdini: #7c4d2b;
-    --fam-maya: #2d6a73;
-    --fam-blender: #7d5333;
-    --fam-max: #2d5c77;
-    --fam-c4d: #374d80;
-    --fam-substance: #734048;
-    --fam-adobe: #3b4973;
-    --fam-nuke: #6e6230;
-    --fam-zbrush: #6d4635;
-    --fam-doc: #475569;
-    --fam-folder: #3b4a63;
-    --fam-unknown: #334155;
-
-    /* Widget geometry tokens */
-    --checkbox-size: 14px;
-    --radio-size: 14px;
-    --switch-w: 32px;
-    --switch-h: 16px;
-    --switch-thumb: 12px;
-    --thumb-w: 10px;
-    --thumb-h: 14px;
-    --groove-h: 4px;
+    /* Widget geometry */
+    --checkbox-size: 18px;
+    --radio-size: 18px;
+    --radio-dot: 8px;
+    --switch-w: 50px;
+    --switch-h: 22px;
+    --switch-thumb: 16px;
+    --switch-knob-w: 23px;
+    --switch-knob-h: 16px;
+    --switch-led-w: 9px;
+    --switch-led-h: 2px;
+    --switch-inset: 2px;
+    --thumb-w: 14px;
+    --thumb-h: 20px;
+    --groove-h: 8px;
+    --tick-h: 6px;
+    --tick-label-h: 14px;
     --dirty-bar-w: 3px;
     --min-btn-w: 60px;
     --min-hit: 24px;
     --scrollbar-w: 12px;
-    --stepper-w: 14px;
-    --icon-sm: 13px;
-    --icon-md: 15px;
+    --stepper-w: 16px;
+    --stepper-h: 12px;
+    --icon-sm: 14px;
+    --icon-md: 16px;
     --icon-lg: 18px;
+    --icon-tile: 32px;
+    --icon-tile-sm: 28px;
+    --icon-tile-lg: 40px;
+    --icon-cell-w: 68px;
     --swatch-size: 16px;
-    --dial-size: 28px;
-    --knob-size: 28px;
+    --dial-size: 44px;
+    --knob-size: 44px;
+    --knob-label-size: 5.5px;
     --ramp-h: 96px;
     --shortcut-col-w: 60px;
     --splitter-size: 4px;
     --spinner-size: 16px;
-    --progress-h: 14px;
+    --progress-h: 12px;
+    --led-size: 8px;
+    --led-glow: 4px;
+    --presence-size: 9px;
+    --flag-size: 15px;
+    --keycap-w: 36px;
+    --keycap-h: 28px;
+    --tooltip-arrow: 5px;
     --dialog-min-w: 320px;
     --dialog-max-w: 560px;
     --popover-min-w: 220px;
     --select-max-h: 180px;
+    --menu-item-h: 26px;
     --tree-indent: 16px;
     --thumb-preview-size: 160px;
     --viewer-field-w: 72px;
@@ -237,7 +639,7 @@
     --timecode-w: 76px;
     --meter-w: 14px;
     --track-row-h: 26px;
-    --transport-h: 26px;
+    --transport-h: 28px;
     --track-label-w: 96px;
     --meter-panel-w: 44px;
     --wave-lane-min-h: 72px;
@@ -251,7 +653,10 @@
     --sparkline-w: 84px;
     --sparkline-h: 20px;
     --gauge-h: 12px;
+    --seg-w: 6px;
+    --seg-step: 7px;
     --nodegraph-h: 170px;
+    --node-strip-h: 4px;
     --pdf-thumb-w: 96px;
     --pdf-bar-h: 26px;
     --scope-h: 96px;
@@ -259,9 +664,13 @@
     --settings-dialog-w: 900px;
     --settings-dialog-h: 600px;
     --settings-nav-w: 190px;
-    /* Z-index scale (CR04 §2). Floating UI is portaled to <body>, so these globals
-       decide stacking: anything opened from a dialog or dock must sit above it.
-       Local stacking inside a widget uses the --z-local-* steps only. */
+    --priority-col-w: 86px;
+    --notes-min-h: 62px;
+    --chip-h: 22px;
+    --picker-min-h: 32px;
+    --picker-row-h: 32px;
+
+    /* Z-index scale (CR04 §2). */
     --z-base: 0;
     --z-local-1: 1;
     --z-local-2: 2;
@@ -275,21 +684,25 @@
     --z-tooltip: 400;
     --z-toast: 500;
 
-    /* CR03 layout, status, capacity, avatar, heatmap tokens */
+    /* CR03 layout, status, capacity, avatar, heatmap geometry */
     --viewswitch-h: 30px;
     --filterbar-h: 34px;
     --task-panel-w: 440px;
-    /* /me: below this page width the three columns stack (read by JS). */
     --me-stack-bp: 1100px;
     --short-code-w: 56px;
-    /* CR04 §7 milestone diamond sizes (deliver dates are larger). */
     --milestone-size: 10px;
     --deliver-size: 14px;
     --draftbar-h: 30px;
     --versions-panel-w: 280px;
-    --avatar-sm: 20px;
-    --avatar-md: 30px;
-    --avatar-lg: 40px;
+    --avatar-20: 20px;
+    --avatar-24: 24px;
+    --avatar-32: 32px;
+    --avatar-40: 40px;
+    --avatar-56: 56px;
+    --avatar-72: 72px;
+    --avatar-sm: var(--avatar-20);
+    --avatar-md: var(--avatar-32);
+    --avatar-lg: var(--avatar-40);
     --gantt-row-h: 34px;
     --gantt-header-h: 44px;
     --gantt-bar-h: 22px;
@@ -320,7 +733,7 @@
     --dialog-wide-w: 680px;
     --badge-dot-w: 6px;
     --unread-dot: 8px;
-    --dept-swatch: 10px;
+    --dept-swatch: 8px;
     --users-nav-w: 220px;
     --progress-thin-h: 6px;
     --gantt-tree-w: 480px;
@@ -335,164 +748,37 @@
     --minimap-w: 156px;
     --minimap-h: 96px;
 
-    --capacity-do: #38bdf8;
-    --capacity-do-bg: #132c42;
-    --capacity-do-text: #7dd3fc;
-    --capacity-lead: #a78bfa;
-    --capacity-lead-bg: #291e4a;
-    --capacity-lead-text: #ddd6fe;
-    --capacity-sup: #fbbf24;
-    --capacity-sup-bg: #3b280d;
-    --capacity-sup-text: #fde68a;
-
-    --status-wtg: #94a3b8;
-    --status-rdy: #38bdf8;
-    --status-ip: #c4b5fd;
-    --status-rtk: #f87171;
-    --status-p-lead: #2dd4bf;
-    --status-p-sup: #a5b4fc;
-    --status-p-client: #f472b6;
-    --status-app: #34d399;
-    --status-hld: #fbbf24;
-
-    --avatar-fg: #ffffff;
-    --avatar-hue-0: #5b21b6;
-    --avatar-hue-1: #047857;
-    --avatar-hue-2: #0369a1;
-    --avatar-hue-3: #b45309;
-    --avatar-hue-4: #b91c1c;
-    --avatar-hue-5: #4338ca;
-    --avatar-hue-6: #0f766e;
-    --avatar-hue-7: #9d174d;
-
-    --heat-0: #1e293b;
-    --heat-1: #064e3b;
-    --heat-2: #0f766e;
-    --heat-3: #b45309;
-    --heat-4: #b91c1c;
-
     /* Aliases referenced by planning views (Gantt / Graph / Workload) */
     --surface-sunken: var(--surface-field);
     --text-primary: var(--text);
     --border-light: var(--bevel-light);
     --control-h-sm: var(--ctl-h-sm);
-    --font-size-xs: 11px;
-    --font-size-2xs: 10px;
     --selection: var(--accent);
-    --selection-soft: var(--accent-soft);
-    --status-app-bg: color-mix(in srgb, var(--status-app) 22%, transparent);
+    --selection-soft: var(--selected);
+    --status-app-bg: color-mix(in srgb, var(--st-approved) 15%, transparent);
     --status-app-fg: var(--status-app);
-    --status-hld-bg: color-mix(in srgb, var(--status-hld) 22%, transparent);
+    --status-hld-bg: color-mix(in srgb, var(--st-hold) 15%, transparent);
     --status-hld-fg: var(--status-hld);
-    --status-p-lead-bg: color-mix(in srgb, var(--status-p-lead) 22%, transparent);
+    --status-p-lead-bg: color-mix(in srgb, var(--st-review) 15%, transparent);
     --status-p-lead-fg: var(--status-p-lead);
-    --status-rtk-bg: color-mix(in srgb, var(--status-rtk) 22%, transparent);
+    --status-rtk-bg: color-mix(in srgb, var(--st-rejected) 15%, transparent);
     --status-rtk-fg: var(--status-rtk);
   }
 
-  [data-theme='light'] {
-    --surface-panel: #e2e8f0;
-    --surface-window: #cbd5e1;
-    --surface-field: #f8fafc;
-    --surface-raised: #f1f5f9;
-    --surface-hover: #ffffff;
-    --surface-pressed: #cbd5e1;
-    --border-dark: #94a3b8;
-    --grid-line: #cbd5e1;
-    --grid-line-strong: #94a3b8;
-    --bevel-light: #ffffff;
-    --border-control: #64748b;
-
-    --text: #0f172a;
-    --text-muted: #475569;
-    --text-disabled: #94a3b8;
-
-    --accent: #7c3aed;
-    --accent-text: #6d28d9;
-    --accent-soft: rgba(139, 92, 246, 0.2);
-    --success: #059669;
-    --success-soft: rgba(5, 150, 105, 0.14);
-    --warning: #b45309;
-    --highlight: #a16207;
-    --milestone: #a16207;
-    --milestone-text: #ffffff;
-    --warning-soft: rgba(245, 158, 11, 0.16);
-    --danger: #dc2626;
-    --danger-soft: rgba(220, 38, 38, 0.14);
-    --info: #0284c7;
-    --info-soft: rgba(2, 132, 199, 0.14);
-    --focus-ring: #6d28d9;
-
-    --danger-text: #b91c1c;
-    --warning-text: #b45309;
-    --success-text: #065f46;
-    --info-text: #0369a1;
-
-    --bevel-raised-bg: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
-    --bevel-hover-bg: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
-    --bevel-pressed-bg: linear-gradient(180deg, #cbd5e1 0%, #e2e8f0 100%);
-    --bevel-inset: inset 1px 1px 0 var(--bevel-light);
-    --bevel-inset-pressed: inset 1px 1px 0 var(--border-dark);
-    --shadow-popup: 1px 1px 0 var(--border-control);
-
-    --vp-bg-default: #cbd5e1;
-    --vp-bg-gradient: linear-gradient(180deg, #e2e8f0 0%, #94a3b8 100%);
-
-    --series-1: #6d28d9;
-    --series-2: #047857;
-    --series-3: #0369a1;
-    --series-4: #b45309;
-    --series-5: #b91c1c;
-    --series-6: #7c3aed;
-    --series-7: #059669;
-    --series-8: #1e293b;
-
-    --fam-houdini: #9a643d;
-    --fam-maya: #3b828d;
-    --fam-blender: #9a6842;
-    --fam-max: #3a7394;
-    --fam-c4d: #4965a3;
-    --fam-substance: #8e515b;
-    --fam-adobe: #4b5c91;
-    --fam-nuke: #8a7b3e;
-    --fam-zbrush: #875743;
-    --fam-doc: #64748b;
-    --fam-folder: #94a3b8;
-    --fam-unknown: #64748b;
-
-    --capacity-do: #0369a1;
-    --capacity-do-bg: #e0f2fe;
-    --capacity-do-text: #0c4a6e;
-    --capacity-lead: #6d28d9;
-    --capacity-lead-bg: #ede9fe;
-    --capacity-lead-text: #4c1d95;
-    --capacity-sup: #b45309;
-    --capacity-sup-bg: #fef3c7;
-    --capacity-sup-text: #78350f;
-
-    --status-wtg: #475569;
-    --status-rdy: #0369a1;
-    --status-ip: #6d28d9;
-    --status-rtk: #b91c1c;
-    --status-p-lead: #115e59;
-    --status-p-sup: #4338ca;
-    --status-p-client: #be185d;
-    --status-app: #065f46;
-    --status-hld: #92400e;
-
-    --heat-0: #f1f5f9;
-    --heat-1: #a7f3d0;
-    --heat-2: #5eead4;
-    --heat-3: #fde68a;
-    --heat-4: #fecaca;
+  [data-density='comfortable'] {
+    --ctl-h: 32px;
+    --row-h: 30px;
+    --header-h: 30px;
+    --space-1: 6px;
+    --space-2: 10px;
+    --space-3: 12px;
   }
 
-  [data-density='comfortable'] {
-    --ctl-h: 30px;
-    --row-h: 32px;
-    --header-h: 34px;
-    --space-1: 4px;
-    --space-2: 8px;
-    --space-3: 10px;
+  @media (prefers-reduced-motion: reduce) {
+    :root {
+      --motion-fast: 0ms linear;
+      --motion-switch: 0ms linear;
+      --motion-popover: 0ms linear;
+    }
   }
 }

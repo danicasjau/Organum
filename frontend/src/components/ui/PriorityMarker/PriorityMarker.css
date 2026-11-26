@@ -2,27 +2,7 @@
   .org-priority {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-1);
     height: var(--priority-h);
-    padding: 0 var(--space-1);
-    border-radius: var(--radius-1);
-    font-family: var(--font-mono);
-    font-size: var(--font-size-sm);
-    font-weight: 700;
-    line-height: 1;
     white-space: nowrap;
   }
-
-  .org-priority[data-priority='high'] {
-    color: var(--warning-text);
-    border: 1px solid var(--warning);
-    background: var(--warning-soft);
-  }
-
-  .org-priority[data-priority='stopper'] {
-    color: var(--danger-text);
-    border: 1px solid var(--danger);
-    background: var(--danger-soft);
-  }
 }
-

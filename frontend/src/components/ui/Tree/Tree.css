@@ -5,8 +5,10 @@
     flex: 1;
     min-height: 0;
     overflow: auto;
-    border: 1px solid var(--border-dark);
-    background: var(--surface-field);
+    border: 1px solid var(--groove-dark);
+    border-radius: var(--radius-well);
+    background: var(--bg-input);
+    box-shadow: var(--sh-inset);
     outline: none;
   }
 
@@ -26,12 +28,12 @@
   }
 
   .org-tree__row:hover {
-    background: var(--surface-hover);
+    background: var(--hover);
   }
 
   .org-tree__row[data-selected='true'] {
-    background: var(--accent-soft);
-    border-left-color: var(--accent);
+    background: var(--selected);
+    border-left-color: var(--zone-accent);
   }
 
   .org-tree__row[data-drop-target='true'] {
@@ -41,7 +43,7 @@
   }
 
   .org-tree__row[data-disabled='true'] {
-    color: var(--text-disabled);
+    color: var(--text-off);
   }
 
   .org-tree__expander {
@@ -53,7 +55,7 @@
     padding: 0;
     border: 0;
     background: transparent;
-    color: var(--text-muted);
+    color: var(--text-dim);
     cursor: pointer;
     flex-shrink: 0;
   }
@@ -63,7 +65,7 @@
   }
 
   .org-tree__icon {
-    color: var(--text-muted);
+    color: var(--text-dim);
     flex-shrink: 0;
   }
 

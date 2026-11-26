@@ -1,0 +1,174 @@
+/* v1 surface system. Components inline these recipes from tokens; the classes
+   below are the same recipes as reusable utilities for feature code and the
+   gallery. Light comes from the top-left. */
+@layer utilities {
+  /* BASE (flat) */
+  .org-surface-base {
+    background-color: var(--bg-panel);
+    border: 1px solid var(--border);
+    box-shadow: none;
+  }
+
+  /* RAISED: buttons, keys, cards, toolbars, knobs, thumbs */
+  .org-surface-raised {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--sh-raised);
+  }
+
+  /* INSET: fields, wells, troughs, table body, log console */
+  .org-surface-inset {
+    background: var(--bg-input);
+    border: 1px solid var(--groove-dark);
+    border-radius: var(--radius-well);
+    box-shadow: var(--sh-inset);
+  }
+
+  /* PRESSED: active button, toggled segment, selected tab (visibly sinks) */
+  .org-surface-pressed {
+    background: var(--bg-input);
+    border: 1px solid var(--groove-dark);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--sh-pressed);
+    transform: translateY(var(--press-y));
+  }
+
+  /* PLATE: panels */
+  .org-surface-plate {
+    background-color: var(--bg-panel);
+    background-image: var(--grain);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--sh-plate);
+  }
+
+  /* Paper grain overlay */
+  .org-grain {
+    background-image: var(--grain);
+  }
+
+  /* 2px groove separator: dark line above, light line below */
+  .org-groove {
+    height: 0;
+    border: 0;
+    border-top: 1px solid var(--groove-dark);
+    box-shadow: var(--sh-groove);
+    margin: var(--space-sep-top) 0 var(--space-sep-bottom);
+  }
+
+  .org-focus-ring:focus-visible {
+    outline: var(--focus-w) solid var(--focus-ring);
+    outline-offset: var(--focus-offset);
+  }
+
+  /* Elevation levels L1–L5 */
+  .org-elev-1 {
+    background-color: var(--bg-panel);
+    border: 1px solid var(--border);
+    box-shadow: var(--elev-1);
+  }
+
+  .org-elev-2 {
+    background-color: var(--hover);
+    border: 1px solid var(--border);
+    box-shadow: var(--elev-2);
+  }
+
+  .org-elev-3 {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--elev-3);
+  }
+
+  .org-elev-4 {
+    background-color: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--elev-4);
+  }
+
+  .org-elev-5 {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--elev-5);
+  }
+
+  /* Etched small-caps section label */
+  .org-etched-label {
+    font-family: var(--font-ui);
+    font-size: var(--font-size-label);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--label-tracking);
+    color: var(--text-dim);
+    text-shadow: 0 1px 0 var(--groove-light);
+  }
+
+  /* Square icon key tile (1:1, radius ≤ 1px, 18px glyph) */
+  .org-icon-tile {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: var(--icon-tile);
+    height: var(--icon-tile);
+    padding: 0;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-tile);
+    box-shadow: var(--sh-raised);
+    color: var(--text-dim);
+    cursor: pointer;
+    transition:
+      filter var(--motion-fast),
+      box-shadow var(--motion-fast),
+      transform var(--motion-fast);
+  }
+
+  .org-icon-tile[data-size='sm'] {
+    width: var(--icon-tile-sm);
+    height: var(--icon-tile-sm);
+  }
+
+  .org-icon-tile[data-size='lg'] {
+    width: var(--icon-tile-lg);
+    height: var(--icon-tile-lg);
+  }
+
+  .org-icon-tile:hover {
+    color: var(--text);
+    filter: brightness(var(--hover-brightness));
+    box-shadow: var(--sh-raised-hover);
+  }
+
+  .org-icon-tile:active,
+  .org-icon-tile[aria-pressed='true'] {
+    background: var(--bg-input);
+    border-color: var(--groove-dark);
+    box-shadow: var(--sh-pressed);
+    transform: translateY(var(--press-y));
+    filter: none;
+    color: var(--zone-accent);
+  }
+
+  .org-icon-tile > svg {
+    width: var(--icon-lg);
+    height: var(--icon-lg);
+  }
+
+  .org-tabular {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Page wrapper for form-like pages (not full-bleed workspaces) */
+  .org-page {
+    width: 100%;
+    max-width: var(--page-max-w);
+    margin: 0 auto;
+    padding: 0 var(--page-pad-x);
+  }
+}

@@ -10,7 +10,20 @@ export type ButtonVariant =
   | 'ghost'
   | 'toolbar'
   | 'icon'
-  | 'toggle';
+  | 'toggle'
+  /* v1 accent variants (raised face + 2px bottom accent line) */
+  | 'production'
+  | 'management'
+  | 'settings'
+  | 'destructive'
+  /* permanently pressed key */
+  | 'sunk'
+  /* review actions: the one filled button, and the four status keys */
+  | 'send'
+  | 'approve'
+  | 'changes'
+  | 'reject'
+  | 'hold';
 
 export type ButtonSize = 'sm' | 'md' | 'lg';
 

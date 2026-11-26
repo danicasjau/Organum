@@ -1,6 +1,11 @@
 import { cn } from '../_internal/cn';
 import './Icon.css';
 
+/**
+ * v1 icon set: one registry on a 24x24 grid, stroke 1.75, fill none,
+ * square caps and miter joins (miterlimit 2) for a machined look.
+ * Rendered at 16px inline (md) and 18px in tiles (lg). Colour is currentColor.
+ */
 export type IconName =
   | 'search'
   | 'grip'
@@ -63,7 +68,100 @@ export type IconName =
   | 'layers'
   | 'maximize'
   | 'calendar'
-  | 'message';
+  | 'message'
+  | 'x-circle'
+  | 'send'
+  | 'comment'
+  | 'redo'
+  | 'paperclip'
+  | 'user'
+  | 'users'
+  | 'bell'
+  | 'flag'
+  | 'clock'
+  | 'edit'
+  | 'log-out'
+  | 'film'
+  | 'mail';
+
+export const ICON_NAMES: ReadonlyArray<IconName> = [
+  'search',
+  'grip',
+  'close',
+  'chevron-down',
+  'chevron-right',
+  'chevron-up',
+  'chevron-left',
+  'check',
+  'minus',
+  'plus',
+  'eye',
+  'eye-off',
+  'reset',
+  'alert',
+  'info',
+  'check-circle',
+  'sun',
+  'moon',
+  'grid',
+  'sliders',
+  'lock',
+  'unlock',
+  'copy',
+  'folder',
+  'file',
+  'image',
+  'video',
+  'box3d',
+  'audio',
+  'doc',
+  'table',
+  'play',
+  'pause',
+  'step-back',
+  'step-forward',
+  'skip-start',
+  'skip-end',
+  'play-reverse',
+  'loop',
+  'volume',
+  'mute',
+  'ruler',
+  'crosshair',
+  'pencil',
+  'lasso',
+  'eraser',
+  'laser',
+  'rect',
+  'circle',
+  'note',
+  'settings',
+  'star',
+  'star-filled',
+  'folder-plus',
+  'trash',
+  'refresh',
+  'external-link',
+  'arrow-up',
+  'layers',
+  'maximize',
+  'calendar',
+  'message',
+  'x-circle',
+  'send',
+  'comment',
+  'redo',
+  'paperclip',
+  'user',
+  'users',
+  'bell',
+  'flag',
+  'clock',
+  'edit',
+  'log-out',
+  'film',
+  'mail',
+];
 
 export interface IconProps {
   name: IconName;
@@ -72,100 +170,115 @@ export interface IconProps {
   label?: string;
 }
 
-const PATHS: Record<IconName, string> = {
-  search:
-    'M6.5 2a4.5 4.5 0 1 0 2.84 7.99l3.33 3.34.71-.71-3.34-3.33A4.5 4.5 0 0 0 6.5 2Zm0 1a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7Z',
-  close:
-    'M3.35 2.65 8 7.29l4.65-4.64.7.7L8.71 8l4.64 4.65-.7.7L8 8.71l-4.65 4.64-.7-.7L7.29 8 2.65 3.35l.7-.7Z',
-  'chevron-down': 'M3.5 6 8 10.5 12.5 6l-.7-.7L8 9.09 4.2 5.3l-.7.7Z',
-  'chevron-right': 'M6 3.5 10.5 8 6 12.5l-.7-.7L9.09 8 5.3 4.2l.7-.7Z',
-  'chevron-up': 'M3.5 10 8 5.5 12.5 10l-.7.7L8 6.91 4.2 10.7l-.7-.7Z',
-  'chevron-left': 'M10 3.5 5.5 8 10 12.5l.7-.7L6.91 8l3.79-3.8-.7-.7Z',
-  check: 'M3 8.2 6.4 11.5 13 4.8l-.7-.7L6.4 10.1 3.7 7.5l-.7.7Z',
-  minus: 'M3 7.5h10v1H3v-1Z',
-  plus: 'M7.5 3h1v4.5H13v1H8.5V13h-1V8.5H3v-1h4.5V3Z',
-  eye: 'M8 3.5c-3.3 0-6 2.5-6.9 4.5.9 2 3.6 4.5 6.9 4.5s6-2.5 6.9-4.5c-.9-2-3.6-4.5-6.9-4.5Zm0 7.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6Zm0-4.5A1.5 1.5 0 1 0 8 9.5 1.5 1.5 0 0 0 8 6.5Z',
-  'eye-off':
-    'M2.7 2 14 13.3l-.7.7-2.2-2.2A7.8 7.8 0 0 1 8 12.5c-3.3 0-6-2.5-6.9-4.5.5-1.1 1.6-2.4 3-3.4L2 2.7l.7-.7Zm3.5 4.2A2 2 0 0 0 9.8 9.8L6.2 6.2ZM8 3.5c3.3 0 6 2.5 6.9 4.5-.4.9-1.1 1.8-2 2.6l-.7-.7c.7-.6 1.2-1.2 1.6-1.9-.8-1.6-3-3.5-5.8-3.5-.6 0-1.1.1-1.6.2l-.8-.8C6.4 3.6 7.2 3.5 8 3.5Z',
-  reset: 'M4 5.5A4.5 4.5 0 1 1 3.6 9H2.5a5.5 5.5 0 1 0 .6-4.3V2.5H2v4h4v-1H4Z',
-  alert: 'M8 2 1.5 13.5h13L8 2Zm-.5 4h1v4h-1V6Zm0 5h1v1.2h-1V11Z',
-  info: 'M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13Zm-.5 3h1v1h-1v-1Zm0 2.5h1v4.5h-1V7Z',
-  'check-circle':
-    'M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13Zm-1.2 9.2L4.2 8.1l.7-.7 1.9 1.9 4.3-4.3.7.7-5 5Z',
-  sun: 'M8 4.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm-.5-3h1v2h-1v-2Zm0 11h1v2h-1v-2Zm6-5h2v1h-2v-1Zm-11 0h2v1h-2v-1Zm9-3.7 1.4-1.4.7.7-1.4 1.4-.7-.7Zm-8.4 8.4 1.4-1.4.7.7-1.4 1.4-.7-.7Zm8.4 0 .7-.7 1.4 1.4-.7.7-1.4-1.4Zm-8.4-8.4.7-.7 1.4 1.4-.7.7-1.4-1.4Z',
-  moon: 'M9.8 2.2a5.8 5.8 0 1 0 4 9.9 5.5 5.5 0 0 1-4-9.9Z',
-  grid: 'M2 2h12v12H2V2Zm1 1v3h3V3H3Zm4 0v3h2V3H7Zm3 0v3h3V3h-3ZM3 7v2h3V7H3Zm4 0v2h2V7H7Zm3 0v2h3V7h-3ZM3 10v3h3v-3H3Zm4 0v3h2v-3H7Zm3 0v3h3v-3h-3Z',
-  sliders:
-    'M2 4h5v1H2V4Zm7 0h5v1H9V4ZM7 3h2v3H7V3Zm-5 4.5h3v1H2v-1Zm5 0h7v1H7v-1ZM5 6.5h2v3H5v-3ZM2 11h7v1H2v-1Zm9 0h3v1h-3v-1Zm-2-1h2v3H9v-3Z',
-  lock: 'M5 7V5a3 3 0 0 1 6 0v2h1.5v7h-9V7H5Zm1 0h4V5a2 2 0 1 0-4 0v2Z',
-  unlock: 'M5 7V5a3 3 0 0 1 5.8-1h-1a2 2 0 0 0-3.8.8V7h6.5v7h-9V7H5Z',
-  copy: 'M5 2h8v10h-2v2H3V4h2V2Zm1 1v1h5v7h1V3H6ZM4 5v8h6V5H4Z',
-  folder: 'M2 3h4.5l1.2 1.5H14v8.5H2V3Z',
-  file: 'M4 2h5.5L13 5.5V14H4V2Zm5 1v3h3l-3-3Z',
-  image:
-    'M2 3h12v10H2V3Zm1 1v6.2l2.8-2.8 2.4 2.4 2-2 2.8 2.8V4H3Zm2.5 1.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z',
-  video: 'M2 4h9v8H2V4Zm10 2.2 2.5-1.5v6.6L12 9.8V6.2Z',
-  box3d:
-    'M8 1.8 13.5 5v6L8 14.2 2.5 11V5L8 1.8Zm0 1.1L3.7 5.4 8 7.9l4.3-2.5L8 2.9Zm-4.5 3.4v4.1l4 2.3V8.6l-4-2.3Zm9 0-4 2.3v4.1l4-2.3V6.3Z',
-  audio: 'M3 6v4h2.5L9 13V3L5.5 6H3Zm8.5-1a4 4 0 0 1 0 6l-.7-.7a3 3 0 0 0 0-4.6l.7-.7Z',
-  doc: 'M3.5 2h6L13 5.5V14H3.5V2ZM5 7h6v1H5V7Zm0 2.5h6v1H5v-1Zm0 2.5h4v1H5v-1Z',
-  table: 'M2 3h12v10H2V3Zm1 3v2h4V6H3Zm5 0v2h5V6H8ZM3 9v3h4V9H3Zm5 0v3h5V9H8Z',
-  play: 'M4 3v10l9-5-9-5Z',
-  pause: 'M4 3h3v10H4V3Zm5 0h3v10H9V3Z',
-  'step-back': 'M4 3h1v10H4V3Zm8 0v10L6 8l6-5Z',
-  'step-forward': 'M11 3h1v10h-1V3ZM4 3l6 5-6 5V3Z',
-  'skip-start': 'M3 3h1.5v10H3V3Zm9.5 0v10L6 8l6.5-5Z',
-  'skip-end': 'M11.5 3H13v10h-1.5V3ZM3.5 3 10 8l-6.5 5V3Z',
-  'play-reverse': 'M12 3v10L3 8l9-5Z',
-  loop: 'M3.5 5h8V3l3 2.5-3 2.5V6h-7v3H3.5V5Zm9 6h-8v2L1.5 10.5 4.5 8v2h7V7h1v4Z',
-  volume:
-    'M2.5 6v4h2.5l3.5 3V3L5 6H2.5Zm8.5-1a4 4 0 0 1 0 6l-.7-.7a3 3 0 0 0 0-4.6l.7-.7Zm1.8-1.8a6.5 6.5 0 0 1 0 9.6l-.7-.7a5.5 5.5 0 0 0 0-8.2l.7-.7Z',
-  mute: 'M2.5 6v4h2.5l3.5 3V3L5 6H2.5Zm8-.5.7-.7L13 6.6l1.8-1.8.7.7L13.7 7.3l1.8 1.8-.7.7L13 8l-1.8 1.8-.7-.7 1.8-1.8-1.8-1.8Z',
-  ruler: 'M2 5h12v6H2V5Zm1 1v4h10V6h-2v2h-1V6H8v2H7V6H5v2H4V6H3Z',
-  crosshair:
-    'M7.5 1.5h1V4h-1V1.5Zm0 10.5h1v2.5h-1V12ZM1.5 7.5H4v1H1.5v-1Zm10.5 0h2.5v1H12v-1ZM8 5a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z',
-  pencil: 'M11.6 2.4 13.6 4.4 5.4 12.6 2.5 13.5 3.4 10.6 11.6 2.4Z',
-  lasso:
-    'M8 3c3.3 0 6 1.8 6 4s-2.7 4-6 4c-1 0-2-.2-2.8-.5L4 13.5l-.8-.5 1-2.8C2.9 9.5 2 8.3 2 7c0-2.2 2.7-4 6-4Z',
-  eraser: 'M7.5 3 13 8.5 8.5 13H4l-2-2L7.5 3Z',
-  laser: 'M2.5 12.5 10.5 4.5l1 1-8 8-1-1ZM11 2h1v2h-1V2Zm2.5 2.5h2v1h-2v-1Z',
-  rect: 'M2.5 3.5h11v9h-11v-9Zm1 1v7h9v-7h-9Z',
-  circle: 'M8 2.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Zm0 1a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9Z',
-  note: 'M3 2.5h10v9H6.5L3 14V2.5Zm2 3v1h6v-1H5Zm0 2.5v1h4v-1H5Z',
-  settings:
-    'M9.2 1.5h-2.4l-.4 1.7a4.9 4.9 0 0 0-1.2.7L3.6 3.2 2.2 4.6l.7 1.6a4.9 4.9 0 0 0-.4 1.2L1 7.8v2.4l1.5.4c.1.4.3.8.5 1.2l-.7 1.6 1.4 1.4 1.6-.7c.4.2.8.4 1.2.5l.4 1.4h2.4l.4-1.4c.4-.1.8-.3 1.2-.5l1.6.7 1.4-1.4-.7-1.6c.2-.4.4-.8.5-1.2l1.3-.4V7.8l-1.3-.4a4.9 4.9 0 0 0-.5-1.2l.7-1.6-1.4-1.4-1.6.7a4.9 4.9 0 0 0-1.2-.5l-.4-1.9ZM8 5.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5Z',
-  star: 'M8 1.8 9.8 5.6l4.2.6-3 3 .7 4.2L8 11.4l-3.7 2 .7-4.2-3-3 4.2-.6L8 1.8Zm0 2.1L6.9 6.2l-2.5.4 1.8 1.8-.4 2.5L8 9.7l2.2 1.2-.4-2.5 1.8-1.8-2.5-.4L8 3.9Z',
-  'star-filled': 'M8 1.8 9.8 5.6l4.2.6-3 3 .7 4.2L8 11.4l-3.7 2 .7-4.2-3-3 4.2-.6L8 1.8Z',
-  'folder-plus': 'M2 3h4.5l1.2 1.5H14v8.5H2V3Zm6.5 3v2H6.5v1h2v2h1v-2h2V8h-2V6h-1Z',
-  grip: 'M5 3h2v2H5V3Zm4 0h2v2H9V3ZM5 7h2v2H5V7Zm4 0h2v2H9V7Zm-4 4h2v2H5v-2Zm4 0h2v2H9v-2Z',
-  trash:
-    'M5.5 2h5l.7 1H14v1.2H2V3h2.8l.7-1ZM3.5 5h9l-.7 9H4.2l-.7-9Zm2.5 1.5v6h1v-6H6Zm3 0v6h1v-6H9Z',
-  refresh:
-    'M12.5 6.5A4.8 4.8 0 0 0 4 5.1V3H2.8v4.2H7V6H5a3.6 3.6 0 1 1-.3 4.2l-1 .7A4.8 4.8 0 1 0 12.5 6.5Z',
-  'external-link':
-    'M9 2h5v5h-1.2V4.1L7.4 9.5l-.9-.9L11.9 3.2H9V2ZM3 4h4v1.2H4.2v7.6h7.6V10H13v4H3V4Z',
-  'arrow-up': 'M8 2.5 3.5 7l.8.8L7.4 4.7V13.5h1.2V4.7l3.1 3.1.8-.8L8 2.5Z',
-  layers:
-    'M8 2 14 5.5 8 9 2 5.5 8 2ZM2.8 8.3 8 11.3l5.2-3 .8.7L8 12.5 2 9l.8-.7Zm0 2.8L8 14.1l5.2-3 .8.7L8 15.3 2 11.8l.8-.7Z',
-  maximize:
-    'M2.5 2.5h4.2v1.2H3.7v3H2.5V2.5Zm6.8 0h4.2v4.2h-1.2v-3h-3V2.5ZM2.5 9.3h1.2v3h3v1.2H2.5V9.3Zm9.8 0h1.2v4.2H9.3v-1.2h3v-3Z',
-  calendar:
-    'M4.5 1.5h1V3h5V1.5h1V3H14v11H2V3h2.5V1.5ZM3 6v7h10V6H3Zm1.5 1.5h2v2h-2v-2Zm3 0h2v2h-2v-2Zm3 0h1.5v2H10.5v-2Zm-6 3h2v2h-2v-2Zm3 0h2v2h-2v-2Z',
-  message:
-    'M2 2.5h12v8.5H6.5L3.5 13.5V11H2V2.5Zm1 1V10h1.5v1.4L6.1 10H13V3.5H3Zm2 2h6v1H5v-1Zm0 2h4v1H5v-1Z',
+interface IconPart {
+  d: string;
+  fill?: boolean;
+}
+
+const ICONS: Record<IconName, ReadonlyArray<IconPart>> = {
+  search: [{ d: 'M16.5 10.5a6 6 0 1 1-12 0a6 6 0 1 1 12 0Z' }, { d: 'M15 15l5 5' }],
+  grip: [{ d: 'M8.5 5.5h2v2h-2ZM13.5 5.5h2v2h-2ZM8.5 11h2v2h-2ZM13.5 11h2v2h-2ZM8.5 16.5h2v2h-2ZM13.5 16.5h2v2h-2Z', fill: true }],
+  close: [{ d: 'M6 6l12 12M18 6L6 18' }],
+  'chevron-down': [{ d: 'M6 9l6 6 6-6' }],
+  'chevron-right': [{ d: 'M9 6l6 6-6 6' }],
+  'chevron-up': [{ d: 'M6 15l6-6 6 6' }],
+  'chevron-left': [{ d: 'M15 6l-6 6 6 6' }],
+  check: [{ d: 'M5 12.5l4.5 4.5L19 7.5' }],
+  minus: [{ d: 'M5 12h14' }],
+  plus: [{ d: 'M12 5v14M5 12h14' }],
+  eye: [{ d: 'M2.5 12C5 7.5 8.3 5.5 12 5.5s7 2 9.5 6.5c-2.5 4.5-5.8 6.5-9.5 6.5S5 16.5 2.5 12Z' }, { d: 'M15 12a3 3 0 1 1-6 0a3 3 0 1 1 6 0Z' }],
+  'eye-off': [{ d: 'M2.5 12C5 7.5 8.3 5.5 12 5.5s7 2 9.5 6.5c-2.5 4.5-5.8 6.5-9.5 6.5S5 16.5 2.5 12Z' }, { d: 'M15 12a3 3 0 1 1-6 0a3 3 0 1 1 6 0Z' }, { d: 'M4 4l16 16' }],
+  reset: [{ d: 'M4 4.5v5h5' }, { d: 'M5.2 14.5a7.5 7.5 0 1 0 .8-6.5L4 9.5' }],
+  alert: [{ d: 'M12 3.5L21.5 20h-19Z' }, { d: 'M12 9.5v5' }, { d: 'M12 16.5v1.75' }],
+  info: [{ d: 'M21 12a9 9 0 1 1-18 0a9 9 0 1 1 18 0Z' }, { d: 'M12 10.5v6.5' }, { d: 'M12 7v1.75' }],
+  'check-circle': [{ d: 'M21 12a9 9 0 1 1-18 0a9 9 0 1 1 18 0Z' }, { d: 'M8 12.3l2.8 2.8L16.2 9.5' }],
+  sun: [{ d: 'M16 12a4 4 0 1 1-8 0a4 4 0 1 1 8 0Z' }, { d: 'M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8' }],
+  moon: [{ d: 'M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10Z' }],
+  grid: [{ d: 'M4 4h16v16H4ZM4 9.33h16M4 14.67h16M9.33 4v16M14.67 4v16' }],
+  sliders: [{ d: 'M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1' }, { d: 'M13 4h4v4h-4ZM7 10h4v4H7ZM15 16h4v4h-4Z' }],
+  lock: [{ d: 'M5 11h14v10H5Z' }, { d: 'M8 11V8a4 4 0 0 1 8 0v3' }],
+  unlock: [{ d: 'M5 11h14v10H5Z' }, { d: 'M8 11V8a4 4 0 0 1 7.7-1.5' }],
+  copy: [{ d: 'M8 8h12v12H8Z' }, { d: 'M16 8V4H4v12h4' }],
+  folder: [{ d: 'M3 5h6.5l2 2.5H21V19H3Z' }],
+  file: [{ d: 'M6 3h8l4 4v14H6Z' }, { d: 'M14 3v4h4' }],
+  image: [{ d: 'M3.5 5h17v14h-17Z' }, { d: 'M3.5 16l5-5 4 4 2.5-2.5 5.5 5.5' }, { d: 'M17 9a1.25 1.25 0 1 1-2.5 0a1.25 1.25 0 1 1 2.5 0Z' }],
+  video: [{ d: 'M3 6.5h12v11H3Z' }, { d: 'M15 10.5l6-3.5v10l-6-3.5' }],
+  box3d: [{ d: 'M12 3l8 4.5v9L12 21l-8-4.5v-9Z' }, { d: 'M4 7.5l8 4.5 8-4.5' }, { d: 'M12 12v9' }],
+  audio: [{ d: 'M4 9.5h3.5L12 5.5v13l-4.5-4H4Z' }, { d: 'M15.5 9a4 4 0 0 1 0 6' }, { d: 'M18 6.5a7.5 7.5 0 0 1 0 11' }],
+  doc: [{ d: 'M6 3h8l4 4v14H6Z' }, { d: 'M14 3v4h4' }, { d: 'M9 11.5h6M9 15h6M9 18.5h4' }],
+  table: [{ d: 'M3.5 5h17v14h-17ZM3.5 10h17M3.5 14.5h17M9.5 10v9' }],
+  play: [{ d: 'M7 4.5v15L19 12Z' }],
+  pause: [{ d: 'M7 5h3.5v14H7ZM13.5 5H17v14h-3.5Z' }],
+  'step-back': [{ d: 'M17 5.5v13L8.5 12Z' }, { d: 'M6.5 5v14' }],
+  'step-forward': [{ d: 'M7 5.5v13l8.5-6.5Z' }, { d: 'M17.5 5v14' }],
+  'skip-start': [{ d: 'M5.5 5v14' }, { d: 'M13 5.5v13L6.5 12Z' }, { d: 'M20 5.5v13L13.5 12Z' }],
+  'skip-end': [{ d: 'M18.5 5v14' }, { d: 'M11 5.5v13l6.5-6.5Z' }, { d: 'M4 5.5v13l6.5-6.5Z' }],
+  'play-reverse': [{ d: 'M17 4.5v15L5 12Z' }],
+  loop: [{ d: 'M4 11V7.5h14' }, { d: 'M15 4.5l3 3-3 3' }, { d: 'M20 13v3.5H6' }, { d: 'M9 13.5l-3 3 3 3' }],
+  volume: [{ d: 'M4 9.5h3.5L12 5.5v13l-4.5-4H4Z' }, { d: 'M15.5 9a4 4 0 0 1 0 6' }, { d: 'M18 6.5a7.5 7.5 0 0 1 0 11' }],
+  mute: [{ d: 'M4 9.5h3.5L12 5.5v13l-4.5-4H4Z' }, { d: 'M15.5 9.5l5 5M20.5 9.5l-5 5' }],
+  ruler: [{ d: 'M2.5 8h19v8h-19Z' }, { d: 'M6.5 8v3M10.5 8v4.5M14.5 8v3M18.5 8v4.5' }],
+  crosshair: [{ d: 'M19 12a7 7 0 1 1-14 0a7 7 0 1 1 14 0Z' }, { d: 'M12 2.5v5M12 16.5v5M2.5 12h5M16.5 12h5' }],
+  pencil: [{ d: 'M15.5 4.5l4 4L8.5 19.5 4 20l.5-4.5Z' }, { d: 'M13.5 6.5l4 4' }],
+  lasso: [{ d: 'M12 4.5c5 0 8.5 2.3 8.5 5.2s-3.5 5.3-8.5 5.3-8.5-2.3-8.5-5.3S7 4.5 12 4.5Z' }, { d: 'M6 13.5c-1.5 2-.5 4 1.5 4s2.5 2 1 3.5' }],
+  eraser: [{ d: 'M14 4.5l6 6-9 9H6.5l-3-3Z' }, { d: 'M9 9.5l6 6' }, { d: 'M11 19.5h9' }],
+  laser: [{ d: 'M4 20L15 9' }, { d: 'M17.5 2.5v3M21.5 6.5h-3M20 4l-2 2' }],
+  rect: [{ d: 'M4 6h16v12H4Z' }],
+  circle: [{ d: 'M20 12a8 8 0 1 1-16 0a8 8 0 1 1 16 0Z' }],
+  note: [{ d: 'M5 4h14v10l-6 6H5Z' }, { d: 'M13 20v-6h6' }],
+  settings: [{ d: 'M10.5 3h3l.6 2.4 1.8.8 2.2-1.3 2.1 2.1-1.3 2.2.8 1.8 2.3.5v3l-2.3.6-.8 1.8 1.3 2.2-2.1 2.1-2.2-1.3-1.8.8-.6 2.3h-3l-.6-2.3-1.8-.8-2.2 1.3-2.1-2.1 1.3-2.2-.8-1.8L3 13.5v-3l2.3-.6.8-1.8-1.3-2.2 2.1-2.1 2.2 1.3 1.8-.8Z' }, { d: 'M15 12a3 3 0 1 1-6 0a3 3 0 1 1 6 0Z' }],
+  star: [{ d: 'M12 3l2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.8l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8Z' }],
+  'star-filled': [{ d: 'M12 3l2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.8l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8Z', fill: true }, { d: 'M12 3l2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.8l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8Z' }],
+  'folder-plus': [{ d: 'M3 5h6.5l2 2.5H21V19H3Z' }, { d: 'M12 10.5v6M9 13.5h6' }],
+  trash: [{ d: 'M4 6.5h16' }, { d: 'M9 6.5V4h6v2.5' }, { d: 'M6 6.5l1 14h10l1-14' }, { d: 'M10 10.5v6M14 10.5v6' }],
+  refresh: [{ d: 'M19.5 12a7.5 7.5 0 1 1-2.2-5.3' }, { d: 'M20 4v5h-5' }],
+  'external-link': [{ d: 'M13 4h7v7' }, { d: 'M20 4l-9 9' }, { d: 'M18 14v6H4V6h6' }],
+  'arrow-up': [{ d: 'M12 20V4.5' }, { d: 'M5.5 11L12 4.5 18.5 11' }],
+  layers: [{ d: 'M12 3.5l9 4.5-9 4.5L3 8Z' }, { d: 'M3 12l9 4.5 9-4.5' }, { d: 'M3 16l9 4.5 9-4.5' }],
+  maximize: [{ d: 'M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5' }],
+  calendar: [{ d: 'M3.5 5.5h17v15h-17Z' }, { d: 'M3.5 10h17' }, { d: 'M8 3v5M16 3v5' }],
+  message: [{ d: 'M3.5 4.5h17v12H10l-4.5 4v-4h-2Z' }, { d: 'M8 9h8M8 12.5h5' }],
+  'x-circle': [{ d: 'M21 12a9 9 0 1 1-18 0a9 9 0 1 1 18 0Z' }, { d: 'M9 9l6 6M15 9l-6 6' }],
+  send: [{ d: 'M3 11.5L21 3l-6.5 18-3-7.5Z' }, { d: 'M11.5 13.5L21 3' }],
+  comment: [{ d: 'M3.5 4.5h17v12H10l-4.5 4v-4h-2Z' }, { d: 'M8 9h8M8 12.5h5' }],
+  redo: [{ d: 'M15 5l5 4.5-5 4.5' }, { d: 'M20 9.5H9.5a5.5 5.5 0 0 0 0 11H13' }],
+  paperclip: [{ d: 'M19 11.5l-7.3 7.3a4.5 4.5 0 0 1-6.4-6.4l8-8a3 3 0 0 1 4.2 4.2l-7.8 7.8a1.5 1.5 0 0 1-2.1-2.1l7-7' }],
+  user: [{ d: 'M16 8a4 4 0 1 1-8 0a4 4 0 1 1 8 0Z' }, { d: 'M4 20.5c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5' }],
+  users: [{ d: 'M13 8.5a3.5 3.5 0 1 1-7 0a3.5 3.5 0 1 1 7 0Z' }, { d: 'M2.5 20c0-3.6 3-5.5 7-5.5s7 1.9 7 5.5' }, { d: 'M15 5.2a3.5 3.5 0 0 1 0 6.6' }, { d: 'M18 14.8c2.2.6 3.5 2.4 3.5 5.2' }],
+  bell: [{ d: 'M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15Z' }, { d: 'M10 21h4' }],
+  flag: [{ d: 'M5 21V3.5' }, { d: 'M5 4.5h12.5L15 9l2.5 4.5H5' }],
+  clock: [{ d: 'M20.5 12a8.5 8.5 0 1 1-17 0a8.5 8.5 0 1 1 17 0Z' }, { d: 'M12 7v5.5l3.5 2' }],
+  edit: [{ d: 'M15.5 4.5l4 4L8.5 19.5 4 20l.5-4.5Z' }, { d: 'M13.5 6.5l4 4' }, { d: 'M13 20h7' }],
+  'log-out': [{ d: 'M10 4H4v16h6' }, { d: 'M15 7.5l4.5 4.5-4.5 4.5' }, { d: 'M19.5 12H9' }],
+  film: [{ d: 'M3.5 4h17v16h-17Z' }, { d: 'M7.5 4v16M16.5 4v16' }, { d: 'M3.5 8h4M3.5 12h4M3.5 16h4M16.5 8h4M16.5 12h4M16.5 16h4' }],
+  mail: [{ d: 'M3 5.5h18v13H3Z' }, { d: 'M3 6l9 7 9-7' }],
 };
 
 export function Icon({ name, size = 'md', className, label }: IconProps) {
+  const parts = ICONS[name] ?? [];
   return (
     <svg
+      data-ui="icon"
+      data-icon={name}
       className={cn('org-icon', `org-icon--${size}`, className)}
-      viewBox="0 0 16 16"
-      fill="currentColor"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="square"
+      strokeLinejoin="miter"
+      strokeMiterlimit={2}
       aria-hidden={label ? undefined : true}
       aria-label={label}
       role={label ? 'img' : undefined}
     >
-      <path d={PATHS[name]} />
+      {parts.map((p, i) =>
+        p.fill ? (
+          <path key={i} d={p.d} fill="currentColor" stroke="none" />
+        ) : (
+          <path key={i} d={p.d} />
+        ),
+      )}
     </svg>
   );
 }

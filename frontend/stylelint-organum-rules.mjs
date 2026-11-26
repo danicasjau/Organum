@@ -56,11 +56,19 @@ const rawPxRule = stylelint.createPlugin('organum/no-raw-px', () => {
 
 const noTransitionsRule = stylelint.createPlugin('organum/no-transitions', () => {
   const messages = ruleMessages('organum/no-transitions', {
-    rejected: 'Transitions are forbidden (only transition: none is allowed)',
+    rejected: 'Transition timings must come from --motion-* tokens (no raw durations or easings)',
   });
   return (root, result) => {
     root.walkDecls(/^transition/, (decl) => {
-      if (decl.prop === 'transition' && decl.value.trim() === 'none') return;
+      const val = decl.value.trim();
+      if (decl.prop === 'transition' && val === 'none') return;
+      if (decl.prop === 'transition-property') return;
+      // v1: motion is allowed, but only through tokens so reduced-motion can zero it.
+      const usesToken = /var\(--motion-[a-z0-9-]+\)/.test(val);
+      const rawTiming = /(?<![\w-])\d*\.?\d+m?s\b|cubic-bezier|steps\(|\bease\b|ease-(in|out|in-out)\b|\blinear\b/.test(
+        val.replace(/var\(--motion-[a-z0-9-]+\)/g, ''),
+      );
+      if (usesToken && !rawTiming) return;
       report({
         message: messages.rejected,
         node: decl,
@@ -96,11 +104,9 @@ const noDisallowedShadowsRule = stylelint.createPlugin('organum/no-disallowed-sh
       }
       if (decl.prop === 'box-shadow') {
         const val = decl.value.trim();
-        if (
-          val !== 'none' &&
-          !val.startsWith('var(--shadow-popup)') &&
-          !val.startsWith('var(--bevel-')
-        ) {
+        // v1: shadows must be built from tokens (recipes --sh-*, --elev-*, legacy
+        // --bevel-* / --shadow-*); raw colours and px are caught by the other rules.
+        if (val !== 'none' && !/var\(--/.test(val)) {
           report({
             message: messages.rejected(val),
             node: decl,

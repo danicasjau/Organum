@@ -8727,6 +8727,141 @@
         }
       }
     },
+    "/api/v1/projects/{project_uuid}/calendar": {
+      "get": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "Calendar Data",
+        "operationId": "calendar_data_api_v1_projects__project_uuid__calendar_get",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/exports/settings": {
+      "get": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "Export Settings",
+        "operationId": "export_settings_api_v1_projects__project_uuid__exports_settings_get",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportSettingsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/exports/xlsx": {
+      "post": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "Export Xlsx",
+        "description": "Render exactly the rows the browser shows (already filtered) as a styled workbook.",
+        "operationId": "export_xlsx_api_v1_projects__project_uuid__exports_xlsx_post",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportXlsxIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_uuid}/tasks/{task_id}/product": {
       "get": {
         "tags": [
@@ -11603,6 +11738,317 @@
           "bootstrap_allowed"
         ],
         "title": "BootstrapInfoOut"
+      },
+      "CalendarCompanyOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "color": {
+            "type": "string",
+            "title": "Color"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "color"
+        ],
+        "title": "CalendarCompanyOut"
+      },
+      "CalendarDepartmentOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "short_code": {
+            "type": "string",
+            "title": "Short Code"
+          },
+          "color": {
+            "type": "string",
+            "title": "Color"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "short_code",
+          "color"
+        ],
+        "title": "CalendarDepartmentOut"
+      },
+      "CalendarOut": {
+        "properties": {
+          "working_days": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Working Days"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/CalendarTaskOut"
+            },
+            "type": "array",
+            "title": "Tasks"
+          },
+          "departments": {
+            "items": {
+              "$ref": "#/components/schemas/CalendarDepartmentOut"
+            },
+            "type": "array",
+            "title": "Departments"
+          },
+          "companies": {
+            "items": {
+              "$ref": "#/components/schemas/CalendarCompanyOut"
+            },
+            "type": "array",
+            "title": "Companies"
+          },
+          "users": {
+            "items": {
+              "$ref": "#/components/schemas/CalendarUserOut"
+            },
+            "type": "array",
+            "title": "Users"
+          },
+          "schedules": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CalendarScheduleOut"
+            },
+            "type": "object",
+            "title": "Schedules"
+          },
+          "activations": {
+            "items": {
+              "$ref": "#/components/schemas/ActivationPeriodOut"
+            },
+            "type": "array",
+            "title": "Activations"
+          },
+          "milestones": {
+            "items": {
+              "$ref": "#/components/schemas/MilestoneOut"
+            },
+            "type": "array",
+            "title": "Milestones"
+          },
+          "can_edit_schedule": {
+            "type": "boolean",
+            "title": "Can Edit Schedule",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "working_days"
+        ],
+        "title": "CalendarOut"
+      },
+      "CalendarScheduleOut": {
+        "properties": {
+          "weekly": {
+            "additionalProperties": {
+              "items": {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Weekly"
+          },
+          "exceptions": {
+            "additionalProperties": {
+              "items": {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Exceptions"
+          }
+        },
+        "type": "object",
+        "title": "CalendarScheduleOut",
+        "description": "Weekly intervals per ISO weekday (\"1\"..\"7\") and dated exceptions, in minutes."
+      },
+      "CalendarTaskOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "priority": {
+            "type": "string",
+            "title": "Priority"
+          },
+          "entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Entity Id"
+          },
+          "entity_name": {
+            "type": "string",
+            "title": "Entity Name"
+          },
+          "entity_path": {
+            "type": "string",
+            "title": "Entity Path"
+          },
+          "entity_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Type"
+          },
+          "department_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Department Id"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          },
+          "finish": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finish"
+          },
+          "assignments": {
+            "items": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Assignments"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "name",
+          "status",
+          "priority",
+          "entity_id",
+          "entity_name",
+          "entity_path",
+          "department_id"
+        ],
+        "title": "CalendarTaskOut"
+      },
+      "CalendarUserOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "role_name": {
+            "type": "string",
+            "title": "Role Name"
+          },
+          "role_label": {
+            "type": "string",
+            "title": "Role Label"
+          },
+          "company_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Id"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "full_name",
+          "role_name",
+          "role_label"
+        ],
+        "title": "CalendarUserOut"
       },
       "CapacityPermissionsOut": {
         "properties": {
@@ -15232,6 +15678,149 @@
         "type": "object",
         "title": "EntityUpdateRequest"
       },
+      "ExportColumnIn": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Key"
+          },
+          "header": {
+            "type": "string",
+            "maxLength": 256,
+            "title": "Header"
+          },
+          "group": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "text",
+              "number",
+              "integer",
+              "date",
+              "status",
+              "priority",
+              "boolean",
+              "color"
+            ],
+            "title": "Kind",
+            "default": "text"
+          },
+          "width": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 120.0,
+                "minimum": 4.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Width"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "header"
+        ],
+        "title": "ExportColumnIn"
+      },
+      "ExportSettingsOut": {
+        "properties": {
+          "styled_exports": {
+            "type": "boolean",
+            "title": "Styled Exports",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "ExportSettingsOut"
+      },
+      "ExportSheetIn": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "columns": {
+            "items": {
+              "$ref": "#/components/schemas/ExportColumnIn"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Columns"
+          },
+          "rows": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "maxItems": 200000,
+            "title": "Rows"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "columns"
+        ],
+        "title": "ExportSheetIn"
+      },
+      "ExportXlsxIn": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "filename": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Filename"
+          },
+          "sheets": {
+            "items": {
+              "$ref": "#/components/schemas/ExportSheetIn"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Sheets"
+          },
+          "styled": {
+            "type": "boolean",
+            "title": "Styled",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "filename",
+          "sheets"
+        ],
+        "title": "ExportXlsxIn"
+      },
       "FilePatchRequest": {
         "properties": {
           "colorspace_override": {
@@ -16438,6 +17027,11 @@
           "link_dependency_depth": {
             "type": "integer",
             "title": "Link Dependency Depth"
+          },
+          "styled_exports": {
+            "type": "boolean",
+            "title": "Styled Exports",
+            "default": true
           }
         },
         "type": "object",
@@ -16568,6 +17162,17 @@
               }
             ],
             "title": "Link Dependency Depth"
+          },
+          "styled_exports": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Styled Exports"
           }
         },
         "type": "object",

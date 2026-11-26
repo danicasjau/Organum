@@ -7,15 +7,15 @@ import { TextField } from '../TextField/TextField';
 import './ColorPicker.css';
 
 export const TOKEN_PALETTE: ReadonlyArray<{ label: string; value: string }> = [
-  { label: 'Purple', value: '#8B5CF6' },
-  { label: 'Green', value: '#10B981' },
-  { label: 'Sky', value: '#38BDF8' },
-  { label: 'Amber', value: '#F59E0B' },
-  { label: 'Red', value: '#EF4444' },
-  { label: 'Lavender', value: '#C4B5FD' },
-  { label: 'Slate Light', value: '#E2E8F0' },
-  { label: 'Slate Dark', value: '#0F172A' },
-];
+  { label: 'Production', value: '#5B93C7' },
+  { label: 'Management', value: '#D98A4E' },
+  { label: 'Approved', value: '#5FB36B' },
+  { label: 'WIP', value: '#E0B341' },
+  { label: 'Rejected', value: '#D95B5B' },
+  { label: 'Rigging', value: '#9B86C4' },
+  { label: 'Paper', value: '#ECE8E1' },
+  { label: 'Canvas', value: '#1A1A1A' },
+]
 
 export interface ColorSwatchProps {
   color: string;

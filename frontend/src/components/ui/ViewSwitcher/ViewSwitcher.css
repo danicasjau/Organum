@@ -1,55 +1,75 @@
 @layer components {
+  /* ViewSwitcher: one RAISED plate, flat keys split by hairline grooves,
+     active key PRESSED with a zone-accent underline. */
   .org-viewswitch {
     display: inline-flex;
     align-items: stretch;
     height: var(--viewswitch-h);
-    border: 1px solid var(--border-dark);
-    border-radius: var(--radius-1);
-    background: var(--surface-field);
-    overflow: hidden;
+    padding: var(--space-half);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-raised);
+    box-shadow: var(--sh-raised);
   }
 
   .org-viewswitch__tab {
+    position: relative;
     display: inline-flex;
     align-items: center;
-    gap: var(--space-1);
+    gap: var(--space-6px);
     min-width: var(--min-hit);
     padding: 0 var(--space-4);
-    border: 0;
-    border-right: 1px solid var(--border-dark);
-    background: var(--bevel-raised-bg);
-    color: var(--text-muted);
+    border: 1px solid transparent;
+    border-radius: var(--radius-xs);
+    background: transparent;
+    color: var(--text-dim);
     font-family: var(--font-ui);
     font-size: var(--font-size);
-    font-weight: 600;
+    font-weight: 500;
     cursor: pointer;
     white-space: nowrap;
+    transition: background-color var(--motion-fast);
   }
 
-  .org-viewswitch__tab:last-child {
-    border-right: 0;
+  .org-viewswitch__tab + .org-viewswitch__tab::before {
+    content: '';
+    position: absolute;
+    left: calc(-1 * var(--border-w));
+    top: var(--space-1);
+    bottom: var(--space-1);
+    border-left: 1px solid var(--groove-dark);
+    box-shadow: 1px 0 0 var(--groove-light);
+  }
+
+  .org-viewswitch__tab[data-active='true']::before,
+  .org-viewswitch__tab[data-active='true'] + .org-viewswitch__tab::before {
+    display: none;
   }
 
   .org-viewswitch__tab:hover:not(:disabled) {
-    background: var(--bevel-hover-bg);
+    background: var(--hover);
     color: var(--text);
   }
 
-  .org-viewswitch__tab[data-active='true'] {
-    background: var(--surface-window);
-    box-shadow: var(--bevel-inset-pressed);
-    color: var(--accent-text);
+  .org-viewswitch__tab[data-active='true'],
+  .org-viewswitch__tab[data-active='true']:hover:not(:disabled) {
+    background: var(--bg-input);
+    border-color: var(--groove-dark);
+    box-shadow:
+      inset 0 calc(-1 * var(--border-w-strong)) 0 var(--zone-accent),
+      var(--sh-pressed);
+    color: var(--text);
+    transform: translateY(var(--press-y));
   }
 
   .org-viewswitch__tab:disabled {
-    opacity: 0.45;
+    color: var(--text-off);
     cursor: not-allowed;
   }
 
   .org-viewswitch__count {
     font-family: var(--font-mono);
-    font-size: var(--font-size-sm);
-    color: var(--text-muted);
+    font-size: var(--font-size-label);
+    color: var(--text-dim);
   }
 }
-

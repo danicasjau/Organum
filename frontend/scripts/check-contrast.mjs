@@ -100,6 +100,20 @@ const checks = [
   ['--avatar-fg', '--avatar-hue-2', 4.5, 'avatar hue 2'],
   ['--avatar-fg', '--avatar-hue-3', 4.5, 'avatar hue 3'],
   ['--avatar-fg', '--avatar-hue-4', 4.5, 'avatar hue 4'],
+  ['--avatar-fg', '--avatar-hue-5', 4.5, 'avatar hue 5'],
+  ['--avatar-fg', '--avatar-hue-6', 4.5, 'avatar hue 6'],
+  ['--avatar-fg', '--avatar-hue-7', 4.5, 'avatar hue 7'],
+  // v1 additions
+  ['--text', '--bg-raised-top', 4.5, 'text on raised face'],
+  ['--text', '--selected', 4.5, 'text on selected row'],
+  ['--text-dim', '--bg-input', 4.5, 'dim text in input well'],
+  ['--text-dim', '--bg-raised-bottom', 4.5, 'dim text on raised face'],
+  ['--text-production', '--bg-panel', 4.5, 'production text on panel'],
+  ['--text-wip', '--bg-panel', 4.5, 'WIP text on panel'],
+  ['--text-review', '--bg-panel', 4.5, 'review text on panel'],
+  ['--text-idle', '--bg-panel', 4.5, 'idle text on panel'],
+  ['--zone-focus', '--bg-input', 3.0, 'focus ring on input well'],
+  ['--zone-focus', '--bg-app', 3.0, 'focus ring on app'],
 ];
 
 let failed = false;

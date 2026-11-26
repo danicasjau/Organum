@@ -1,36 +1,56 @@
 @layer components {
+  /* Tooltip: dark plate, 3px radius, tiny arrow */
   .org-tooltip {
     z-index: var(--z-tooltip);
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
     padding: var(--space-1) var(--space-2);
-    border: 1px solid var(--border-dark);
-    border-radius: var(--radius-0);
-    background: var(--surface-window);
-    box-shadow: var(--shadow-popup);
-    color: var(--text);
-    font-size: var(--font-size);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--tooltip-bg);
+    box-shadow: var(--elev-2);
+    color: var(--white);
+    font-size: var(--font-size-sm);
   }
 
+  .org-tooltip__arrow {
+    fill: var(--tooltip-bg);
+  }
+
+  /* Popover: L5 */
   .org-popover {
     z-index: var(--z-popover);
     min-width: var(--popover-min-w);
     padding: var(--space-3);
-    border: 1px solid var(--border-dark);
-    border-radius: var(--radius-0);
-    background: var(--surface-window);
-    box-shadow: var(--shadow-popup);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-raised);
+    box-shadow: var(--elev-5);
     color: var(--text);
+    transform-origin: var(--radix-popover-content-transform-origin);
+    animation: org-pop-in var(--motion-popover);
+  }
+
+  @keyframes org-pop-in {
+    from {
+      opacity: 0;
+      transform: translateY(calc(-1 * var(--space-1)));
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
   }
 
   .org-dialog__overlay {
     position: fixed;
     inset: 0;
     z-index: var(--z-dialog);
-    background: var(--accent-soft);
+    background: var(--scrim);
   }
 
+  /* Dialog: L4 modal */
   .org-dialog {
     position: fixed;
     top: 50%;
@@ -39,10 +59,11 @@
     z-index: var(--z-dialog);
     min-width: var(--dialog-min-w);
     max-width: var(--dialog-max-w);
-    border: 1px solid var(--border-dark);
-    border-radius: var(--radius-0);
-    background: var(--surface-panel);
-    box-shadow: var(--shadow-popup);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background-color: var(--bg-panel);
+    background-image: var(--grain);
+    box-shadow: var(--elev-4);
     color: var(--text);
   }
 
@@ -54,27 +75,30 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: var(--panel-title-h);
-    padding: 0 var(--space-2) 0 var(--space-3);
-    border-bottom: 1px solid var(--border-dark);
-    background: var(--surface-window);
+    min-height: var(--toolbar-h);
+    padding: 0 var(--space-3) 0 var(--panel-pad);
+    border-bottom: 1px solid var(--groove-dark);
+    box-shadow: var(--sh-groove);
   }
 
   .org-dialog__title {
     margin: 0;
-    font-size: var(--font-size);
+    font-size: var(--font-size-label);
     font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--label-tracking);
+    color: var(--text-dim);
+    text-shadow: 0 1px 0 var(--groove-light);
   }
 
   .org-dialog__body {
-    padding: var(--space-4);
+    padding: var(--panel-pad);
   }
 
   .org-dialog__footer {
     display: flex;
     justify-content: flex-end;
-    gap: var(--space-3);
-    padding: 0 var(--space-4) var(--space-4);
+    gap: var(--space-2);
+    padding: 0 var(--panel-pad) var(--panel-pad);
   }
 }
-

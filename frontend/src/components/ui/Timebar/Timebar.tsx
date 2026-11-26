@@ -1,3 +1,4 @@
+import { readCssToken } from '../Theme/readCssToken';
 import { useEffect, useMemo, useRef, useState, type PointerEvent, type WheelEvent } from 'react';
 import { useCssVarRef } from '../_internal/useCssVar';
 import { Badge } from '../Badge/Badge';
@@ -294,14 +295,14 @@ export function AudioWaveformStrip({
     if (!ctx) return;
     ctx.clearRect(0, 0, w, h);
     const mid = h / 2;
-    ctx.strokeStyle = 'rgba(148, 163, 184, 0.35)';
+    ctx.strokeStyle = readCssToken('--grid-line-strong', 'rgba(128, 128, 128, 0.35)', cv);
     ctx.beginPath();
     ctx.moveTo(0, mid);
     ctx.lineTo(w, mid);
     ctx.stroke();
 
     if (peaks.length === 0) return;
-    ctx.fillStyle = '#10B981';
+    ctx.fillStyle = readCssToken('--st-approved', 'rgb(95, 179, 107)', cv);
     for (let x = 0; x < w; x++) {
       const idx = Math.min(peaks.length - 1, Math.floor((x / w) * peaks.length));
       const [lo, hi] = peaks[idx] ?? [0, 0];

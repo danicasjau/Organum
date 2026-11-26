@@ -16,7 +16,8 @@
 
   .org-inline-edit__display:hover:not(:disabled),
   .org-inline-edit__display:focus-visible {
-    border-color: var(--border-control);
+    border-color: var(--border);
+    background: var(--hover);
   }
 
   .org-inline-edit__display:focus-visible {
@@ -42,16 +43,18 @@
     height: var(--ctl-h);
     min-width: 0;
     padding: 0 var(--space-1);
-    border: var(--border-w) solid var(--accent);
-    border-radius: var(--radius-1);
-    background: var(--surface-field);
-    box-shadow: var(--bevel-inset-pressed);
+    border: var(--border-w) solid var(--groove-dark);
+    border-radius: var(--radius-well);
+    background: var(--bg-input);
+    box-shadow: var(--sh-inset);
+    outline: var(--focus-w) solid var(--focus-ring);
+    outline-offset: var(--focus-offset);
     color: var(--text);
     font: inherit;
   }
 
   .org-inline-edit[data-error='true'] .org-inline-edit__input {
-    border: var(--border-w-strong) dashed var(--red-500);
+    border: var(--border-w-strong) dashed var(--st-rejected);
   }
 
   .org-inline-edit__err {

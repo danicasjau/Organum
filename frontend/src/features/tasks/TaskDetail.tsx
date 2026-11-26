@@ -24,8 +24,12 @@ import {
   TextArea,
   TextField,
   ReviewCard,
+  ReviewPanel,
+  toPriorityLevel,
   UserPicker,
   useToast,
+  type PriorityLevel,
+  type ReviewThreadItem,
   type UserPickerOption,
 } from '../../components/ui';
 import {
@@ -67,6 +71,13 @@ function isHiddenAdminTransition(opt: TransitionOptionOut): boolean {
   if (opt.acted_as !== 'role:admin') return false;
   const action = opt.action.toLowerCase();
   return action.startsWith('start') || action.startsWith('hold');
+}
+
+function formatFeedTime(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
 function SectionBlock({
@@ -198,6 +209,7 @@ export function TaskDetail({
   const [depThreshold, setDepThreshold] = useState<'APP' | 'PUBLISHED' | 'ANY_STATUS'>('APP');
   const [commentDraft, setCommentDraft] = useState('');
   const [commentClientVis, setCommentClientVis] = useState(false);
+  const [reviewBusy, setReviewBusy] = useState(false);
   const [savedNotice, setSavedNotice] = useState(false);
   const [conflictMsg, setConflictMsg] = useState<string | null>(null);
   const [pendingTransition, setPendingTransition] = useState<TransitionOptionOut | null>(null);
@@ -328,16 +340,12 @@ export function TaskDetail({
     }
   };
 
-  const handlePostComment = async () => {
+  const handlePostComment = async (kind: 'note' | 'review' = 'note') => {
     const body = commentDraft.trim();
     if (!body) return;
     try {
       const visibility = isClientRole || commentClientVis ? 'client' : 'internal';
-      await apiClient.createTaskComment(
-        taskId,
-        { body, kind: 'note', visibility },
-        activeProjectUuid,
-      );
+      await apiClient.createTaskComment(taskId, { body, kind, visibility }, activeProjectUuid);
       setCommentDraft('');
       await invalidateTask();
       flashSaved();
@@ -468,7 +476,7 @@ export function TaskDetail({
                     size="sm"
                     variant="primary"
                     disabled={!commentDraft.trim()}
-                    onClick={() => void handlePostComment()}
+                    onClick={() => void handlePostComment('note')}
                   >
                     Post Client Comment
                   </Button>
@@ -573,6 +581,100 @@ export function TaskDetail({
         : null,
     currentUserId: auth?.user.id ?? null,
     unreadAfter: seenBaseline?.taskId === full.id ? seenBaseline.at : undefined,
+  });
+
+  // ---- v1 review panel wiring (real task actions) ----
+  const latestVersionLabel = versions.length > 0 ? (versions[versions.length - 1]?.label ?? null) : null;
+  const artistId = assignForRole('artist')[0];
+  const artistUser = artistId ? userById.get(artistId) : undefined;
+  const submitter = artistUser
+    ? {
+        username: artistUser.username,
+        fullName: artistUser.full_name,
+        avatarUrl: artistUser.avatar_file
+          ? apiClient.userAvatarUrl(artistUser.id, activeProjectUuid)
+          : null,
+      }
+    : null;
+  const findTransition = (pred: (o: TransitionOptionOut) => boolean) =>
+    visibleTransitions.find(pred) ?? null;
+  const isRejectAction = (o: TransitionOptionOut) => /reject/i.test(o.action);
+  const approveOpt = findTransition((o) => o.to === 'APP');
+  const rejectOpt = findTransition((o) => isRejectAction(o));
+  const changesOpt = findTransition((o) => o.to === 'RTK' && !isRejectAction(o));
+  const holdOpt = findTransition((o) => o.to === 'HLD');
+  const reviewAction = (opt: TransitionOptionOut | null) =>
+    opt
+      ? {
+          title: opt.action,
+          onClick: () => {
+            const note = commentDraft.trim();
+            // A note in the panel satisfies a required comment; versions still go through the dialog.
+            if (opt.requires_comment && !opt.requires_version && note) {
+              void executeTransition(opt, { comment: note }).then(() => setCommentDraft(''));
+            } else {
+              handleTransitionClick(opt);
+            }
+          },
+        }
+      : { disabled: true, title: 'Not available for this task right now' };
+  const handleMarkViewed = () => {
+    const latest = feed.length > 0 ? feed[feed.length - 1]!.at : new Date().toISOString();
+    markSeen(full.id, latest);
+    setSeenBaseline({ taskId: full.id, at: latest });
+    toast.push('success', 'Marked as viewed');
+  };
+  const handleAttach = async (files: File[]) => {
+    setReviewBusy(true);
+    try {
+      const ver = await apiClient.publishUploads(
+        taskId,
+        files,
+        commentDraft.trim(),
+        null,
+        activeProjectUuid,
+      );
+      toast.push('success', `Attached as ${ver.label}`);
+      setCommentDraft('');
+      await invalidateTask();
+    } catch (err) {
+      toast.push('danger', err instanceof Error ? err.message : 'Attach failed');
+    } finally {
+      setReviewBusy(false);
+    }
+  };
+  const reviewThread: ReviewThreadItem[] = feed.map((item) => {
+    const isReview = item.key.startsWith('rev:') || item.title.startsWith('Review');
+    const tag: ReviewThreadItem['tag'] = isReview
+      ? item.tone === 'danger' || item.tone === 'warning'
+        ? 'changes'
+        : 'sent'
+      : 'comment';
+    return {
+      key: item.key,
+      author: item.author,
+      role: item.authorLabel,
+      time: formatFeedTime(item.at),
+      tag,
+      unread: item.unread,
+      body: item.body ? <CommentBody body={item.body} /> : undefined,
+      extra:
+        item.chips.length > 0 || item.fileId ? (
+          <div className="org-tdet__thread-extra">
+            {item.chips.map((c) => (
+              <Badge key={c.label} tone={c.tone ?? 'neutral'}>
+                {c.label}
+              </Badge>
+            ))}
+            {item.fileId && (
+              <Button size="sm" onClick={() => handleOpenViewer(item.fileId, item.frame)}>
+                Open in viewer
+                {item.frame !== null && item.frame !== undefined ? ` · F${item.frame}` : ''}
+              </Button>
+            )}
+          </div>
+        ) : undefined,
+    };
   });
 
   return (
@@ -1313,82 +1415,47 @@ export function TaskDetail({
             </SectionBlock>
 
             <SectionBlock title="Reviews" badge={String(feed.length)}>
-              <Stack gap="2">
-                {feed.length === 0 ? (
-                  <Text size="sm" variant="muted">
-                    No reviews or comments yet.
-                  </Text>
-                ) : (
-                  feed.map((item) => (
-                    <ReviewCard
-                      key={item.key}
-                      title={item.title}
-                      tone={item.tone}
-                      tag={item.tag}
-                      author={item.author}
-                      authorLabel={item.authorLabel}
-                      at={item.at}
-                      taskLabel={full.task_code}
-                      chips={item.chips}
-                      unread={item.unread}
-                      imageUrl={
-                        item.fileId
-                          ? apiClient.fileThumbnailUrl(item.fileId, activeProjectUuid)
-                          : null
-                      }
-                      imageAlt="Painted review"
-                      onImageClick={
-                        item.fileId ? () => handleOpenViewer(item.fileId, item.frame) : undefined
-                      }
-                      body={item.body ? <CommentBody body={item.body} /> : undefined}
-                      actions={
-                        item.fileId ? (
-                          <Button
-                            size="sm"
-                            onClick={() => handleOpenViewer(item.fileId, item.frame)}
-                          >
-                            Open in viewer
-                            {item.frame !== null && item.frame !== undefined
-                              ? ` · F${item.frame}`
-                              : ''}
-                          </Button>
-                        ) : undefined
-                      }
+              <ReviewPanel
+                title={full.task_code}
+                subtitle={full.task_name}
+                status={full.status}
+                priority={toPriorityLevel(full.priority)}
+                dueDate={formatDisplayDate(full.ideal_finish_date) || null}
+                version={latestVersionLabel}
+                submitter={submitter}
+                onPriorityChange={
+                  canEditFields
+                    ? (p: PriorityLevel) =>
+                        void patchWithConflict({ priority: p === 'critical' ? 'stopper' : p })
+                    : undefined
+                }
+                priorityLevels={['normal', 'high', 'critical']}
+                thread={reviewThread}
+                emptyThreadText="No reviews or comments yet."
+                notes={commentDraft}
+                onNotesChange={setCommentDraft}
+                notesPlaceholder="Write a note for the artist... (use @username to reference)"
+                notesAriaLabel="New task comment"
+                notesExtra={
+                  canShareClient ? (
+                    <Checkbox
+                      label="Visible to client"
+                      checked={commentClientVis}
+                      onChange={setCommentClientVis}
                     />
-                  ))
-                )}
-
-                {canComment && (
-                  <Stack gap="1">
-                    <TextArea
-                      aria-label="New task comment"
-                      rows={3}
-                      placeholder="Write a review comment (use @username to reference)..."
-                      value={commentDraft}
-                      onChange={(e) => setCommentDraft(e.target.value)}
-                    />
-                    <div className="org-tdet__cmt-foot">
-                      {canShareClient ? (
-                        <Checkbox
-                          label="Visible to client"
-                          checked={commentClientVis}
-                          onChange={setCommentClientVis}
-                        />
-                      ) : (
-                        <span />
-                      )}
-                      <Button
-                        size="sm"
-                        variant="primary"
-                        disabled={!commentDraft.trim()}
-                        onClick={() => void handlePostComment()}
-                      >
-                        Post Comment
-                      </Button>
-                    </div>
-                  </Stack>
-                )}
-              </Stack>
+                  ) : undefined
+                }
+                readOnly={!canComment}
+                busy={reviewBusy}
+                onSend={() => void handlePostComment('review')}
+                onComment={() => void handlePostComment('note')}
+                onAttach={(files) => void handleAttach(files)}
+                onMarkViewed={handleMarkViewed}
+                approve={reviewAction(approveOpt)}
+                requestChanges={reviewAction(changesOpt)}
+                reject={reviewAction(rejectOpt)}
+                hold={reviewAction(holdOpt)}
+              />
             </SectionBlock>
 
             <SectionBlock

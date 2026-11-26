@@ -491,6 +491,13 @@ export interface DagEdge {
   to: string;
 }
 
+const DEPT_KEYS = ['modeling', 'rigging', 'animation', 'lookdev', 'lighting', 'fx', 'comp'] as const;
+function deptKey(kind: string | undefined, idx: number): string {
+  const k = (kind ?? '').toLowerCase();
+  const hit = DEPT_KEYS.find((d) => k.includes(d));
+  return hit ?? DEPT_KEYS[idx % DEPT_KEYS.length]!;
+}
+
 export function NodeGraph({
   title,
   nodes,
@@ -513,7 +520,7 @@ export function NodeGraph({
       <svg className="org-chart__node-svg" viewBox="0 0 440 160" role="img" aria-label={title ?? 'Node graph'}>
         <defs>
           <marker id={`${uid}-arrow`} markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-            <path d="M0,0 L6,3 L0,6 Z" fill="var(--accent)" />
+            <path d="M0,0 L6,3 L0,6 Z" className="org-node__arrow" />
           </marker>
         </defs>
         {edges.map((e, i) => {
@@ -528,30 +535,24 @@ export function NodeGraph({
           return (
             <path
               key={`${e.from}-${e.to}-${i}`}
-              d={`M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`}
-              fill="none"
-              stroke="var(--accent)"
-              strokeWidth={1.5}
+              d={`M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2 - 3} ${y2}`}
+              className="org-node__edge"
               markerEnd={`url(#${uid}-arrow)`}
             />
           );
         })}
-        {nodes.map((n) => (
-          <g key={n.id}>
-            <rect
-              x={n.x}
-              y={n.y}
-              width={nodeW}
-              height={nodeH}
-              fill="var(--surface-raised)"
-              stroke="var(--border-control)"
-              strokeWidth={1}
-            />
-            <rect x={n.x} y={n.y} width={3} height={nodeH} fill="var(--accent)" />
-            <text x={n.x + 8} y={n.y + 14} className="org-chart__tick-label">
+        {nodes.map((n, idx) => (
+          <g key={n.id} className="org-node" data-dept={deptKey(n.kind, idx)}>
+            <rect x={n.x + 1} y={n.y + 2} width={nodeW} height={nodeH} rx={1} className="org-node__shadow" />
+            <rect x={n.x} y={n.y} width={nodeW} height={nodeH} rx={1} className="org-node__body" />
+            <rect x={n.x + 0.5} y={n.y + 0.5} width={nodeW - 1} height={nodeH - 1} rx={1} className="org-node__hi" />
+            <rect x={n.x} y={n.y} width={nodeW} height={4} className="org-node__strip" />
+            <circle cx={n.x} cy={n.y + nodeH / 2} r={2.5} className="org-node__port" />
+            <circle cx={n.x + nodeW} cy={n.y + nodeH / 2} r={2.5} className="org-node__port" />
+            <text x={n.x + 8} y={n.y + 17} className="org-node__label">
               {n.label}
             </text>
-            <text x={n.x + 8} y={n.y + 27} className="org-chart__tick-label">
+            <text x={n.x + 8} y={n.y + 29} className="org-node__kind">
               {n.kind ?? 'op'}
             </text>
           </g>

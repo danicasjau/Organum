@@ -11,9 +11,9 @@
     align-items: center;
     height: var(--badge-cap-h);
     padding: var(--space-0) var(--space-1);
-    border-radius: var(--radius-1);
+    border-radius: var(--radius-sm);
     font-family: var(--font-mono);
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-label);
     font-weight: 700;
     line-height: 1;
     letter-spacing: 0.03em;

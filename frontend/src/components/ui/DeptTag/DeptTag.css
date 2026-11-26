@@ -7,13 +7,12 @@
     max-width: 100%;
     height: var(--badge-cap-h);
     padding: 0 var(--space-2) 0 var(--space-1);
-    border: 1px solid var(--dept-color, var(--border-dark));
-    border-left-width: var(--dirty-bar-w);
-    border-radius: var(--radius-1);
-    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-raised-bottom);
     color: var(--text);
     font-size: var(--font-size-sm);
-    font-weight: 700;
+    font-weight: 500;
     white-space: nowrap;
   }
 
@@ -22,9 +21,10 @@
     flex-shrink: 0;
     width: var(--dept-swatch);
     height: var(--dept-swatch);
-    border: 1px solid var(--border-dark);
+    border: 1px solid var(--groove-dark);
     border-radius: 50%;
     background: var(--dept-color, var(--series-1));
+    box-shadow: inset 1px 1px 0 var(--send-hi);
   }
 
   .org-dept-tag__label {

@@ -27,6 +27,7 @@ export function Tooltip({
         <TooltipPrimitive.Content sideOffset={4} className="org-tooltip">
           <span>{content}</span>
           {shortcut && <Kbd>{shortcut}</Kbd>}
+          <TooltipPrimitive.Arrow className="org-tooltip__arrow" width={8} height={4} />
         </TooltipPrimitive.Content>
       </TooltipPrimitive.Portal>
     </TooltipPrimitive.Root>

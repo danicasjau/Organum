@@ -1,4 +1,40 @@
 @layer components {
+  /* v1 UserPicker: an INSET field with ZERO radius holding square chips. */
+  .org-userpicker__field {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1);
+    width: 100%;
+    max-width: 100%;
+    min-height: var(--picker-min-h);
+    padding: var(--space-1) var(--space-6px);
+    border: 1px solid var(--groove-dark);
+    border-radius: var(--radius-0);
+    background: var(--bg-input);
+    box-shadow: var(--sh-inset);
+    color: var(--text);
+    font-size: var(--font-size-sm);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .org-userpicker__field:hover:not(:disabled) {
+    filter: brightness(var(--hover-brightness));
+  }
+
+  .org-userpicker__field[data-state='open'] {
+    box-shadow: var(--sh-pressed);
+  }
+
+  .org-userpicker__field:disabled {
+    background: var(--bg-panel);
+    box-shadow: none;
+    border-color: var(--border);
+    color: var(--text-off);
+    cursor: not-allowed;
+  }
+
   .org-userpicker__trigger {
     max-width: 100%;
     justify-content: flex-start;
@@ -8,6 +44,59 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .org-userpicker__placeholder {
+    flex: 1;
+    min-width: var(--space-8);
+    color: var(--text-off);
+    font-size: var(--font-size-sm);
+  }
+
+  /* square chip: 22px, radius 0, 18px square avatar, 11px name, 10px x */
+  .org-userpicker__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    height: var(--chip-h);
+    padding: 0 var(--space-6px) 0 var(--space-half);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-0);
+    background: var(--bg-raised-bottom);
+    color: var(--text);
+    font-size: var(--font-size-sm);
+    white-space: nowrap;
+  }
+
+  .org-userpicker__chip .org-avatar {
+    border-radius: var(--radius-0);
+    box-shadow: none;
+  }
+
+  .org-userpicker__chip-name {
+    max-width: var(--filter-select-w);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .org-userpicker__chip-x {
+    display: inline-flex;
+    color: var(--text-dim);
+    cursor: pointer;
+  }
+
+  .org-userpicker__chip-x svg {
+    width: var(--font-size-label);
+    height: var(--font-size-label);
+  }
+
+  .org-userpicker__chip-x:hover {
+    color: var(--text-rejected);
+  }
+
+  /* dropdown: radius 0, L5 shadow, 32px rows with 24px square avatars */
+  .org-popover:has(> .org-userpicker) {
+    border-radius: var(--radius-0);
   }
 
   .org-userpicker {
@@ -29,8 +118,10 @@
     flex-direction: column;
     max-height: var(--select-max-h);
     overflow-y: auto;
-    border: var(--border-w) solid var(--border-dark);
-    background: var(--surface-field);
+    border: 1px solid var(--groove-dark);
+    border-radius: var(--radius-0);
+    background: var(--bg-input);
+    box-shadow: var(--sh-inset);
   }
 
   .org-userpicker__row {
@@ -38,10 +129,11 @@
     align-items: center;
     gap: var(--space-2);
     width: 100%;
-    min-height: var(--min-hit);
+    min-height: var(--picker-row-h);
     padding: var(--space-1) var(--space-2);
     border: none;
-    border-bottom: var(--border-w) solid var(--border-dark);
+    border-bottom: 1px solid var(--groove-light);
+    border-radius: var(--radius-0);
     background: transparent;
     color: var(--text);
     text-align: left;
@@ -51,11 +143,11 @@
   }
 
   .org-userpicker__row:hover {
-    background: var(--surface-hover);
+    background: var(--hover);
   }
 
   .org-userpicker__row[data-selected="true"] {
-    background: var(--accent-soft);
+    background: var(--selected);
   }
 
   .org-userpicker__meta {
@@ -72,14 +164,13 @@
   }
 
   .org-userpicker__sub {
-    color: var(--text-muted);
-    font-size: var(--font-size-sm);
+    color: var(--text-dim);
+    font-size: var(--font-size-label);
   }
 
   .org-userpicker__empty {
     padding: var(--space-3);
-    color: var(--text-muted);
+    color: var(--text-dim);
     font-size: var(--font-size);
   }
 }
-
