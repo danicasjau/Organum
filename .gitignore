@@ -22,6 +22,7 @@ node_modules/
 frontend/dist/
 frontend/playwright-report/
 frontend/test-results/
+frontend/.e2e-bootstrap-root/
 frontend/.vite/
 
 # OS / IDE

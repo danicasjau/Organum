@@ -116,21 +116,34 @@ class ProjectRegistry:
             await session.commit()
 
     def _prepare_create_dirs(self, path: Path, clean_name: str) -> tuple[Path, str, str]:
+        if not str(path).strip():
+            raise AppError("invalid_path", "Choose a folder for the project", status_code=400)
         resolved = path.resolve()
         pipeline_dir = resolved / "00_Pipeline"
         project_json_path = pipeline_dir / "project.json"
         if project_json_path.exists():
             raise ConflictError(f"A project already exists at '{resolved}'")
+        if resolved.exists() and not resolved.is_dir():
+            raise AppError(
+                "invalid_path", f"'{resolved}' is a file, not a folder", status_code=400
+            )
 
-        for d in (
-            resolved,
-            pipeline_dir,
-            pipeline_dir / "cache",
-            pipeline_dir / "trash",
-            pipeline_dir / "logs",
-            resolved / "01_Production",
-        ):
-            d.mkdir(parents=True, exist_ok=True)
+        try:
+            for d in (
+                resolved,
+                pipeline_dir,
+                pipeline_dir / "cache",
+                pipeline_dir / "trash",
+                pipeline_dir / "logs",
+                resolved / "01_Production",
+            ):
+                d.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            raise AppError(
+                "invalid_path",
+                f"Cannot create the project folder '{resolved}': {exc.strerror or exc}",
+                status_code=400,
+            ) from exc
 
         proj_uuid = str(uuid.uuid4())
         project_json_path.write_text(
@@ -236,7 +249,11 @@ class ProjectRegistry:
         resolved = path.resolve()
         project_json_path = resolved / "00_Pipeline" / "project.json"
         if not project_json_path.is_file():
-            raise NotFoundError("project", str(resolved))
+            raise AppError(
+                "project_not_found",
+                f"No ORGANUM project found at '{resolved}' (missing 00_Pipeline/project.json)",
+                status_code=404,
+            )
         meta = json.loads(project_json_path.read_text(encoding="utf-8"))
         proj_uuid = str(meta["uuid"])
         name = str(meta.get("name") or resolved.name)
@@ -312,7 +329,12 @@ class ProjectRegistry:
             if not await asyncio.to_thread(
                 lambda: (root / "00_Pipeline" / "project.json").is_file()
             ):
-                raise NotFoundError("project_on_disk", known.path)
+                raise AppError(
+                    "project_missing_on_disk",
+                    f"Project '{known.name}' was not found at '{known.path}'. "
+                    "The folder was moved or deleted: locate it again or create a new project.",
+                    status_code=404,
+                )
 
             db_file = root / "00_Pipeline" / "project.db"
             db_url = f"sqlite+aiosqlite:///{db_file.as_posix()}"

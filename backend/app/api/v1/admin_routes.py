@@ -52,7 +52,13 @@ from app.schemas.api import (
 )
 from app.services.auth_service import write_audit
 from app.services.db_viewer import browse_db_table, execute_readonly_sql, list_db_tables
-from app.services.permissions import ALL_PERMISSION_KEYS, VALID_CAPACITIES, AuthContext, assert_can
+from app.services.permissions import (
+    ALL_PERMISSION_KEYS,
+    DEFAULT_ROLE_PERMISSIONS,
+    VALID_CAPACITIES,
+    AuthContext,
+    assert_can,
+)
 
 router = APIRouter(tags=["admin"])
 
@@ -61,8 +67,18 @@ def _role_to_out(r: Role) -> RoleOut:
     perms = {k: "none" for k in ALL_PERMISSION_KEYS}
     for rp in r.permissions:
         perms[rp.permission_key] = rp.scope
+    seeded = DEFAULT_ROLE_PERMISSIONS.get(r.name)
+    defaults = (
+        {k: seeded.get(k, "none") for k in ALL_PERMISSION_KEYS} if seeded is not None else None
+    )
     return RoleOut(
-        id=r.id, name=r.name, label=r.label, rank=r.rank, is_system=r.is_system, permissions=perms
+        id=r.id,
+        name=r.name,
+        label=r.label,
+        rank=r.rank,
+        is_system=r.is_system,
+        permissions=perms,
+        default_permissions=defaults,
     )
 
 
@@ -313,6 +329,7 @@ async def get_project_settings(
         enforce_dependencies_in_gantt=meta.enforce_dependencies_in_gantt,
         admin_sql_console_enabled=meta.admin_sql_console_enabled,
         link_dependency_depth=meta.link_dependency_depth,
+        styled_exports=meta.styled_exports,
     )
 
 
@@ -373,6 +390,8 @@ async def patch_project_settings(
         meta.admin_sql_console_enabled = payload.admin_sql_console_enabled
     if "link_dependency_depth" in fields and payload.link_dependency_depth is not None:
         meta.link_dependency_depth = payload.link_dependency_depth
+    if "styled_exports" in fields and payload.styled_exports is not None:
+        meta.styled_exports = payload.styled_exports
 
     if "status" in fields and payload.status != old_status:
         await write_audit(
@@ -407,6 +426,7 @@ async def patch_project_settings(
         enforce_dependencies_in_gantt=meta.enforce_dependencies_in_gantt,
         admin_sql_console_enabled=meta.admin_sql_console_enabled,
         link_dependency_depth=meta.link_dependency_depth,
+        styled_exports=meta.styled_exports,
     )
 
 

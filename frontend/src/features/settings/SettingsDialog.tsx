@@ -1,12 +1,11 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ThemeMode } from '../../app/App';
 import {
   Badge,
   Banner,
   Button,
   Checkbox,
-  ColorPicker,
   Icon,
   Inline,
   RadioGroup,
@@ -18,11 +17,10 @@ import {
   useToast,
   type SideNavGroup,
 } from '../../components/ui';
-import { apiClient, type DepartmentOut, type LauncherItemIn } from '../../lib/api/client';
+import { apiClient, type LauncherItemIn } from '../../lib/api/client';
 import { useAuthStore } from '../auth/authStore';
-import { DepartmentTag } from '../departments/DepartmentTag';
-import { deptColorHex } from '../departments/deptColors';
 import { useProjectStore, type SettingsPageId } from '../project/projectStore';
+import { DepartmentsSettings } from './DepartmentsSettings';
 import { FolderBrowserDialog } from './FolderBrowserDialog';
 import './SettingsDialog.css';
 
@@ -55,7 +53,6 @@ const NAV_GROUPS: ReadonlyArray<SideNavGroup<SettingsPageId>> = [
 ];
 
 const EMPTY_PROJECTS: Awaited<ReturnType<typeof apiClient.listProjects>> = [];
-const EMPTY_DEPARTMENTS: DepartmentOut[] = [];
 
 export function SettingsContent({
   theme,
@@ -66,32 +63,6 @@ export function SettingsContent({
 }) {
   const queryClient = useQueryClient();
   const toast = useToast();
-  const [deptColorDrafts, setDeptColorDrafts] = useState<Record<string, string>>({});
-  const deptColorTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
-
-  const saveDeptColor = (deptId: string, hex: string) => {
-    setDeptColorDrafts((prev) => ({ ...prev, [deptId]: hex }));
-    const timers = deptColorTimers.current;
-    if (timers[deptId]) clearTimeout(timers[deptId]);
-    timers[deptId] = setTimeout(async () => {
-      delete timers[deptId];
-      try {
-        await apiClient.updateDepartment(deptId, { color: hex }, activeProjectUuid);
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ['departments', activeProjectUuid] }),
-          queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectUuid] }),
-        ]);
-      } catch (err) {
-        toast.push('danger', err instanceof Error ? err.message : 'Color update failed');
-      } finally {
-        setDeptColorDrafts((prev) => {
-          const next = { ...prev };
-          delete next[deptId];
-          return next;
-        });
-      }
-    }, 300);
-  };
   const activeProjectUuid = useProjectStore((s) => s.activeProjectUuid);
   const setActiveProject = useProjectStore((s) => s.setActiveProject);
   // Rendered as a full-screen page: queries are live whenever the page is mounted.
@@ -109,12 +80,6 @@ export function SettingsContent({
   const [openPath, setOpenPath] = useState('');
   const [browserTarget, setBrowserTarget] = useState<'create' | 'open' | null>(null);
 
-  // Departments state
-  const [selectedDeptId, setSelectedDeptId] = useState<string | null>(null);
-  const [newDeptName, setNewDeptName] = useState('');
-  const [newTaskName, setNewTaskName] = useState('');
-  const [renameDeptDraft, setRenameDeptDraft] = useState('');
-
   // Launchers & Detection state
   const [launcherDrafts, setLauncherDrafts] = useState<LauncherItemIn[]>([]);
   const [udimKeywords, setUdimKeywords] = useState(
@@ -129,13 +94,6 @@ export function SettingsContent({
   const projects = projectsData ?? EMPTY_PROJECTS;
 
   const activeProject = projects.find((p) => p.uuid === activeProjectUuid) ?? null;
-
-  const { data: departmentsData, refetch: refetchDepts } = useQuery({
-    queryKey: ['departments', activeProjectUuid],
-    queryFn: () => apiClient.listDepartments(activeProjectUuid),
-    enabled: settingsOpen && Boolean(activeProjectUuid),
-  });
-  const departments = departmentsData ?? EMPTY_DEPARTMENTS;
 
   const { data: launchersData } = useQuery({
     queryKey: ['launchers'],
@@ -170,19 +128,6 @@ export function SettingsContent({
       setUdimKeywords((pref.value_json as string[]).join(', '));
     }
   }, [uiPrefsData]);
-
-  useEffect(() => {
-    if (departments.length > 0 && !departments.some((d) => d.id === selectedDeptId)) {
-      setSelectedDeptId(departments[0]!.id);
-    }
-  }, [departments, selectedDeptId]);
-
-  const selectedDept: DepartmentOut | null =
-    departments.find((d) => d.id === selectedDeptId) ?? null;
-
-  useEffect(() => {
-    setRenameDeptDraft(selectedDept?.name ?? '');
-  }, [selectedDept?.id, selectedDept?.name]);
 
   const handleCreateProject = async () => {
     try {
@@ -220,30 +165,6 @@ export function SettingsContent({
     } catch (err) {
       toast.push('danger', err instanceof Error ? err.message : 'Open project failed');
     }
-  };
-
-  const moveDept = async (idx: number, delta: -1 | 1) => {
-    const target = idx + delta;
-    if (target < 0 || target >= departments.length) return;
-    const ids = departments.map((d) => d.id);
-    const [moved] = ids.splice(idx, 1);
-    if (!moved) return;
-    ids.splice(target, 0, moved);
-    await apiClient.reorderDepartments(ids, activeProjectUuid);
-    await refetchDepts();
-  };
-
-  const moveDefaultTask = async (idx: number, delta: -1 | 1) => {
-    if (!selectedDept) return;
-    const tasks = selectedDept.default_tasks ?? [];
-    const target = idx + delta;
-    if (target < 0 || target >= tasks.length) return;
-    const ids = tasks.map((t) => t.id);
-    const [moved] = ids.splice(idx, 1);
-    if (!moved) return;
-    ids.splice(target, 0, moved);
-    await apiClient.reorderDefaultTasks(selectedDept.id, ids, activeProjectUuid);
-    await refetchDepts();
   };
 
   return (
@@ -419,225 +340,14 @@ export function SettingsContent({
             </>
           )}
 
-          {settingsPage === 'departments' && (
-            <>
-              {!activeProjectUuid ? (
-                <Banner severity="warning" title="No active project">
-                  Create or open a project in the Project tab first.
-                </Banner>
-              ) : (
-                <Stack gap="2">
-                  <Banner severity="info" title="Catalog scope">
-                    Changes apply only to entities or departments created afterwards.
-                  </Banner>
-                  <div className="org-settings__split">
-                    <Stack gap="1">
-                      <Text size="sm" variant="muted">
-                        Departments ({departments.length})
-                      </Text>
-                      <div className="org-settings__field-with-btn">
-                        <TextField
-                          aria-label="New department name"
-                          placeholder="Add department..."
-                          value={newDeptName}
-                          onChange={(e) => setNewDeptName(e.target.value)}
-                        />
-                        <Button
-                          size="sm"
-                          disabled={!newDeptName.trim()}
-                          onClick={async () => {
-                            try {
-                              const created = await apiClient.createDepartment(
-                                newDeptName.trim(),
-                                activeProjectUuid,
-                              );
-                              setNewDeptName('');
-                              await refetchDepts();
-                              setSelectedDeptId(created.id);
-                              toast.push('success', `Created department "${created.name}".`);
-                            } catch (err) {
-                              toast.push(
-                                'danger',
-                                err instanceof Error ? err.message : 'Unable to create department',
-                              );
-                            }
-                          }}
-                        >
-                          Add
-                        </Button>
-                      </div>
-                      <div className="org-settings__list">
-                        {departments.map((d, idx) => (
-                          <div
-                            key={d.id}
-                            className="org-settings__list-row"
-                            data-selected={d.id === selectedDeptId ? 'true' : undefined}
-                            onClick={() => setSelectedDeptId(d.id)}
-                          >
-                            <span className="org-settings__dept-name">
-                              <DepartmentTag
-                                name={d.name}
-                                color={deptColorDrafts[d.id] ?? d.color}
-                                variant="text"
-                              />
-                              {!d.is_active && <Badge tone="neutral">Inactive</Badge>}
-                            </span>
-                            <Inline gap="1">
-                              <span
-                                className="org-settings__dept-color"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <ColorPicker
-                                  ariaLabel={`${d.name} color`}
-                                  value={deptColorDrafts[d.id] ?? deptColorHex(d.color)}
-                                  onChange={(hex) => saveDeptColor(d.id, hex)}
-                                />
-                              </span>
-                              <Button
-                                size="sm"
-                                disabled={idx === 0}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  void moveDept(idx, -1);
-                                }}
-                              >
-                                Up
-                              </Button>
-                              <Button
-                                size="sm"
-                                disabled={idx === departments.length - 1}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  void moveDept(idx, 1);
-                                }}
-                              >
-                                Dn
-                              </Button>
-                            </Inline>
-                          </div>
-                        ))}
-                      </div>
-                      {selectedDept && (
-                        <Inline gap="1">
-                          <TextField
-                            aria-label="Rename selected department"
-                            value={renameDeptDraft}
-                            onChange={(e) => setRenameDeptDraft(e.target.value)}
-                          />
-                          <Button
-                            size="sm"
-                            disabled={
-                              !renameDeptDraft.trim() ||
-                              renameDeptDraft.trim() === selectedDept.name
-                            }
-                            onClick={async () => {
-                              try {
-                                await apiClient.updateDepartment(
-                                  selectedDept.id,
-                                  { name: renameDeptDraft.trim() },
-                                  activeProjectUuid,
-                                );
-                                await refetchDepts();
-                                toast.push(
-                                  'success',
-                                  `Renamed department "${renameDeptDraft.trim()}".`,
-                                );
-                              } catch (err) {
-                                toast.push(
-                                  'danger',
-                                  err instanceof Error
-                                    ? err.message
-                                    : 'Unable to rename department',
-                                );
-                              }
-                            }}
-                          >
-                            Rename
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={async () => {
-                              await apiClient.updateDepartment(
-                                selectedDept.id,
-                                { is_active: !selectedDept.is_active },
-                                activeProjectUuid,
-                              );
-                              await refetchDepts();
-                            }}
-                          >
-                            {selectedDept.is_active ? 'Deactivate' : 'Activate'}
-                          </Button>
-                        </Inline>
-                      )}
-                    </Stack>
-
-                    <Stack gap="1">
-                      <Text size="sm" variant="muted">
-                        Default Tasks ({selectedDept?.name ?? 'None'})
-                      </Text>
-                      <div className="org-settings__field-with-btn">
-                        <TextField
-                          aria-label="New default task name"
-                          placeholder="Add default task..."
-                          disabled={!selectedDept}
-                          value={newTaskName}
-                          onChange={(e) => setNewTaskName(e.target.value)}
-                        />
-                        <Button
-                          size="sm"
-                          disabled={!selectedDept || !newTaskName.trim()}
-                          onClick={async () => {
-                            if (!selectedDept) return;
-                            await apiClient.createDefaultTask(
-                              selectedDept.id,
-                              newTaskName.trim(),
-                              activeProjectUuid,
-                            );
-                            setNewTaskName('');
-                            await refetchDepts();
-                          }}
-                        >
-                          Add
-                        </Button>
-                      </div>
-                      <div className="org-settings__list">
-                        {(selectedDept?.default_tasks ?? []).map((t, idx) => (
-                          <div key={t.id} className="org-settings__list-row">
-                            <span>{t.name}</span>
-                            <Inline gap="1">
-                              <Button
-                                size="sm"
-                                disabled={idx === 0}
-                                onClick={() => void moveDefaultTask(idx, -1)}
-                              >
-                                Up
-                              </Button>
-                              <Button
-                                size="sm"
-                                disabled={idx === (selectedDept?.default_tasks?.length ?? 1) - 1}
-                                onClick={() => void moveDefaultTask(idx, 1)}
-                              >
-                                Dn
-                              </Button>
-                              <Button
-                                size="sm"
-                                onClick={async () => {
-                                  await apiClient.deleteDefaultTask(t.id, activeProjectUuid);
-                                  await refetchDepts();
-                                }}
-                              >
-                                Del
-                              </Button>
-                            </Inline>
-                          </div>
-                        ))}
-                      </div>
-                    </Stack>
-                  </div>
-                </Stack>
-              )}
-            </>
-          )}
+          {settingsPage === 'departments' &&
+            (!activeProjectUuid ? (
+              <Banner severity="warning" title="No active project">
+                Create or open a project in the Project tab first.
+              </Banner>
+            ) : (
+              <DepartmentsSettings projectUuid={activeProjectUuid} />
+            ))}
 
           {settingsPage === 'applications' && (
             <div className="org-settings__section">

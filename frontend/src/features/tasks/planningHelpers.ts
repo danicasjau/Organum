@@ -68,6 +68,15 @@ export function isoWeekdayZeroMon(iso: string): number {
   return (dt.getUTCDay() + 6) % 7;
 }
 
+/**
+ * Project settings store ISO weekdays (1=Mon..7=Sun); the planning helpers use 0=Mon..6=Sun.
+ * Always convert API values with this before calling `isWorkingDay`.
+ */
+export function isoToZeroMonDays(isoDays: ReadonlyArray<number> | null | undefined): number[] {
+  const valid = (isoDays ?? []).filter((d) => d >= 1 && d <= 7).map((d) => d - 1);
+  return valid.length > 0 ? valid : [0, 1, 2, 3, 4];
+}
+
 /** Checks if `iso` falls inside `workingDays` (0=Mon..6=Sun). */
 export function isWorkingDay(
   iso: string,

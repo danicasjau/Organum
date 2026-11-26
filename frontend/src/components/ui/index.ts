@@ -49,3 +49,5 @@ export * from './UserPicker/UserPicker';
 export * from './VectorField/VectorField';
 export * from './ViewSwitcher/ViewSwitcher';
 export * from './SideNav/SideNav';
+export * from './SortableList/SortableList';
+export * from './InlineEdit/InlineEdit';

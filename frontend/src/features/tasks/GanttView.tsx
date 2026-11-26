@@ -37,11 +37,11 @@ import {
   buildGanttRows,
   collectDependencyChain,
   computeDependencyViolations,
-  computePushDependents,
   computeTimelineBounds,
   diffDays,
   edgeKey,
   isWorkingDay,
+  isoToZeroMonDays,
   todayIsoUtc,
   type GanttGroupRow,
   type GanttRow,
@@ -50,6 +50,23 @@ import {
 import { canPerformOnTask } from './taskHelpers';
 import { useTasksStore, type GanttGroupBy, type GanttPatchItem } from './tasksStore';
 import './GanttView.css';
+import { DraftBar } from '../schedule/DraftBar';
+import {
+  MilestoneDialog,
+  MilestoneMarker,
+  type MilestoneDraftValues,
+  type MilestoneTargets,
+} from '../schedule/MilestoneDialog';
+import {
+  computeCollisionPush,
+  lateTaskIds,
+  overlayMilestones,
+  overlayTasks,
+  type MilestoneLike,
+  type PushPatch,
+} from '../schedule/scheduleModel';
+import { useScheduleDraft } from '../schedule/useScheduleDraft';
+import { VersionsPanel } from '../schedule/VersionsPanel';
 
 const EMPTY_EDGES: TaskGraphEdgeOut[] = [];
 const DEFAULT_WORKING_DAYS = [0, 1, 2, 3, 4];
@@ -66,6 +83,9 @@ interface LinkDragState {
 }
 
 interface DragPreviewState {
+  /** CR04 §9: downstream tasks pushed live while dragging. */
+  pushed?: PushPatch[];
+  pushError?: string;
   taskId: string;
   mode: 'move' | 'resize-start' | 'resize-end' | 'reassign';
   startX: number;
@@ -234,7 +254,8 @@ function TimelineTaskRow({
   startIso,
   dayPx,
   selected,
-  chainDimmed,
+  linked,
+  isDraft,
   violated,
   canEditDates,
   canAssign,
@@ -243,6 +264,7 @@ function TimelineTaskRow({
   linkTarget,
   onBeginLink,
   onSelectTask,
+  onClearSelection,
   onBeginDrag,
 }: {
   row: GanttTaskRow;
@@ -250,7 +272,10 @@ function TimelineTaskRow({
   startIso: string;
   dayPx: number;
   selected: boolean;
-  chainDimmed: boolean;
+  /** Upstream/downstream of the selection: yellow border, never dimming others. */
+  linked: boolean;
+  isDraft: boolean;
+  onClearSelection: () => void;
   violated: boolean;
   canEditDates: boolean;
   canAssign: boolean;
@@ -273,10 +298,13 @@ function TimelineTaskRow({
   const { task } = row;
 
   const isPreview = dragPreview?.taskId === task.id;
-  const startDate = isPreview ? dragPreview.previewStart : task.ideal_start_date;
+  const pushed = dragPreview?.pushed?.find((p) => p.taskId === task.id);
+  const startDate = isPreview
+    ? dragPreview.previewStart
+    : (pushed?.start ?? task.ideal_start_date);
   const finishDate = isPreview
     ? dragPreview.previewFinish
-    : (task.ideal_finish_date ?? task.ideal_start_date);
+    : (pushed?.finish ?? task.ideal_finish_date ?? task.ideal_start_date);
 
   const hasIdeal = Boolean(startDate && finishDate);
   const idealX = startDate ? diffDays(startIso, startDate) * dayPx : 0;
@@ -305,18 +333,24 @@ function TimelineTaskRow({
     <div
       ref={rowRef}
       className={`org-gantt__tl-task-row ${selected ? 'is-selected' : ''} ${
-        chainDimmed ? 'is-dimmed' : ''
-      } ${linkTarget ? 'is-link-target' : ''}`}
+        linkTarget ? 'is-link-target' : ''
+      }`}
       data-task-row-id={task.id}
-      onClick={() => onSelectTask(task.id)}
+      onClick={() => onClearSelection()}
     >
       {hasIdeal ? (
         <div
           ref={idealBarRef}
           className={`org-gantt__bar ${canEditDates ? 'is-editable' : ''} ${
             violated ? 'is-violated' : ''
-          } ${selected ? 'is-selected' : ''} org-gantt__bar--${task.status.toLowerCase()}`}
+          } ${selected ? 'is-selected' : ''} ${linked ? 'is-linked' : ''} ${
+            isDraft ? 'is-draft' : ''
+          } ${pushed ? 'is-pushed' : ''} org-gantt__bar--${task.status.toLowerCase()}`}
           data-gantt-bar={task.id}
+          data-selected={selected ? 'true' : undefined}
+          data-linked={linked ? 'true' : undefined}
+          data-draft={isDraft ? 'true' : undefined}
+          data-pushed={pushed ? 'true' : undefined}
           title={`${task.task_code}: ${startDate} → ${finishDate} (${task.status}, ${task.logged_hours}h / ${task.bid_hours ?? 0}h)`}
           onClick={(e) => {
             e.stopPropagation();
@@ -344,6 +378,7 @@ function TimelineTaskRow({
           <div ref={fillRef} className="org-gantt__bar-fill" />
           <span className="org-gantt__bar-label">
             {violated ? '! ' : ''}
+            {isDraft || pushed ? '✎ ' : ''}
             {task.task_name || task.name}
           </span>
           {canEditDates && (
@@ -405,18 +440,31 @@ function TimelineTaskRow({
 }
 
 export function GanttView({
-  tasks,
+  tasks: liveTasks,
   users,
   companies,
   selectedTaskId,
   onSelectTask,
+  onClearSelection = () => undefined,
 }: {
   tasks: ReadonlyArray<TaskListItemOut>;
   users: ReadonlyArray<UserOut>;
   companies: ReadonlyArray<CompanyOut>;
   selectedTaskId: string | null;
   onSelectTask: (taskId: string) => void;
+  onClearSelection?: () => void;
 }) {
+  // CR04 §5: every Gantt edit goes to the per-user draft; bars show draft values.
+  const schedule = useScheduleDraft();
+  const { addChanges: addDraftChanges } = schedule;
+  const { tasks, draftIds } = useMemo(
+    () => overlayTasks(liveTasks, schedule.changes),
+    [liveTasks, schedule.changes],
+  );
+  const [showVersions, setShowVersions] = useState(false);
+  const [msDialog, setMsDialog] = useState<
+    (Partial<MilestoneDraftValues> & { id?: string }) | null
+  >(null);
   const queryClient = useQueryClient();
   const toast = useToast();
   const auth = useAuthStore((s) => s.auth);
@@ -464,7 +512,57 @@ export function GanttView({
   });
 
   const edges = graphData?.edges ?? EMPTY_EDGES;
-  const workingDays = settings?.working_days ?? DEFAULT_WORKING_DAYS;
+
+  const { data: liveMilestones } = useQuery({
+    queryKey: ['milestones', activeProjectUuid],
+    queryFn: () => apiClient.listMilestones(activeProjectUuid),
+    enabled: Boolean(activeProjectUuid),
+  });
+  const milestones = useMemo(
+    () =>
+      overlayMilestones(
+        (liveMilestones ?? []) as unknown as MilestoneLike[],
+        schedule.changes,
+      ),
+    [liveMilestones, schedule.changes],
+  );
+  const companyOfUser = useMemo(
+    () => new Map(users.map((u) => [u.id, u.company_id ?? null])),
+    [users],
+  );
+  const milestoneTargets = useMemo<MilestoneTargets>(() => {
+    const depts = new Map<string, string>();
+    const ents = new Map<string, string>();
+    for (const t of tasks) {
+      depts.set(t.department_id, t.department_name);
+      ents.set(t.entity_id, t.entity_name);
+    }
+    const sorted = (m: Map<string, string>) =>
+      [...m].map(([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label));
+    return {
+      department: sorted(depts),
+      entity: sorted(ents),
+      task: tasks.map((t) => ({ value: t.id, label: t.task_code })),
+      user: users.map((u) => ({ value: u.id, label: u.full_name })),
+      company: companies.map((c) => ({ value: c.id, label: c.name })),
+    };
+  }, [tasks, users, companies]);
+
+  // Esc clears the selection (CR04 §9).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || !selectedTaskId) return;
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('[role="dialog"], input, textarea')) return;
+      onClearSelection();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selectedTaskId, onClearSelection]);
+  // API values are ISO weekdays (1=Mon); helpers use 0=Mon.
+  const workingDays = settings?.working_days
+    ? isoToZeroMonDays(settings.working_days)
+    : DEFAULT_WORKING_DAYS;
   const enforceDeps = Boolean(settings?.enforce_dependencies_in_gantt);
   const dayPx = ganttDayPx;
   const todayIso = useMemo(() => todayIsoUtc(), []);
@@ -498,6 +596,10 @@ export function GanttView({
       ideal_start_date: dragPreview.previewStart,
       ideal_finish_date: dragPreview.previewFinish,
     });
+    for (const p of dragPreview.pushed ?? []) {
+      const t = tasksById.get(p.taskId);
+      if (t) copy.set(t.id, { ...t, ideal_start_date: p.start, ideal_finish_date: p.finish });
+    }
     return copy;
   }, [tasksById, dragPreview]);
 
@@ -685,31 +787,20 @@ export function GanttView({
     ) => {
       setBusyMutation(true);
       try {
-        for (const p of patches) {
-          await apiClient.patchTask(
-            p.taskId,
-            {
-              ideal_start_date: p.start,
-              ideal_finish_date: p.finish,
-              expected_updated_at: p.updatedAt,
-            },
-            activeProjectUuid,
-          );
-        }
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectUuid] }),
-          queryClient.invalidateQueries({ queryKey: ['task', activeProjectUuid] }),
-          queryClient.invalidateQueries({ queryKey: ['workload', activeProjectUuid] }),
-          queryClient.invalidateQueries({ queryKey: ['task-graph', activeProjectUuid] }),
-        ]);
-        toast.push('success', label);
-      } catch (err) {
-        toast.push('danger', err instanceof Error ? err.message : 'Schedule update failed');
+        await addDraftChanges(
+          patches.map((p) => ({
+            kind: 'task' as const,
+            op: 'update' as const,
+            target_id: p.taskId,
+            payload: { start: p.start, finish: p.finish },
+          })),
+          `${label} — in your draft`,
+        );
       } finally {
         setBusyMutation(false);
       }
     },
-    [activeProjectUuid, queryClient, toast],
+    [addDraftChanges],
   );
 
   const handleUndo = useCallback(async () => {
@@ -809,12 +900,30 @@ export function GanttView({
         previewFinish = candidate >= initialState.origStart ? candidate : initialState.origStart;
       }
 
+      let pushed: PushPatch[] | undefined;
+      let pushError: string | undefined;
+      if (ganttPushDependents && mode !== 'reassign' && !hoverGroupKey) {
+        const res = computeCollisionPush({
+          rootId: task.id,
+          start: previewStart,
+          finish: previewFinish,
+          edges,
+          tasksById,
+          workingDays,
+          canEdit: (id) =>
+            canPerformOnTask(auth, 'task.edit_schedule', tasksById.get(id)?.my_capacities),
+        });
+        pushed = res.patches;
+        pushError = res.error;
+      }
       latest = {
         ...initialState,
         deltaDays,
         previewStart,
         previewFinish,
         hoverGroupKey,
+        pushed,
+        pushError,
       };
       setDragPreview(latest);
     };
@@ -863,7 +972,11 @@ export function GanttView({
         return;
       }
 
-      if (enforceDeps) {
+      if (ganttPushDependents && latest.pushError) {
+        toast.push('danger', `Move refused: ${latest.pushError}`);
+        return;
+      }
+      if (!ganttPushDependents && enforceDeps) {
         for (const edge of edges) {
           if (edge.kind !== 'dependency' || edge.target_task_id !== task.id) continue;
           const up = tasksById.get(edge.source_task_id);
@@ -889,22 +1002,23 @@ export function GanttView({
       ];
 
       if (ganttPushDependents) {
-        const downstream = computePushDependents({
-          rootTaskId: task.id,
-          newRootFinish: latest.previewFinish,
-          edges,
-          tasksById,
-        });
-        for (const d of downstream) {
+        for (const d of latest.pushed ?? []) {
           const t = tasksById.get(d.taskId);
-          if (!t || !canPerformOnTask(auth, 'task.edit_schedule', t.my_capacities)) continue;
-          patches.push(d);
+          if (!t) continue;
+          patches.push({
+            taskId: d.taskId,
+            prevStart: t.ideal_start_date ?? null,
+            prevFinish: t.ideal_finish_date ?? null,
+            nextStart: d.start,
+            nextFinish: d.finish,
+            updatedAt: t.updated_at,
+          });
         }
       }
 
       const actionLabel =
         patches.length > 1
-          ? `${task.task_code} + ${patches.length - 1} dependent(s)`
+          ? `${task.task_code} + ${patches.length - 1} pushed`
           : task.task_code;
 
       pushGanttUndo({ label: actionLabel, patches });
@@ -1025,7 +1139,14 @@ export function GanttView({
         const nextAssignments = targetId
           ? [...preservedNonArtists, { user_id: targetId, assignment_role: 'artist' as const }]
           : preservedNonArtists;
-        await apiClient.putTaskAssignments(task.id, nextAssignments, activeProjectUuid);
+        await addDraftChanges([
+          {
+            kind: 'task',
+            op: 'assign',
+            target_id: task.id,
+            payload: { assignments: nextAssignments.map((a) => [a.user_id, a.assignment_role]) },
+          },
+        ]);
       } else {
         const candidateUser = targetId
           ? users.find((u) => u.is_active && u.company_id === targetId)
@@ -1045,14 +1166,21 @@ export function GanttView({
               { user_id: candidateUser.id, assignment_role: 'artist' as const },
             ]
           : preservedNonArtists;
-        await apiClient.putTaskAssignments(task.id, nextAssignments, activeProjectUuid);
+        await addDraftChanges([
+          {
+            kind: 'task',
+            op: 'assign',
+            target_id: task.id,
+            payload: { assignments: nextAssignments.map((a) => [a.user_id, a.assignment_role]) },
+          },
+        ]);
       }
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectUuid] }),
         queryClient.invalidateQueries({ queryKey: ['task', activeProjectUuid] }),
         queryClient.invalidateQueries({ queryKey: ['workload', activeProjectUuid] }),
       ]);
-      toast.push('success', `Assigned ${task.task_code} → ${targetLabel}`);
+      toast.push('info', `Assigned ${task.task_code} → ${targetLabel} — in your draft`);
       setPendingReassign(null);
     } catch (err) {
       toast.push('danger', err instanceof Error ? err.message : 'Reassignment failed');
@@ -1117,7 +1245,7 @@ export function GanttView({
       path: string;
       kind: 'dependency' | 'link';
       violated: boolean;
-      dimmed: boolean;
+      linked: boolean;
       fromEntityLink: boolean;
       mx: number;
       my: number;
@@ -1145,13 +1273,13 @@ export function GanttView({
 
       const k = edgeKey(e.source_task_id, e.target_task_id, e.kind);
       const violated = violatedEdgeKeys.has(k);
-      const dimmed = Boolean(selectedChain && !selectedChain.edgeKeys.has(k));
+      const linked = Boolean(selectedChain?.edgeKeys.has(k));
       arrows.push({
         key: k,
         path: d,
         kind: e.kind,
         violated,
-        dimmed,
+        linked,
         fromEntityLink: e.from_entity_link,
         mx: (x1 + x2) / 2,
         my: (y1 + y2) / 2,
@@ -1171,6 +1299,7 @@ export function GanttView({
 
   return (
     <div className="org-gantt" data-ui="gantt-view">
+      {!isClient && <DraftBar context="gantt" />}
       <div className="org-gantt__toolbar">
         <div className="org-gantt__toolbar-group">
           <Text size="sm" variant="muted">
@@ -1258,9 +1387,26 @@ export function GanttView({
           <Button size="sm" variant="default" onClick={scrollToToday}>
             Today
           </Button>
+          {!isClient && (
+            <Button
+              size="sm"
+              variant={showVersions ? 'primary' : 'default'}
+              aria-pressed={showVersions}
+              onClick={() => setShowVersions((v) => !v)}
+            >
+              Versions
+            </Button>
+          )}
+          {schedule.canEditMilestones && !isClient && (
+            <Button size="sm" onClick={() => setMsDialog({ date: todayIso, kind: 'milestone' })}>
+              + Milestone
+            </Button>
+          )}
         </div>
       </div>
 
+      <div className="org-gantt__body">
+      {showVersions && <VersionsPanel context="gantt" />}
       <div className="org-gantt__split">
         {/* Left Tree Pane */}
         <div className="org-gantt__tree-pane">
@@ -1279,8 +1425,7 @@ export function GanttView({
                 {virtualItems.map((vi) => {
                   const row = rows[vi.index]!;
                   const isGroup = row.kind === 'group';
-                  const dimmed =
-                    !isGroup && Boolean(selectedChain && !selectedChain.nodeIds.has(row.task.id));
+                  const dimmed = false; // CR04 §9: nothing is dimmed on selection
                   const violated = !isGroup && violatedTaskIds.has(row.task.id);
                   const dropHi = isGroup && dragPreview?.hoverGroupKey === row.groupKey;
                   return (
@@ -1339,7 +1484,21 @@ export function GanttView({
             </div>
           </div>
 
-          <div ref={tlCanvasRef} className="org-gantt__tl-canvas">
+          <div
+            ref={tlCanvasRef}
+            className="org-gantt__tl-canvas"
+            data-ui="gantt-canvas"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) onClearSelection();
+            }}
+            onDoubleClick={(e) => {
+              if (!schedule.canEditMilestones || isClient) return;
+              if ((e.target as HTMLElement).closest('[data-gantt-bar], .org-ms, button')) return;
+              const rect = e.currentTarget.getBoundingClientRect();
+              const dayIdx = Math.floor((e.clientX - rect.left) / dayPx);
+              setMsDialog({ date: addDays(startIso, dayIdx), kind: 'milestone' });
+            }}
+          >
             {/* Weekend / non-working column shading */}
             {dayColumns.map((d) =>
               d.isNonWorking ? (
@@ -1347,6 +1506,47 @@ export function GanttView({
               ) : null,
             )}
             <div ref={todayRef} className="org-gantt__today-line" title={`Today (${todayIso})`} />
+            {milestones.map((m) => (
+              <MilestoneMarker
+                key={m.id}
+                milestone={m}
+                x={diffDays(startIso, m.date) * dayPx + dayPx / 2}
+                height={Math.max(ROW_HEIGHT_PX, totalHeightPx)}
+                lateCount={lateTaskIds(m, tasks, companyOfUser).length}
+                editable={schedule.canEditMilestones && !isClient}
+                dayPx={dayPx}
+                onEdit={() => setMsDialog({ ...m, target_id: m.target_id ?? null } as never)}
+                onDelete={() =>
+                  void addDraftChanges(
+                    [{ kind: 'milestone', op: 'delete', target_id: m.id, payload: {} }],
+                    `Deleted ${m.name} — in your draft`,
+                  )
+                }
+                onToggleDone={() =>
+                  void addDraftChanges([
+                    {
+                      kind: 'milestone',
+                      op: 'update',
+                      target_id: m.id,
+                      payload: { status: m.status === 'done' ? 'open' : 'done' },
+                    },
+                  ])
+                }
+                onMoveDays={(days) =>
+                  void addDraftChanges(
+                    [
+                      {
+                        kind: 'milestone',
+                        op: 'update',
+                        target_id: m.id,
+                        payload: { date: addDays(m.date, days) },
+                      },
+                    ],
+                    `Moved ${m.name} — in your draft`,
+                  )
+                }
+              />
+            ))}
 
             {virtualItems.map((vi) => {
               const row = rows[vi.index]!;
@@ -1362,7 +1562,6 @@ export function GanttView({
                   />
                 );
               }
-              const dimmed = Boolean(selectedChain && !selectedChain.nodeIds.has(row.task.id));
               return (
                 <TimelineTaskRow
                   key={row.rowKey}
@@ -1371,7 +1570,12 @@ export function GanttView({
                   startIso={startIso}
                   dayPx={dayPx}
                   selected={selectedTaskId === row.task.id}
-                  chainDimmed={dimmed}
+                  linked={
+                    selectedTaskId !== row.task.id &&
+                    Boolean(selectedChain?.nodeIds.has(row.task.id))
+                  }
+                  isDraft={draftIds.has(row.task.id)}
+                  onClearSelection={onClearSelection}
                   violated={violatedTaskIds.has(row.task.id)}
                   canEditDates={canPerformOnTask(
                     auth,
@@ -1427,7 +1631,7 @@ export function GanttView({
                     key={a.key}
                     className={`org-gantt__arrow-grp ${a.violated ? 'is-violated' : ''} ${
                       a.kind === 'link' ? 'is-link' : ''
-                    } ${a.dimmed ? 'is-dimmed' : ''}`}
+                    } ${a.linked ? 'is-linked' : ''}`}
                   >
                     <path
                       d={a.path}
@@ -1457,6 +1661,36 @@ export function GanttView({
           </div>
         </div>
       </div>
+
+      </div>
+
+      <MilestoneDialog
+        open={Boolean(msDialog)}
+        onOpenChange={(o) => !o && setMsDialog(null)}
+        initial={msDialog}
+        targets={milestoneTargets}
+        onSubmit={(v) =>
+          void addDraftChanges(
+            [
+              {
+                kind: 'milestone',
+                op: msDialog?.id ? 'update' : 'create',
+                target_id: msDialog?.id ?? crypto.randomUUID(),
+                payload: v as unknown as Record<string, unknown>,
+              },
+            ],
+            `${v.name} — in your draft`,
+          )
+        }
+        onDelete={
+          msDialog?.id
+            ? () =>
+                void addDraftChanges([
+                  { kind: 'milestone', op: 'delete', target_id: msDialog.id!, payload: {} },
+                ])
+            : undefined
+        }
+      />
 
       <Dialog
         open={Boolean(pendingReassign)}

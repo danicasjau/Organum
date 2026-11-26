@@ -1,0 +1,226 @@
+@layer components {
+  .org-draftbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--draftbar-h);
+    padding: var(--space-1) var(--space-2);
+    border: var(--border-w) solid var(--border-dark);
+    background: var(--surface-panel);
+  }
+
+  /* Pending changes: dashed highlight border + pencil + count (never colour alone). */
+  .org-draftbar[data-has-changes='true'] {
+    border: var(--border-w-strong) dashed var(--highlight);
+  }
+
+  .org-draftbar__label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-weight: 700;
+  }
+
+  .org-draftbar__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-width: var(--popover-min-w);
+    max-height: var(--select-max-h);
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+  }
+
+  .org-draftbar__list li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .org-draftbar__item {
+    flex: 1;
+  }
+
+  .org-sched-save,
+  .org-sched-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: var(--popover-min-w);
+  }
+
+  .org-sched-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .org-sched-inline,
+  .org-sched-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .org-sched-actions {
+    justify-content: flex-end;
+  }
+
+  .org-sched-diff {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .org-sched-diff th,
+  .org-sched-diff td {
+    padding: var(--space-1) var(--space-2);
+    border-bottom: var(--border-w) solid var(--border-dark);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .org-sched-conflicts {
+    margin: 0;
+    padding-left: var(--space-4);
+  }
+
+  .org-sched-versions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    width: var(--versions-panel-w);
+    min-width: var(--versions-panel-w);
+    padding: var(--space-2);
+    overflow-y: auto;
+    border-right: var(--border-w) solid var(--border-dark);
+    background: var(--surface-panel);
+  }
+
+  .org-sched-versions__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .org-sched-versions__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .org-sched-version {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-2);
+    border: var(--border-w) solid var(--border-dark);
+    border-left: var(--dirty-bar-w) solid transparent;
+    background: var(--surface-field);
+  }
+
+  .org-sched-version[data-current='true'] {
+    border-left-color: var(--success);
+  }
+
+  .org-sched-version__top,
+  .org-sched-version__summary,
+  .org-sched-version__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .org-sched-version__label {
+    font-family: var(--font-mono);
+    font-weight: 700;
+  }
+
+  .org-sched-version__spacer {
+    flex: 1;
+  }
+
+  /* ---- milestone rhombus (shared by Gantt and Calendar) ---- */
+  .org-ms {
+    position: absolute;
+    top: 0;
+    left: var(--ms-x);
+    z-index: var(--z-local-4);
+    width: 0;
+    height: var(--ms-h);
+    pointer-events: none;
+  }
+
+  .org-ms__line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    border-left: var(--border-w) dashed var(--milestone);
+  }
+
+  .org-ms__diamond {
+    position: absolute;
+    top: var(--space-1);
+    left: calc(-1 * var(--deliver-size));
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(var(--deliver-size) * 2);
+    height: calc(var(--deliver-size) * 2);
+    padding: 0;
+    border: none;
+    background: transparent;
+    pointer-events: auto;
+    cursor: grab;
+  }
+
+  .org-ms__shape {
+    width: var(--milestone-size);
+    height: var(--milestone-size);
+    border: var(--border-w-strong) solid var(--milestone);
+    background: var(--surface-field);
+    transform: rotate(45deg);
+  }
+
+  .org-ms[data-kind='deliver'] .org-ms__shape {
+    width: var(--deliver-size);
+    height: var(--deliver-size);
+    background: var(--milestone);
+  }
+
+  .org-ms[data-status='done'] .org-ms__shape {
+    border-style: dotted;
+  }
+
+  .org-ms[data-draft='true'] .org-ms__shape {
+    outline: var(--border-w) dashed var(--highlight);
+    outline-offset: var(--border-w-strong);
+  }
+
+  .org-ms__late {
+    position: absolute;
+    top: 0;
+    right: 0;
+    color: var(--danger-text);
+    font-weight: 700;
+  }
+
+  .org-ms__name {
+    position: absolute;
+    top: calc(var(--deliver-size) * 2);
+    left: var(--space-1);
+    padding: 0 var(--space-1);
+    background: var(--milestone);
+    color: var(--milestone-text);
+    font-size: var(--font-size-sm);
+    white-space: nowrap;
+  }
+}

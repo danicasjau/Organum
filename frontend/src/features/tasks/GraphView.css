@@ -222,7 +222,7 @@
     border: 1px solid var(--border-dark);
     background: var(--surface-panel);
     cursor: crosshair;
-    z-index: 3;
+    z-index: var(--z-local-3);
   }
 
   .org-graph__minimap-svg {

@@ -1,22 +1,68 @@
 @layer components {
   .org-me-page {
+    display: flex;
     flex: 1;
+    flex-direction: column;
     min-width: 0;
     min-height: 0;
-    padding: var(--space-3);
+    padding: var(--space-2);
+    overflow: hidden;
+  }
+
+  .org-me-page[data-layout='stacked'] {
     overflow-y: auto;
   }
 
-  .org-me-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+  .org-me-stack {
+    display: flex;
+    flex-direction: column;
     gap: var(--space-3);
-    padding-top: var(--space-2);
   }
 
-  .org-me-prefs {
-    max-width: var(--dialog-max-w);
-    padding-top: var(--space-2);
+  .org-me-col {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    border: var(--border-w) solid var(--border-dark);
+    background: var(--surface-panel);
+  }
+
+  .org-me-col__head {
+    display: flex;
+    align-items: center;
+    height: var(--panel-title-h);
+    padding: 0 var(--space-3);
+    border-bottom: var(--border-w) solid var(--border-dark);
+    background: var(--surface-window);
+    font-weight: 600;
+    text-transform: uppercase;
+    user-select: none;
+  }
+
+  .org-me-col__body {
+    flex: 1;
+    min-height: 0;
+    padding: var(--space-2);
+    overflow: auto;
+  }
+
+  .org-me-page[data-layout='stacked'] .org-me-col {
+    height: auto;
+  }
+
+  .org-me-page[data-layout='stacked'] .org-me-col__body {
+    overflow: visible;
+  }
+
+  .org-me-empty {
+    padding: var(--space-3);
+  }
+
+  .org-me-kv {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: var(--space-1) var(--space-3);
   }
 
   .org-me-form {

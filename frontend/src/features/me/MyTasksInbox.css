@@ -108,6 +108,13 @@
     background: var(--surface-field);
   }
 
+  /* Selected card: border style + weight change, not colour alone. */
+  .org-inbox__card[data-selected='true'] {
+    border: var(--border-w-strong) solid var(--highlight);
+    outline: var(--border-w) dashed var(--highlight);
+    outline-offset: calc(-1 * var(--space-1));
+  }
+
   .org-inbox__card-top {
     display: flex;
     align-items: center;

@@ -171,6 +171,14 @@ export function TaskDetail({
   });
   const companies = companiesData ?? EMPTY_COMPANIES;
 
+  // CR04 §6: scheduled outside an assignee's / department's / studio's activation period.
+  const { data: scheduleWarnings } = useQuery({
+    queryKey: ['schedule-warnings', activeProjectUuid, taskId],
+    queryFn: () => apiClient.listScheduleWarnings(taskId, activeProjectUuid),
+    enabled: Boolean(activeProjectUuid && taskId && !isClientRole),
+    retry: false,
+  });
+
   const [depPickerOpen, setDepPickerOpen] = useState(false);
   const { data: depCandidateResp } = useQuery({
     queryKey: ['tasks-dep-candidates', activeProjectUuid],
@@ -573,6 +581,15 @@ export function TaskDetail({
       data-ui="task-detail"
       data-task-id={full.id}
     >
+      {(scheduleWarnings ?? []).length > 0 && (
+        <Banner severity="warning" title="Outside activation period">
+          <ul className="org-tdet__warn-list" data-ui="task-activation-warnings">
+            {(scheduleWarnings ?? []).map((w) => (
+              <li key={`${w.kind}:${w.target_id}`}>{w.message}</li>
+            ))}
+          </ul>
+        </Banner>
+      )}
       <div className="org-tdet__hdr">
         <div className="org-tdet__hdr-top">
           <span className="org-tdet__code">{full.task_code}</span>

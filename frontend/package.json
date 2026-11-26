@@ -14,7 +14,8 @@
     "check:contrast": "node scripts/check-contrast.mjs",
     "generate:api": "openapi-typescript ../backend/openapi.json -o src/lib/api/schema.d.ts",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:bootstrap": "playwright test -c playwright.bootstrap.config.ts"
   },
   "dependencies": {
     "@radix-ui/react-context-menu": "^2.4.1",

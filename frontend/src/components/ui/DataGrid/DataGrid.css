@@ -46,7 +46,7 @@
   .org-datagrid__thead {
     position: sticky;
     top: 0;
-    z-index: 2;
+    z-index: var(--z-local-2);
     background: var(--surface-raised);
     border-bottom: 1px solid var(--border-dark);
   }
@@ -250,5 +250,78 @@
     gap: var(--space-1);
     min-width: var(--popover-min-w);
   }
-}
 
+  /* CR04: frozen leading columns stay put while scrolling horizontally. */
+  .org-datagrid__row .org-datagrid__gutter-cell,
+  .org-datagrid__header-row .org-datagrid__gutter-head,
+  .org-datagrid__filter-row .org-datagrid__gutter-cell {
+    position: sticky;
+    left: 0;
+    z-index: var(--z-local-1);
+  }
+
+  .org-datagrid__cell[data-frozen='true'],
+  .org-datagrid__th[data-frozen='true'],
+  .org-datagrid__filter-cell[data-frozen='true'] {
+    position: sticky;
+    left: var(--dg-left);
+    z-index: var(--z-local-1);
+    background: inherit;
+  }
+
+  .org-datagrid__th[data-frozen='true'] {
+    background: var(--bevel-raised-bg);
+  }
+
+  .org-datagrid__filter-cell[data-frozen='true'] {
+    background: var(--surface-panel);
+  }
+
+  /* Last frozen column gets a heavier divider (shape cue, not colour only). */
+  .org-datagrid__cell[data-frozen='true'] + .org-datagrid__cell:not([data-frozen='true']),
+  .org-datagrid__th[data-frozen='true'] + .org-datagrid__th:not([data-frozen='true']) {
+    border-left: var(--border-w-strong) solid var(--border-dark);
+  }
+
+  .org-datagrid__cell[data-error='true'] {
+    position: relative;
+    outline: var(--border-w) dashed var(--danger);
+    outline-offset: calc(-1 * var(--border-w-strong));
+  }
+
+  .org-datagrid__cell-err {
+    position: absolute;
+    top: 0;
+    right: var(--space-1);
+    color: var(--danger-text);
+    font-weight: 700;
+  }
+
+  .org-datagrid__group-row {
+    background: var(--surface-panel);
+  }
+
+  .org-datagrid__group-row:hover {
+    background: var(--surface-hover);
+  }
+
+  .org-datagrid__group-toggle {
+    position: sticky;
+    left: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 0 var(--space-2);
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .org-datagrid__group-count {
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+}

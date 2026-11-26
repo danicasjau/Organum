@@ -96,7 +96,11 @@ const noDisallowedShadowsRule = stylelint.createPlugin('organum/no-disallowed-sh
       }
       if (decl.prop === 'box-shadow') {
         const val = decl.value.trim();
-        if (val !== 'none' && !val.startsWith('var(--shadow-popup)') && !val.startsWith('var(--bevel-')) {
+        if (
+          val !== 'none' &&
+          !val.startsWith('var(--shadow-popup)') &&
+          !val.startsWith('var(--bevel-')
+        ) {
           report({
             message: messages.rejected(val),
             node: decl,
@@ -132,11 +136,29 @@ const noLargeRadiusRule = stylelint.createPlugin('organum/no-large-radius', () =
   };
 });
 
+const zIndexTokenRule = stylelint.createPlugin('organum/z-index-token', () => {
+  const messages = ruleMessages('organum/z-index-token', {
+    rejected: (val) => `z-index "${val}" must use a --z-* token from tokens.css`,
+  });
+  return (root, result) => {
+    if (isTokensFile(result)) return;
+    root.walkDecls('z-index', (decl) => {
+      if (/^var\(--z-[a-z0-9-]+\)$/.test(decl.value.trim())) return;
+      report({
+        message: messages.rejected(decl.value),
+        node: decl,
+        result,
+        ruleName: 'organum/z-index-token',
+      });
+    });
+  };
+});
+
 export default [
   rawColorRule,
   rawPxRule,
   noTransitionsRule,
   noDisallowedShadowsRule,
   noLargeRadiusRule,
+  zIndexTokenRule,
 ];
-

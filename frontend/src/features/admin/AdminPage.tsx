@@ -21,6 +21,15 @@ import { AdminDatabaseSection } from './AdminDatabaseSection';
 import { AdminDefaultTasksSection } from './AdminDefaultTasksSection';
 import { AdminDepTemplatesSection } from './AdminDepTemplatesSection';
 import { AdminRulesSection } from './AdminRulesSection';
+import {
+  EMPTY_PERMISSION_FILTER,
+  differsFromDefault,
+  filterPermissionKeys,
+  isFilterActive,
+  permissionGroups,
+  visibleRoles,
+  type PermissionFilter,
+} from './permissionFilter';
 import './AdminPage.css';
 
 type AdminSection =
@@ -148,6 +157,15 @@ export function AdminConsoleContent({
     const first = roles[0]?.permissions ?? {};
     return Object.keys(first).sort();
   }, [roles]);
+
+  const [permFilter, setPermFilter] = useState<PermissionFilter>(EMPTY_PERMISSION_FILTER);
+  const patchPermFilter = (patch: Partial<PermissionFilter>) =>
+    setPermFilter((prev) => ({ ...prev, ...patch }));
+  const shownRoles = useMemo(() => visibleRoles(roles, permFilter), [roles, permFilter]);
+  const shownKeys = useMemo(
+    () => filterPermissionKeys(permissionKeys, roles, permFilter),
+    [permissionKeys, roles, permFilter],
+  );
 
   const handleUpdateRoleScope = async (role: RoleOut, permKey: string, nextScope: PermScope) => {
     setErrorMsg(null);
@@ -299,12 +317,56 @@ export function AdminConsoleContent({
                       </Button>
                     </div>
 
+                    <div
+                      className="org-admin-toolbar org-admin-permfilter"
+                      role="search"
+                      aria-label="Filter permissions"
+                    >
+                      <TextField
+                        aria-label="Search permissions"
+                        placeholder="Search key, role or scope (e.g. gantt, company)..."
+                        value={permFilter.text}
+                        onChange={(e) => patchPermFilter({ text: e.target.value })}
+                      />
+                      <Select
+                        ariaLabel="Permission group"
+                        value={permFilter.group}
+                        onChange={(group) => patchPermFilter({ group })}
+                        options={[
+                          { value: '', label: 'All groups' },
+                          ...permissionGroups(permissionKeys).map((g) => ({ value: g, label: g })),
+                        ]}
+                      />
+                      <Select
+                        ariaLabel="Role column"
+                        value={permFilter.roleId}
+                        onChange={(roleId) => patchPermFilter({ roleId })}
+                        options={[
+                          { value: '', label: 'All roles' },
+                          ...roles.map((r) => ({ value: r.id, label: r.label })),
+                        ]}
+                      />
+                      <Checkbox
+                        label="Only differences from default"
+                        checked={permFilter.onlyDifferences}
+                        onChange={(onlyDifferences) => patchPermFilter({ onlyDifferences })}
+                      />
+                      <Text size="sm" variant="muted" aria-live="polite">
+                        {shownKeys.length} of {permissionKeys.length} permissions
+                      </Text>
+                      {isFilterActive(permFilter) && (
+                        <Button size="sm" onClick={() => setPermFilter(EMPTY_PERMISSION_FILTER)}>
+                          Clear filters
+                        </Button>
+                      )}
+                    </div>
+
                     <div className="org-admin-table-wrap">
                       <table className="org-admin-matrix" aria-label="Role permissions matrix">
                         <thead>
                           <tr>
                             <th>Permission</th>
-                            {roles.map((r) => (
+                            {shownRoles.map((r) => (
                               <th key={r.id} title={r.name}>
                                 {r.label}
                               </th>
@@ -312,14 +374,40 @@ export function AdminConsoleContent({
                           </tr>
                         </thead>
                         <tbody>
-                          {permissionKeys.map((perm) => (
+                          {shownKeys.length === 0 && (
+                            <tr>
+                              <td colSpan={shownRoles.length + 1}>
+                                <Text size="sm" variant="muted">
+                                  No permissions match the current filters.
+                                </Text>
+                              </td>
+                            </tr>
+                          )}
+                          {shownKeys.map((perm) => (
                             <tr key={perm}>
                               <td className="org-admin-matrix__perm">{perm}</td>
-                              {roles.map((role) => {
+                              {shownRoles.map((role) => {
                                 const scope = (role.permissions?.[perm] ?? 'none') as PermScope;
                                 const locked = role.name === 'admin';
+                                const changed = differsFromDefault(role, perm);
                                 return (
-                                  <td key={`${role.id}:${perm}`}>
+                                  <td
+                                    key={`${role.id}:${perm}`}
+                                    data-changed={changed ? 'true' : undefined}
+                                    title={
+                                      changed
+                                        ? `Changed from default (${role.default_permissions?.[perm] ?? 'none'})`
+                                        : undefined
+                                    }
+                                  >
+                                    {changed && (
+                                      <span
+                                        className="org-admin-matrix__changed"
+                                        aria-label={`changed from default ${role.default_permissions?.[perm] ?? 'none'}`}
+                                      >
+                                        *
+                                      </span>
+                                    )}
                                     {locked ? (
                                       <Badge tone="neutral">all</Badge>
                                     ) : (

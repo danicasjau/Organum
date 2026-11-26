@@ -135,7 +135,7 @@
   .org-workload__td-user {
     position: sticky;
     left: 0;
-    z-index: 2;
+    z-index: var(--z-local-2);
     width: var(--heat-user-w);
     min-width: var(--heat-user-w);
     max-width: var(--heat-user-w);
@@ -150,7 +150,7 @@
 
   .org-workload__th-user {
     top: 0;
-    z-index: 4;
+    z-index: var(--z-local-4);
     background: var(--surface-raised);
     font-weight: 700;
     border-bottom: 1px solid var(--border-dark);
@@ -179,7 +179,7 @@
   .org-workload__th-day {
     position: sticky;
     top: 0;
-    z-index: 3;
+    z-index: var(--z-local-3);
     width: var(--heat-cell-w);
     min-width: var(--heat-cell-w);
     height: var(--heat-cell-h);

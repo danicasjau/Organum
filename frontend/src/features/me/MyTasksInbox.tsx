@@ -55,7 +55,19 @@ function InboxProgressFill({ logged, bid }: { logged: number; bid: number | null
   );
 }
 
-export function MyTasksInbox() {
+export interface MyTasksInboxProps {
+  /** When set, cards are selectable and the review queue is left to the caller. */
+  selectedTaskId?: string | null;
+  onSelectTask?: (taskId: string) => void;
+  /** Hide the embedded review queue (the /me page shows it in its preview column). */
+  hideReviewQueue?: boolean;
+}
+
+export function MyTasksInbox({
+  selectedTaskId = null,
+  onSelectTask,
+  hideReviewQueue = false,
+}: MyTasksInboxProps = {}) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -171,6 +183,13 @@ export function MyTasksInbox() {
         className="org-inbox__card"
         data-ui="my-task-card"
         data-task-id={task.id}
+        data-selected={selectedTaskId === task.id ? 'true' : undefined}
+        aria-current={selectedTaskId === task.id ? 'true' : undefined}
+        onClick={(ev) => {
+          // Buttons inside the card keep their own actions.
+          if (!onSelectTask || (ev.target as HTMLElement).closest('button, a, input')) return;
+          onSelectTask(task.id);
+        }}
       >
         <div className="org-inbox__card-top">
           <span className="org-inbox__code">{task.task_code}</span>
@@ -326,7 +345,7 @@ export function MyTasksInbox() {
       </div>
 
       <div className="org-inbox__scroll">
-        {(data?.to_review?.length ?? 0) > 0 && (
+        {!hideReviewQueue && (data?.to_review?.length ?? 0) > 0 && (
           <div className="org-inbox__revwrap">
             <ReviewQueueView
               searchQuery={search}

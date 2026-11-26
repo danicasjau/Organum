@@ -44,7 +44,7 @@
   .org-matrix__thead {
     position: sticky;
     top: 0;
-    z-index: 3;
+    z-index: var(--z-local-3);
     width: max-content;
     min-width: 100%;
     background: var(--surface-raised);
@@ -59,7 +59,7 @@
   .org-matrix__corner {
     position: sticky;
     left: 0;
-    z-index: 4;
+    z-index: var(--z-local-4);
     flex: 0 0 var(--matrix-entity-col-w);
     width: var(--matrix-entity-col-w);
     display: flex;
@@ -137,7 +137,7 @@
   .org-matrix__ent-cell {
     position: sticky;
     left: 0;
-    z-index: 2;
+    z-index: var(--z-local-2);
     flex: 0 0 var(--matrix-entity-col-w);
     width: var(--matrix-entity-col-w);
     display: flex;

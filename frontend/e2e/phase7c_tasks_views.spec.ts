@@ -121,7 +121,7 @@ test.describe('Phase 7C — Tasks Panel Core, Matrix, Kanban, Review Queue, Link
     // 6. Artist (art_sam) -> /me > My Tasks Focus Inbox
     await logoutViaMenu(page);
     await loginAs(page, 'art_sam', 'DemoPass123!', { targetPath: '/me' });
-    await page.getByRole('tab', { name: 'My Tasks' }).click();
+    // CR04 §13: /me shows Profile, My Tasks and Preview side by side (no tab switch).
     const inbox = page.locator('[data-ui="my-tasks-inbox"]');
     await expect(inbox).toBeVisible({ timeout: 10000 });
     await expect(inbox.getByRole('button', { name: 'I DO' })).toBeVisible();

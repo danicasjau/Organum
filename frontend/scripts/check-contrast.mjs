@@ -17,8 +17,9 @@ function extractVars(selectorRegex) {
   return vars;
 }
 
-const rootVars = extractVars(/:root,\s*\[data-theme="dark"\]\s*\{([\s\S]*?)\n\s*\}/);
-const lightOverrides = extractVars(/\[data-theme="light"\]\s*\{([\s\S]*?)\n\s*\}/);
+// Accept either quote style in the theme selectors (prettier normalises to single quotes).
+const rootVars = extractVars(/:root,\s*\[data-theme=["']dark["']\]\s*\{([\s\S]*?)\n\s*\}/);
+const lightOverrides = extractVars(/\[data-theme=["']light["']\]\s*\{([\s\S]*?)\n\s*\}/);
 
 function resolveVar(name, map, depth = 0) {
   if (depth > 8) return name;
@@ -75,6 +76,11 @@ const checks = [
   ['--btn-danger-fg', '--btn-danger-bg', 4.5, 'danger button'],
   ['--focus-ring', '--surface-panel', 3.0, 'focus ring on panel'],
   ['--focus-ring', '--surface-field', 3.0, 'focus ring on field'],
+  ['--highlight', '--surface-panel', 3.0, 'highlight border on panel'],
+  ['--highlight', '--surface-field', 3.0, 'highlight border on field'],
+  ['--highlight', '--surface-window', 3.0, 'highlight border on window'],
+  ['--milestone-text', '--milestone', 4.5, 'milestone label'],
+  ['--milestone', '--surface-field', 3.0, 'milestone diamond on field'],
   ['--border-control', '--surface-panel', 3.0, 'control border on panel'],
   ['--border-control', '--surface-field', 3.0, 'control border on field'],
   ['--capacity-do-text', '--capacity-do-bg', 4.5, 'capacity DO chip'],

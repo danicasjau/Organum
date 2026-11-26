@@ -55,7 +55,7 @@
   }
 
   .org-select__popup {
-    z-index: var(--z-dropdown);
+    z-index: var(--z-popover);
     min-width: var(--popover-min-w);
     border: 1px solid var(--border-dark);
     border-radius: var(--radius-0);

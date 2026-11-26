@@ -26,6 +26,7 @@ from app.schemas.api import (
     ChangePasswordRequest,
     LoginProjectOption,
     LoginRequest,
+    StaleProjectOut,
 )
 from app.services.auth_service import (
     SESSION_COOKIE_NAME,
@@ -74,14 +75,19 @@ async def auth_bootstrap_info(
         .scalars()
         .all()
     )
-    valid_projects = [
-        LoginProjectOption(uuid=r.uuid, name=r.name)
-        for r in rows
-        if (Path(r.path) / "00_Pipeline" / "project.json").is_file()
-    ]
+    valid_projects: list[LoginProjectOption] = []
+    stale_projects: list[StaleProjectOut] = []
+    for r in rows:
+        if (Path(r.path) / "00_Pipeline" / "project.json").is_file():
+            valid_projects.append(LoginProjectOption(uuid=r.uuid, name=r.name))
+        else:
+            stale_projects.append(StaleProjectOut(uuid=r.uuid, name=r.name, path=r.path))
+    bootstrap_allowed = len(valid_projects) == 0
     return BootstrapInfoOut(
-        bootstrap_allowed=(len(valid_projects) == 0),
+        bootstrap_allowed=bootstrap_allowed,
         projects=valid_projects,
+        # Paths are only disclosed while nobody can sign in anyway (bootstrap mode).
+        stale_projects=stale_projects if bootstrap_allowed else [],
     )
 
 

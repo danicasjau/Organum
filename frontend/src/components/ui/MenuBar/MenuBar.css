@@ -27,7 +27,7 @@
   }
 
   .org-menu__content {
-    z-index: var(--z-dropdown);
+    z-index: var(--z-menu);
     min-width: var(--popover-min-w);
     padding: var(--space-1);
     border: 1px solid var(--border-dark);

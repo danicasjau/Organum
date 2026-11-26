@@ -52,6 +52,11 @@
     --success: #10b981;
     --success-soft: rgba(16, 185, 129, 0.16);
     --warning: #f59e0b;
+    /* CR04: selection / linked-item state colour (borders only, never large fills). */
+    --highlight: #facc15;
+    /* CR04 §7: milestone / deliver date rhombus. */
+    --milestone: #facc15;
+    --milestone-text: #1e293b;
     --warning-soft: rgba(245, 158, 11, 0.16);
     --danger: #ef4444;
     --danger-soft: rgba(239, 68, 68, 0.16);
@@ -164,6 +169,7 @@
     --radius-2: 3px;
     --radius-max: 4px;
     --border-w: 1px;
+    --border-w-strong: 2px;
     --border-double-w: 3px;
     --focus-w: 1px;
 
@@ -253,16 +259,34 @@
     --settings-dialog-w: 900px;
     --settings-dialog-h: 600px;
     --settings-nav-w: 190px;
-    --z-dropdown: 100;
-    --z-popover: 150;
-    --z-tooltip: 200;
-    --z-dialog: 300;
-    --z-toast: 400;
+    /* Z-index scale (CR04 §2). Floating UI is portaled to <body>, so these globals
+       decide stacking: anything opened from a dialog or dock must sit above it.
+       Local stacking inside a widget uses the --z-local-* steps only. */
+    --z-base: 0;
+    --z-local-1: 1;
+    --z-local-2: 2;
+    --z-local-3: 3;
+    --z-local-4: 4;
+    --z-local-5: 5;
+    --z-dock: 50;
+    --z-dialog: 100;
+    --z-popover: 200;
+    --z-menu: 300;
+    --z-tooltip: 400;
+    --z-toast: 500;
 
     /* CR03 layout, status, capacity, avatar, heatmap tokens */
     --viewswitch-h: 30px;
     --filterbar-h: 34px;
     --task-panel-w: 440px;
+    /* /me: below this page width the three columns stack (read by JS). */
+    --me-stack-bp: 1100px;
+    --short-code-w: 56px;
+    /* CR04 §7 milestone diamond sizes (deliver dates are larger). */
+    --milestone-size: 10px;
+    --deliver-size: 14px;
+    --draftbar-h: 30px;
+    --versions-panel-w: 280px;
     --avatar-sm: 20px;
     --avatar-md: 30px;
     --avatar-lg: 40px;
@@ -389,6 +413,9 @@
     --success: #059669;
     --success-soft: rgba(5, 150, 105, 0.14);
     --warning: #b45309;
+    --highlight: #a16207;
+    --milestone: #a16207;
+    --milestone-text: #ffffff;
     --warning-soft: rgba(245, 158, 11, 0.16);
     --danger: #dc2626;
     --danger-soft: rgba(220, 38, 38, 0.14);

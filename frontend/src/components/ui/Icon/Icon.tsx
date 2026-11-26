@@ -3,6 +3,7 @@ import './Icon.css';
 
 export type IconName =
   | 'search'
+  | 'grip'
   | 'close'
   | 'chevron-down'
   | 'chevron-right'
@@ -136,6 +137,7 @@ const PATHS: Record<IconName, string> = {
   star: 'M8 1.8 9.8 5.6l4.2.6-3 3 .7 4.2L8 11.4l-3.7 2 .7-4.2-3-3 4.2-.6L8 1.8Zm0 2.1L6.9 6.2l-2.5.4 1.8 1.8-.4 2.5L8 9.7l2.2 1.2-.4-2.5 1.8-1.8-2.5-.4L8 3.9Z',
   'star-filled': 'M8 1.8 9.8 5.6l4.2.6-3 3 .7 4.2L8 11.4l-3.7 2 .7-4.2-3-3 4.2-.6L8 1.8Z',
   'folder-plus': 'M2 3h4.5l1.2 1.5H14v8.5H2V3Zm6.5 3v2H6.5v1h2v2h1v-2h2V8h-2V6h-1Z',
+  grip: 'M5 3h2v2H5V3Zm4 0h2v2H9V3ZM5 7h2v2H5V7Zm4 0h2v2H9V7Zm-4 4h2v2H5v-2Zm4 0h2v2H9v-2Z',
   trash:
     'M5.5 2h5l.7 1H14v1.2H2V3h2.8l.7-1ZM3.5 5h9l-.7 9H4.2l-.7-9Zm2.5 1.5v6h1v-6H6Zm3 0v6h1v-6H9Z',
   refresh:

@@ -460,3 +460,10 @@
     padding: 0 var(--space-1);
   }
 }
+
+@layer components {
+  .org-tdet__warn-list {
+    margin: 0;
+    padding-left: var(--space-4);
+  }
+}

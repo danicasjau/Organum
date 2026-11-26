@@ -44,7 +44,7 @@
   .org-tgrid__thead {
     position: sticky;
     top: 0;
-    z-index: 2;
+    z-index: var(--z-local-2);
     background: var(--surface-raised);
     border-bottom: 1px solid var(--border-dark);
     width: max-content;

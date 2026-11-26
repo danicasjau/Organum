@@ -18,6 +18,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     Uuid,
+    true,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -47,6 +48,10 @@ class ProjectMeta(TimestampMixin, Base):
     )
     admin_sql_console_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     link_dependency_depth: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    # CR04 §10: exports offer a styled XLSX next to plain CSV (on by default).
+    styled_exports: Mapped[bool] = mapped_column(
+        Boolean, default=True, server_default=true(), nullable=False
+    )
 
 
 class Department(TimestampMixin, Base):

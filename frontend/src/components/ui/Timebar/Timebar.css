@@ -100,7 +100,7 @@
     border-radius: var(--radius-0);
     background: var(--amber-500);
     cursor: pointer;
-    z-index: 2;
+    z-index: var(--z-local-2);
   }
 
   .org-timebar__marker:hover {
@@ -115,7 +115,7 @@
     width: 1px;
     background: var(--accent);
     pointer-events: none;
-    z-index: 3;
+    z-index: var(--z-local-3);
   }
 
   .org-timebar__playhead::before {

@@ -25,6 +25,7 @@ import {
   addDays,
   aggregateWorkloadWeeks,
   isWorkingDay,
+  isoToZeroMonDays,
   todayIsoUtc,
   utilizationTier,
 } from './planningHelpers';
@@ -92,7 +93,10 @@ export function WorkloadView({
     enabled: Boolean(activeProjectUuid),
   });
 
-  const workingDays = settings?.working_days ?? DEFAULT_WORKING_DAYS;
+  // API values are ISO weekdays (1=Mon); helpers use 0=Mon.
+  const workingDays = settings?.working_days
+    ? isoToZeroMonDays(settings.working_days)
+    : DEFAULT_WORKING_DAYS;
 
   const tasksById = useMemo(() => {
     const m = new Map<string, TaskListItemOut>();

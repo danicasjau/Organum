@@ -40,6 +40,9 @@ function PrefetchWorkspaces() {
   }, [signedIn]);
   return null;
 }
+const LayeringFixture = lazy(() =>
+  import('../gallery/LayeringFixture').then((m) => ({ default: m.LayeringFixture })),
+);
 const AdminPage = lazy(() =>
   import('../features/admin/AdminPage').then((m) => ({ default: m.AdminPage })),
 );
@@ -195,6 +198,7 @@ export function App() {
                     </RequireAuth>
                   }
                 />
+                <Route path="/gallery/layering" element={<LayeringFixture />} />
                 <Route
                   path="/gallery"
                   element={

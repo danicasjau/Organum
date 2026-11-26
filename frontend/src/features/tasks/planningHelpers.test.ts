@@ -248,3 +248,15 @@ describe('planningHelpers Workload & Graph layout', () => {
     expect(indirect).toEqual([{ sourceId: 'e1', targetId: 'e3', viaNames: ['hero_robot'] }]);
   });
 });
+
+describe('isoToZeroMonDays', () => {
+  it('converts ISO weekdays (1=Mon) to 0=Mon and defaults to Mon-Fri', async () => {
+    const { isoToZeroMonDays, isWorkingDay } = await import('./planningHelpers');
+    expect(isoToZeroMonDays([1, 2, 3, 4, 5])).toEqual([0, 1, 2, 3, 4]);
+    expect(isoToZeroMonDays([6, 7])).toEqual([5, 6]);
+    expect(isoToZeroMonDays([])).toEqual([0, 1, 2, 3, 4]);
+    // 2026-12-07 is a Monday, 2026-12-05 a Saturday.
+    expect(isWorkingDay('2026-12-07', isoToZeroMonDays([1, 2, 3, 4, 5]))).toBe(true);
+    expect(isWorkingDay('2026-12-05', isoToZeroMonDays([1, 2, 3, 4, 5]))).toBe(false);
+  });
+});

@@ -1,7 +1,14 @@
 import { create } from 'zustand';
 import type { TaskBulkRowIn, TaskListQuery } from '../../lib/api/client';
 
-export type TasksWorkspaceView = 'gantt' | 'matrix' | 'grid' | 'workload' | 'kanban' | 'review';
+export type TasksWorkspaceView =
+  | 'gantt'
+  | 'matrix'
+  | 'grid'
+  | 'workload'
+  | 'kanban'
+  | 'review'
+  | 'confo';
 export type MatrixGroupBy = 'path' | 'type';
 export type KanbanSwimlane = 'none' | 'department' | 'assignee';
 export type GanttGroupBy =

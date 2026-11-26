@@ -6718,6 +6718,2015 @@
         }
       }
     },
+    "/api/v1/projects/{project_uuid}/confo": {
+      "get": {
+        "tags": [
+          "confo"
+        ],
+        "summary": "Get Confo Grid",
+        "operationId": "get_confo_grid_api_v1_projects__project_uuid__confo_get",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfoGridOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/confo/cells": {
+      "patch": {
+        "tags": [
+          "confo"
+        ],
+        "summary": "Patch Confo Cells",
+        "operationId": "patch_confo_cells_api_v1_projects__project_uuid__confo_cells_patch",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfoCellsPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfoCellsResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/confo/columns/trash": {
+      "get": {
+        "tags": [
+          "confo"
+        ],
+        "summary": "List Deleted Columns",
+        "operationId": "list_deleted_columns_api_v1_projects__project_uuid__confo_columns_trash_get",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConfoColumnOut"
+                  },
+                  "title": "Response List Deleted Columns Api V1 Projects  Project Uuid  Confo Columns Trash Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/confo/columns": {
+      "post": {
+        "tags": [
+          "confo"
+        ],
+        "summary": "Create Confo Column",
+        "operationId": "create_confo_column_api_v1_projects__project_uuid__confo_columns_post",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfoColumnCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfoColumnOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/confo/columns/{column_id}": {
+      "patch": {
+        "tags": [
+          "confo"
+        ],
+        "summary": "Update Confo Column",
+        "operationId": "update_confo_column_api_v1_projects__project_uuid__confo_columns__column_id__patch",
+        "parameters": [
+          {
+            "name": "column_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Column Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfoColumnUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfoColumnOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "confo"
+        ],
+        "summary": "Delete Confo Column",
+        "description": "Soft delete: values are kept for 30 days and the column can be restored.",
+        "operationId": "delete_confo_column_api_v1_projects__project_uuid__confo_columns__column_id__delete",
+        "parameters": [
+          {
+            "name": "column_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Column Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/confo/columns/order": {
+      "put": {
+        "tags": [
+          "confo"
+        ],
+        "summary": "Reorder Confo Columns",
+        "operationId": "reorder_confo_columns_api_v1_projects__project_uuid__confo_columns_order_put",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfoReorderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConfoColumnOut"
+                  },
+                  "title": "Response Reorder Confo Columns Api V1 Projects  Project Uuid  Confo Columns Order Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/confo/columns/{column_id}/restore": {
+      "post": {
+        "tags": [
+          "confo"
+        ],
+        "summary": "Restore Confo Column",
+        "operationId": "restore_confo_column_api_v1_projects__project_uuid__confo_columns__column_id__restore_post",
+        "parameters": [
+          {
+            "name": "column_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Column Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfoColumnOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/confo/columns/{column_id}/purge": {
+      "delete": {
+        "tags": [
+          "confo"
+        ],
+        "summary": "Purge Confo Column",
+        "operationId": "purge_confo_column_api_v1_projects__project_uuid__confo_columns__column_id__purge_delete",
+        "parameters": [
+          {
+            "name": "column_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Column Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/confo/import/preview": {
+      "post": {
+        "tags": [
+          "confo"
+        ],
+        "summary": "Preview Confo Import",
+        "operationId": "preview_confo_import_api_v1_projects__project_uuid__confo_import_preview_post",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfoImportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfoImportPreviewOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/confo/import/commit": {
+      "post": {
+        "tags": [
+          "confo"
+        ],
+        "summary": "Commit Confo Import",
+        "description": "All-or-nothing: any error in the plan aborts before anything is written.",
+        "operationId": "commit_confo_import_api_v1_projects__project_uuid__confo_import_commit_post",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfoImportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfoImportCommitOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/users/{user_id}/work-hours": {
+      "get": {
+        "tags": [
+          "people"
+        ],
+        "summary": "Get Work Hours",
+        "operationId": "get_work_hours_api_v1_projects__project_uuid__users__user_id__work_hours_get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHoursOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "people"
+        ],
+        "summary": "Put Work Hours",
+        "operationId": "put_work_hours_api_v1_projects__project_uuid__users__user_id__work_hours_put",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkHoursPut"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHoursOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/activation-periods": {
+      "get": {
+        "tags": [
+          "people"
+        ],
+        "summary": "List Activation Periods",
+        "operationId": "list_activation_periods_api_v1_projects__project_uuid__activation_periods_get",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          },
+          {
+            "name": "target_kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Target Kind"
+            }
+          },
+          {
+            "name": "target_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Target Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ActivationPeriodOut"
+                  },
+                  "title": "Response List Activation Periods Api V1 Projects  Project Uuid  Activation Periods Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "people"
+        ],
+        "summary": "Create Activation Period",
+        "operationId": "create_activation_period_api_v1_projects__project_uuid__activation_periods_post",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivationPeriodIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivationPeriodOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/activation-periods/{period_id}": {
+      "patch": {
+        "tags": [
+          "people"
+        ],
+        "summary": "Update Activation Period",
+        "operationId": "update_activation_period_api_v1_projects__project_uuid__activation_periods__period_id__patch",
+        "parameters": [
+          {
+            "name": "period_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Period Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivationPeriodUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivationPeriodOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "people"
+        ],
+        "summary": "Delete Activation Period",
+        "operationId": "delete_activation_period_api_v1_projects__project_uuid__activation_periods__period_id__delete",
+        "parameters": [
+          {
+            "name": "period_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Period Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/schedule/warnings": {
+      "get": {
+        "tags": [
+          "people"
+        ],
+        "summary": "List Schedule Warnings",
+        "description": "Tasks scheduled outside activation periods (warnings, never blocking).",
+        "operationId": "list_schedule_warnings_api_v1_projects__project_uuid__schedule_warnings_get",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          },
+          {
+            "name": "task_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScheduleWarningOut"
+                  },
+                  "title": "Response List Schedule Warnings Api V1 Projects  Project Uuid  Schedule Warnings Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/companies/{company_id}/comments": {
+      "get": {
+        "tags": [
+          "people"
+        ],
+        "summary": "List Company Comments",
+        "operationId": "list_company_comments_api_v1_projects__project_uuid__companies__company_id__comments_get",
+        "parameters": [
+          {
+            "name": "company_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Company Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CompanyCommentOut"
+                  },
+                  "title": "Response List Company Comments Api V1 Projects  Project Uuid  Companies  Company Id  Comments Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "people"
+        ],
+        "summary": "Add Company Comment",
+        "operationId": "add_company_comment_api_v1_projects__project_uuid__companies__company_id__comments_post",
+        "parameters": [
+          {
+            "name": "company_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Company Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompanyCommentIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyCommentOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/companies/{company_id}/comments/{comment_id}": {
+      "delete": {
+        "tags": [
+          "people"
+        ],
+        "summary": "Delete Company Comment",
+        "operationId": "delete_company_comment_api_v1_projects__project_uuid__companies__company_id__comments__comment_id__delete",
+        "parameters": [
+          {
+            "name": "company_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Company Id"
+            }
+          },
+          {
+            "name": "comment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Comment Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/companies/{company_id}/members": {
+      "get": {
+        "tags": [
+          "people"
+        ],
+        "summary": "Get Company Members",
+        "operationId": "get_company_members_api_v1_projects__project_uuid__companies__company_id__members_get",
+        "parameters": [
+          {
+            "name": "company_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Company Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyMembersOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "people"
+        ],
+        "summary": "Put Company Members",
+        "description": "Replace the *linked* people of a studio/group (primary company is set on the user).",
+        "operationId": "put_company_members_api_v1_projects__project_uuid__companies__company_id__members_put",
+        "parameters": [
+          {
+            "name": "company_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Company Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompanyMembersPut"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyMembersOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/users/{user_id}/companies": {
+      "get": {
+        "tags": [
+          "people"
+        ],
+        "summary": "Get User Linked Companies",
+        "operationId": "get_user_linked_companies_api_v1_projects__project_uuid__users__user_id__companies_get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "title": "Response Get User Linked Companies Api V1 Projects  Project Uuid  Users  User Id  Companies Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/milestones": {
+      "get": {
+        "tags": [
+          "schedule"
+        ],
+        "summary": "List Milestones",
+        "description": "Everyone who can see tasks sees milestones; clients only see the shared ones.",
+        "operationId": "list_milestones_api_v1_projects__project_uuid__milestones_get",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MilestoneOut"
+                  },
+                  "title": "Response List Milestones Api V1 Projects  Project Uuid  Milestones Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "schedule"
+        ],
+        "summary": "Create Milestone",
+        "description": "Direct (non-draft) creation, e.g. from lists; the Gantt/Calendar use the draft.",
+        "operationId": "create_milestone_api_v1_projects__project_uuid__milestones_post",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MilestoneIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MilestoneOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/milestones/{milestone_id}": {
+      "patch": {
+        "tags": [
+          "schedule"
+        ],
+        "summary": "Patch Milestone",
+        "operationId": "patch_milestone_api_v1_projects__project_uuid__milestones__milestone_id__patch",
+        "parameters": [
+          {
+            "name": "milestone_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Milestone Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MilestonePatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MilestoneOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "schedule"
+        ],
+        "summary": "Delete Milestone",
+        "operationId": "delete_milestone_api_v1_projects__project_uuid__milestones__milestone_id__delete",
+        "parameters": [
+          {
+            "name": "milestone_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Milestone Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/schedule/draft": {
+      "get": {
+        "tags": [
+          "schedule"
+        ],
+        "summary": "Get Draft",
+        "operationId": "get_draft_api_v1_projects__project_uuid__schedule_draft_get",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "schedule"
+        ],
+        "summary": "Discard Draft",
+        "operationId": "discard_draft_api_v1_projects__project_uuid__schedule_draft_delete",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/schedule/draft/changes": {
+      "post": {
+        "tags": [
+          "schedule"
+        ],
+        "summary": "Add Draft Changes",
+        "description": "Stage schedule edits in the caller's draft; live data is untouched.",
+        "operationId": "add_draft_changes_api_v1_projects__project_uuid__schedule_draft_changes_post",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftChangesIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/schedule/draft/changes/{change_id}": {
+      "delete": {
+        "tags": [
+          "schedule"
+        ],
+        "summary": "Revert Draft Change",
+        "operationId": "revert_draft_change_api_v1_projects__project_uuid__schedule_draft_changes__change_id__delete",
+        "parameters": [
+          {
+            "name": "change_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Change Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/schedule/draft/preview": {
+      "get": {
+        "tags": [
+          "schedule"
+        ],
+        "summary": "Preview Draft",
+        "description": "Differences the draft would apply, plus conflicts with live data changed meanwhile.",
+        "operationId": "preview_draft_api_v1_projects__project_uuid__schedule_draft_preview_get",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftPreviewOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/schedule/draft/save": {
+      "post": {
+        "tags": [
+          "schedule"
+        ],
+        "summary": "Save Draft As Version",
+        "description": "Apply the draft to live data and store the result as a new immutable version.",
+        "operationId": "save_draft_as_version_api_v1_projects__project_uuid__schedule_draft_save_post",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftSaveIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleVersionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/schedule/versions": {
+      "get": {
+        "tags": [
+          "schedule"
+        ],
+        "summary": "List Versions",
+        "operationId": "list_versions_api_v1_projects__project_uuid__schedule_versions_get",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScheduleVersionOut"
+                  },
+                  "title": "Response List Versions Api V1 Projects  Project Uuid  Schedule Versions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/schedule/versions/{version_id}/star": {
+      "post": {
+        "tags": [
+          "schedule"
+        ],
+        "summary": "Star Version",
+        "description": "Mark (or unmark) the baseline/master version; at most one version is starred.",
+        "operationId": "star_version_api_v1_projects__project_uuid__schedule_versions__version_id__star_post",
+        "parameters": [
+          {
+            "name": "version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Version Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VersionStarIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleVersionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/schedule/versions/{version_id}/jump": {
+      "post": {
+        "tags": [
+          "schedule"
+        ],
+        "summary": "Jump To Version",
+        "description": "Load a version as a *new draft* (replacing the caller's draft); live data untouched.",
+        "operationId": "jump_to_version_api_v1_projects__project_uuid__schedule_versions__version_id__jump_post",
+        "parameters": [
+          {
+            "name": "version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Version Id"
+            }
+          },
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_uuid}/schedule/versions/compare": {
+      "get": {
+        "tags": [
+          "schedule"
+        ],
+        "summary": "Compare Versions",
+        "operationId": "compare_versions_api_v1_projects__project_uuid__schedule_versions_compare_get",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Uuid"
+            }
+          },
+          {
+            "name": "a",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "A"
+            }
+          },
+          {
+            "name": "b",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "live",
+              "title": "B"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleCompareOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_uuid}/tasks/{task_id}/product": {
       "get": {
         "tags": [
@@ -8628,6 +10637,137 @@
   },
   "components": {
     "schemas": {
+      "ActivationPeriodIn": {
+        "properties": {
+          "target_kind": {
+            "type": "string",
+            "enum": [
+              "department",
+              "company",
+              "user"
+            ],
+            "title": "Target Kind"
+          },
+          "target_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Target Id"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "title": "End Date"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 256,
+            "title": "Note",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "target_kind",
+          "target_id",
+          "start_date",
+          "end_date"
+        ],
+        "title": "ActivationPeriodIn"
+      },
+      "ActivationPeriodOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "target_kind": {
+            "type": "string",
+            "enum": [
+              "department",
+              "company",
+              "user"
+            ],
+            "title": "Target Kind"
+          },
+          "target_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Target Id"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "title": "End Date"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "target_kind",
+          "target_id",
+          "start_date",
+          "end_date"
+        ],
+        "title": "ActivationPeriodOut"
+      },
+      "ActivationPeriodUpdate": {
+        "properties": {
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "title": "ActivationPeriodUpdate"
+      },
       "AnnotationCreate": {
         "properties": {
           "kind": {
@@ -9449,6 +11589,13 @@
             },
             "type": "array",
             "title": "Projects"
+          },
+          "stale_projects": {
+            "items": {
+              "$ref": "#/components/schemas/StaleProjectOut"
+            },
+            "type": "array",
+            "title": "Stale Projects"
           }
         },
         "type": "object",
@@ -10406,6 +12553,75 @@
         ],
         "title": "ColorspaceListResponse"
       },
+      "CompanyCommentIn": {
+        "properties": {
+          "body": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Body"
+          }
+        },
+        "type": "object",
+        "required": [
+          "body"
+        ],
+        "title": "CompanyCommentIn"
+      },
+      "CompanyCommentOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "company_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Company Id"
+          },
+          "author_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Id"
+          },
+          "author_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Name"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "company_id",
+          "body",
+          "created_at"
+        ],
+        "title": "CompanyCommentOut"
+      },
       "CompanyCreateRequest": {
         "properties": {
           "name": {
@@ -10421,6 +12637,7 @@
             "enum": [
               "internal",
               "external",
+              "client",
               "group"
             ],
             "title": "Kind",
@@ -10466,6 +12683,50 @@
         "type": "object",
         "title": "CompanyDepartmentsPutRequest"
       },
+      "CompanyMembersOut": {
+        "properties": {
+          "company_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Company Id"
+          },
+          "primary_user_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Primary User Ids"
+          },
+          "linked_user_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Linked User Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "company_id"
+        ],
+        "title": "CompanyMembersOut"
+      },
+      "CompanyMembersPut": {
+        "properties": {
+          "user_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "User Ids"
+          }
+        },
+        "type": "object",
+        "title": "CompanyMembersPut"
+      },
       "CompanyOut": {
         "properties": {
           "id": {
@@ -10486,6 +12747,7 @@
             "enum": [
               "internal",
               "external",
+              "client",
               "group"
             ],
             "title": "Kind"
@@ -10561,6 +12823,7 @@
                 "enum": [
                   "internal",
                   "external",
+                  "client",
                   "group"
                 ]
               },
@@ -10595,6 +12858,661 @@
         },
         "type": "object",
         "title": "CompanyUpdateRequest"
+      },
+      "ConfoCellChangeIn": {
+        "properties": {
+          "entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Entity Id"
+          },
+          "column_key": {
+            "type": "string",
+            "title": "Column Key"
+          },
+          "value": {
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entity_id",
+          "column_key"
+        ],
+        "title": "ConfoCellChangeIn"
+      },
+      "ConfoCellsPatch": {
+        "properties": {
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/ConfoCellChangeIn"
+            },
+            "type": "array",
+            "maxItems": 20000,
+            "minItems": 1,
+            "title": "Changes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "changes"
+        ],
+        "title": "ConfoCellsPatch"
+      },
+      "ConfoCellsResult": {
+        "properties": {
+          "applied": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Applied"
+          }
+        },
+        "type": "object",
+        "title": "ConfoCellsResult"
+      },
+      "ConfoColumnCreate": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Key"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Label"
+          },
+          "col_type": {
+            "type": "string",
+            "title": "Col Type"
+          },
+          "options": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Options"
+          },
+          "default_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Text"
+          },
+          "validation": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Validation"
+          },
+          "is_visible": {
+            "type": "boolean",
+            "title": "Is Visible",
+            "default": true
+          },
+          "edit_roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Edit Roles"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "label",
+          "col_type"
+        ],
+        "title": "ConfoColumnCreate"
+      },
+      "ConfoColumnOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "col_type": {
+            "type": "string",
+            "title": "Col Type"
+          },
+          "options": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Options"
+          },
+          "default_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Text"
+          },
+          "validation": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Validation"
+          },
+          "sort_order": {
+            "type": "integer",
+            "title": "Sort Order"
+          },
+          "is_visible": {
+            "type": "boolean",
+            "title": "Is Visible"
+          },
+          "edit_roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Edit Roles"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit",
+            "default": false
+          },
+          "deleted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deleted At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "key",
+          "label",
+          "col_type",
+          "sort_order",
+          "is_visible"
+        ],
+        "title": "ConfoColumnOut"
+      },
+      "ConfoColumnUpdate": {
+        "properties": {
+          "key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "col_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Col Type"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Options"
+          },
+          "default_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Text"
+          },
+          "validation": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validation"
+          },
+          "is_visible": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Visible"
+          },
+          "edit_roles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edit Roles"
+          }
+        },
+        "type": "object",
+        "title": "ConfoColumnUpdate"
+      },
+      "ConfoGridOut": {
+        "properties": {
+          "columns": {
+            "items": {
+              "$ref": "#/components/schemas/ConfoColumnOut"
+            },
+            "type": "array",
+            "title": "Columns"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/ConfoRowOut"
+            },
+            "type": "array",
+            "title": "Rows"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit",
+            "default": false
+          },
+          "can_manage": {
+            "type": "boolean",
+            "title": "Can Manage",
+            "default": false
+          },
+          "can_create_entities": {
+            "type": "boolean",
+            "title": "Can Create Entities",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "ConfoGridOut"
+      },
+      "ConfoImportCommitOut": {
+        "properties": {
+          "updated_cells": {
+            "type": "integer",
+            "title": "Updated Cells"
+          },
+          "created_columns": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Created Columns"
+          },
+          "created_entities": {
+            "type": "integer",
+            "title": "Created Entities",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "updated_cells"
+        ],
+        "title": "ConfoImportCommitOut"
+      },
+      "ConfoImportMappingIn": {
+        "properties": {
+          "header": {
+            "type": "string",
+            "title": "Header"
+          },
+          "target_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Key"
+          },
+          "new_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Label"
+          },
+          "new_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Type"
+          },
+          "new_options": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "New Options"
+          }
+        },
+        "type": "object",
+        "required": [
+          "header"
+        ],
+        "title": "ConfoImportMappingIn"
+      },
+      "ConfoImportPreviewOut": {
+        "properties": {
+          "headers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Headers"
+          },
+          "match_by": {
+            "type": "string",
+            "title": "Match By"
+          },
+          "match_header": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Match Header"
+          },
+          "mapping": {
+            "items": {
+              "$ref": "#/components/schemas/ConfoImportMappingIn"
+            },
+            "type": "array",
+            "title": "Mapping"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/ConfoImportRowOut"
+            },
+            "type": "array",
+            "title": "Rows"
+          },
+          "errors": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Errors"
+          },
+          "summary": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Summary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "headers",
+          "match_by",
+          "mapping",
+          "rows"
+        ],
+        "title": "ConfoImportPreviewOut"
+      },
+      "ConfoImportRequest": {
+        "properties": {
+          "csv_text": {
+            "type": "string",
+            "title": "Csv Text"
+          },
+          "match_by": {
+            "type": "string",
+            "title": "Match By",
+            "default": "auto"
+          },
+          "match_header": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Match Header"
+          },
+          "mapping": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ConfoImportMappingIn"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mapping"
+          },
+          "create_missing": {
+            "type": "boolean",
+            "title": "Create Missing",
+            "default": false
+          },
+          "skip_unmatched": {
+            "type": "boolean",
+            "title": "Skip Unmatched",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "csv_text"
+        ],
+        "title": "ConfoImportRequest"
+      },
+      "ConfoImportRowOut": {
+        "properties": {
+          "line": {
+            "type": "integer",
+            "title": "Line"
+          },
+          "identity": {
+            "type": "string",
+            "title": "Identity"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "entity_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Id"
+          },
+          "entity_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Name"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "cells": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Cells"
+          }
+        },
+        "type": "object",
+        "required": [
+          "line",
+          "identity",
+          "status"
+        ],
+        "title": "ConfoImportRowOut"
+      },
+      "ConfoReorderRequest": {
+        "properties": {
+          "ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ids"
+        ],
+        "title": "ConfoReorderRequest"
+      },
+      "ConfoRowOut": {
+        "properties": {
+          "entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Entity Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "rel_path": {
+            "type": "string",
+            "title": "Rel Path"
+          },
+          "entity_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Type"
+          },
+          "values": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Values"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entity_id",
+          "name",
+          "rel_path"
+        ],
+        "title": "ConfoRowOut"
       },
       "DbColumnOut": {
         "properties": {
@@ -11345,6 +14263,216 @@
         },
         "type": "object",
         "title": "DependencyTemplateUpdateRequest"
+      },
+      "DraftChangeIn": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "task",
+              "milestone",
+              "activation"
+            ],
+            "title": "Kind"
+          },
+          "op": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update",
+              "delete",
+              "assign"
+            ],
+            "title": "Op"
+          },
+          "target_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Target Id"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "op",
+          "target_id"
+        ],
+        "title": "DraftChangeIn"
+      },
+      "DraftChangeOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "op": {
+            "type": "string",
+            "title": "Op"
+          },
+          "target_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Target Id"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "op",
+          "target_id",
+          "label",
+          "created_at"
+        ],
+        "title": "DraftChangeOut"
+      },
+      "DraftChangesIn": {
+        "properties": {
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/DraftChangeIn"
+            },
+            "type": "array",
+            "maxItems": 2000,
+            "minItems": 1,
+            "title": "Changes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "changes"
+        ],
+        "title": "DraftChangesIn"
+      },
+      "DraftOut": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "base_version_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Version Id"
+          },
+          "base_version_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Version Label"
+          },
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/DraftChangeOut"
+            },
+            "type": "array",
+            "title": "Changes"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "DraftOut"
+      },
+      "DraftPreviewOut": {
+        "properties": {
+          "diff": {
+            "items": {
+              "$ref": "#/components/schemas/ScheduleDiffItemOut"
+            },
+            "type": "array",
+            "title": "Diff"
+          },
+          "summary": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Summary"
+          },
+          "conflicts": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Conflicts"
+          },
+          "can_save": {
+            "type": "boolean",
+            "title": "Can Save",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "DraftPreviewOut"
+      },
+      "DraftSaveIn": {
+        "properties": {
+          "comment": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Comment"
+          },
+          "overwrite_conflicts": {
+            "type": "boolean",
+            "title": "Overwrite Conflicts",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "comment"
+        ],
+        "title": "DraftSaveIn"
       },
       "EntityCreateRequest": {
         "properties": {
@@ -12787,6 +15915,280 @@
         ],
         "title": "LutResponse"
       },
+      "MilestoneIn": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "deliver",
+              "milestone"
+            ],
+            "title": "Kind",
+            "default": "milestone"
+          },
+          "target_kind": {
+            "type": "string",
+            "enum": [
+              "none",
+              "department",
+              "user",
+              "entity",
+              "task",
+              "company"
+            ],
+            "title": "Target Kind",
+            "default": "none"
+          },
+          "target_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Id"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note",
+            "default": ""
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "done"
+            ],
+            "title": "Status",
+            "default": "open"
+          },
+          "client_visible": {
+            "type": "boolean",
+            "title": "Client Visible",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "date"
+        ],
+        "title": "MilestoneIn"
+      },
+      "MilestoneOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "deliver",
+              "milestone"
+            ],
+            "title": "Kind"
+          },
+          "target_kind": {
+            "type": "string",
+            "enum": [
+              "none",
+              "department",
+              "user",
+              "entity",
+              "task",
+              "company"
+            ],
+            "title": "Target Kind"
+          },
+          "target_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Id"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note",
+            "default": ""
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "done"
+            ],
+            "title": "Status",
+            "default": "open"
+          },
+          "client_visible": {
+            "type": "boolean",
+            "title": "Client Visible",
+            "default": false
+          },
+          "late_task_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Late Task Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "date",
+          "kind",
+          "target_kind"
+        ],
+        "title": "MilestoneOut"
+      },
+      "MilestonePatch": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "deliver",
+                  "milestone"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "target_kind": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "department",
+                  "user",
+                  "entity",
+                  "task",
+                  "company"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Kind"
+          },
+          "target_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Id"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "open",
+                  "done"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "client_visible": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Visible"
+          }
+        },
+        "type": "object",
+        "title": "MilestonePatch"
+      },
       "MyTasksResponse": {
         "properties": {
           "tasks": {
@@ -13460,6 +16862,20 @@
             },
             "type": "object",
             "title": "Permissions"
+          },
+          "default_permissions": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Permissions"
           }
         },
         "type": "object",
@@ -14227,6 +17643,206 @@
           "new_name"
         ],
         "title": "SceneRenameRequest"
+      },
+      "ScheduleCompareOut": {
+        "properties": {
+          "a": {
+            "type": "string",
+            "title": "A"
+          },
+          "b": {
+            "type": "string",
+            "title": "B"
+          },
+          "diff": {
+            "items": {
+              "$ref": "#/components/schemas/ScheduleDiffItemOut"
+            },
+            "type": "array",
+            "title": "Diff"
+          },
+          "summary": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Summary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "a",
+          "b"
+        ],
+        "title": "ScheduleCompareOut"
+      },
+      "ScheduleDiffItemOut": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "target_id": {
+            "type": "string",
+            "title": "Target Id"
+          },
+          "op": {
+            "type": "string",
+            "title": "Op"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "fields": {
+            "additionalProperties": {
+              "items": {},
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Fields"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "target_id",
+          "op",
+          "label"
+        ],
+        "title": "ScheduleDiffItemOut"
+      },
+      "ScheduleVersionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "comment": {
+            "type": "string",
+            "title": "Comment"
+          },
+          "author_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Id"
+          },
+          "author_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "is_starred": {
+            "type": "boolean",
+            "title": "Is Starred"
+          },
+          "is_current": {
+            "type": "boolean",
+            "title": "Is Current",
+            "default": false
+          },
+          "diff_summary": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Diff Summary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "number",
+          "label",
+          "comment",
+          "created_at",
+          "is_starred"
+        ],
+        "title": "ScheduleVersionOut"
+      },
+      "ScheduleWarningOut": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "target_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Target Id"
+          },
+          "target_name": {
+            "type": "string",
+            "title": "Target Name"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "kind",
+          "target_id",
+          "target_name",
+          "message"
+        ],
+        "title": "ScheduleWarningOut"
+      },
+      "StaleProjectOut": {
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "title": "Uuid"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "path": {
+            "type": "string",
+            "title": "Path"
+          }
+        },
+        "type": "object",
+        "required": [
+          "uuid",
+          "name",
+          "path"
+        ],
+        "title": "StaleProjectOut",
+        "description": "A known project whose folder is missing or no longer holds a project."
       },
       "SuggestDependenciesRequest": {
         "properties": {
@@ -15542,7 +19158,8 @@
             "enum": [
               "user",
               "rule",
-              "system"
+              "system",
+              "schedule"
             ],
             "title": "Source"
           },
@@ -17241,6 +20858,175 @@
         },
         "type": "object",
         "title": "VersionSharesPutRequest"
+      },
+      "VersionStarIn": {
+        "properties": {
+          "starred": {
+            "type": "boolean",
+            "title": "Starred",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "VersionStarIn"
+      },
+      "WorkDay": {
+        "properties": {
+          "weekday": {
+            "type": "integer",
+            "maximum": 7.0,
+            "minimum": 1.0,
+            "title": "Weekday"
+          },
+          "intervals": {
+            "items": {
+              "$ref": "#/components/schemas/WorkInterval"
+            },
+            "type": "array",
+            "title": "Intervals"
+          }
+        },
+        "type": "object",
+        "required": [
+          "weekday"
+        ],
+        "title": "WorkDay"
+      },
+      "WorkException": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "off": {
+            "type": "boolean",
+            "title": "Off",
+            "default": false
+          },
+          "intervals": {
+            "items": {
+              "$ref": "#/components/schemas/WorkInterval"
+            },
+            "type": "array",
+            "title": "Intervals"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "day"
+        ],
+        "title": "WorkException"
+      },
+      "WorkHoursOut": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          },
+          "is_default": {
+            "type": "boolean",
+            "title": "Is Default"
+          },
+          "weekly": {
+            "items": {
+              "$ref": "#/components/schemas/WorkDay"
+            },
+            "type": "array",
+            "title": "Weekly"
+          },
+          "exceptions": {
+            "items": {
+              "$ref": "#/components/schemas/WorkException"
+            },
+            "type": "array",
+            "title": "Exceptions"
+          },
+          "daily_capacity_hours": {
+            "type": "number",
+            "title": "Daily Capacity Hours"
+          },
+          "weekly_hours": {
+            "type": "number",
+            "title": "Weekly Hours"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "timezone",
+          "is_default",
+          "weekly",
+          "daily_capacity_hours",
+          "weekly_hours"
+        ],
+        "title": "WorkHoursOut"
+      },
+      "WorkHoursPut": {
+        "properties": {
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
+          },
+          "use_project_default": {
+            "type": "boolean",
+            "title": "Use Project Default",
+            "default": false
+          },
+          "weekly": {
+            "items": {
+              "$ref": "#/components/schemas/WorkDay"
+            },
+            "type": "array",
+            "title": "Weekly"
+          },
+          "exceptions": {
+            "items": {
+              "$ref": "#/components/schemas/WorkException"
+            },
+            "type": "array",
+            "title": "Exceptions"
+          }
+        },
+        "type": "object",
+        "title": "WorkHoursPut"
+      },
+      "WorkInterval": {
+        "properties": {
+          "start": {
+            "type": "string",
+            "pattern": "^\\d{1,2}:\\d{2}$",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "pattern": "^\\d{1,2}:\\d{2}$",
+            "title": "End"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start",
+          "end"
+        ],
+        "title": "WorkInterval"
       },
       "WorkloadCellSchema": {
         "properties": {

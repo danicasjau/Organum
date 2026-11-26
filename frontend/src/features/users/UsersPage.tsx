@@ -20,11 +20,15 @@ import {
   TextField,
 } from '../../components/ui';
 import { useCssVarRef } from '../../components/ui/_internal/useCssVar';
-import { apiClient, type CompanyOut, type DepartmentOut, type UserOut } from '../../lib/api/client';
+import { apiClient, type DepartmentOut, type UserOut } from '../../lib/api/client';
 import { AdminConsoleContent } from '../admin/AdminPage';
 import { AuthenticatedShell } from '../auth/AuthenticatedShell';
 import { hasPerm, useAuthStore } from '../auth/authStore';
 import { deptColorHex } from '../departments/deptColors';
+import { ActivationPeriodsEditor } from '../people/ActivationPeriodsEditor';
+import { CompaniesSection } from '../people/CompaniesSection';
+import { DepartmentMultiSelect } from '../people/DepartmentMultiSelect';
+import { WorkHoursEditor } from '../people/WorkHoursEditor';
 import { TimeCapacitySection } from './TimeCapacitySection';
 import './UsersPage.css';
 
@@ -169,11 +173,12 @@ export function UsersPage({
   const queryClient = useQueryClient();
   const canManageUsers = hasPerm(auth?.permissions, 'user.manage');
   const canManageDepts = hasPerm(auth?.permissions, 'entity.manage');
+  const canEditActivation = canManageUsers || hasPerm(auth?.permissions, 'task.edit_schedule');
+  const [deptPeriodsFor, setDeptPeriodsFor] = useState<DepartmentOut | null>(null);
 
   const [query, setQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -188,12 +193,6 @@ export function UsersPage({
 
   const [resetPwOpen, setResetPwOpen] = useState(false);
   const [resetPwValue, setResetPwValue] = useState('');
-
-  const [newCompanyName, setNewCompanyName] = useState('');
-  const [newCompanyCode, setNewCompanyCode] = useState('');
-  const [newCompanyKind, setNewCompanyKind] = useState<'internal' | 'external' | 'group'>(
-    'internal',
-  );
 
   const [newDeptName, setNewDeptName] = useState('');
   const [newDeptCode, setNewDeptCode] = useState('');
@@ -257,11 +256,6 @@ export function UsersPage({
     [filteredUsers, users, selectedUserId],
   );
 
-  const selectedCompany: CompanyOut | null = useMemo(
-    () => companies.find((c) => c.id === selectedCompanyId) ?? companies[0] ?? null,
-    [companies, selectedCompanyId],
-  );
-
   const invalidateUsers = async () => {
     await queryClient.invalidateQueries({ queryKey: ['users', projectUuid] });
   };
@@ -317,14 +311,11 @@ export function UsersPage({
     }
   };
 
-  const handleToggleUserDept = async (user: UserOut, deptId: string) => {
+  const handleSetUserDepts = async (user: UserOut, ids: string[]) => {
     if (!projectUuid || !canManageUsers) return;
-    const set = new Set(user.department_ids ?? []);
-    if (set.has(deptId)) set.delete(deptId);
-    else set.add(deptId);
     setErrorMsg(null);
     try {
-      await apiClient.setUserDepartments(user.id, Array.from(set), projectUuid);
+      await apiClient.setUserDepartments(user.id, ids, projectUuid);
       await invalidateUsers();
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Unable to update user departments');
@@ -361,44 +352,6 @@ export function UsersPage({
       setErrorMsg(err instanceof Error ? err.message : 'Avatar upload failed');
     } finally {
       e.target.value = '';
-    }
-  };
-
-  const handleCreateCompany = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!projectUuid) return;
-    setErrorMsg(null);
-    try {
-      const created = await apiClient.createCompany(
-        {
-          name: newCompanyName.trim(),
-          short_code: newCompanyCode.trim().toUpperCase(),
-          kind: newCompanyKind,
-          color: '--series-1',
-          notes: '',
-        },
-        projectUuid,
-      );
-      setNewCompanyName('');
-      setNewCompanyCode('');
-      setSelectedCompanyId(created.id);
-      await queryClient.invalidateQueries({ queryKey: ['companies', projectUuid] });
-      setFeedback(`Created company ${created.name}.`);
-    } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Unable to create company');
-    }
-  };
-
-  const handleToggleCompanyDept = async (comp: CompanyOut, deptId: string) => {
-    if (!projectUuid || !canManageUsers) return;
-    const set = new Set(comp.department_ids ?? []);
-    if (set.has(deptId)) set.delete(deptId);
-    else set.add(deptId);
-    try {
-      await apiClient.setCompanyDepartments(comp.id, Array.from(set), projectUuid);
-      await queryClient.invalidateQueries({ queryKey: ['companies', projectUuid] });
-    } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Unable to update company departments');
     }
   };
 
@@ -677,21 +630,14 @@ export function UsersPage({
                                   }
                                 />
                               </label>
-                              <label className="org-users-field">
+                              <div className="org-users-field">
                                 <Text size="sm" variant="muted">
-                                  Daily Capacity Hours
+                                  Daily Capacity (from working hours)
                                 </Text>
-                                <TextField
-                                  type="number"
-                                  disabled={!canManageUsers}
-                                  defaultValue={String(selectedUser.daily_capacity_hours)}
-                                  onBlur={(e) =>
-                                    void handlePatchUser(selectedUser, {
-                                      daily_capacity_hours: Number(e.target.value) || 8,
-                                    })
-                                  }
-                                />
-                              </label>
+                                <Badge tone="neutral">
+                                  {selectedUser.daily_capacity_hours}h / day
+                                </Badge>
+                              </div>
                               <label className="org-users-field">
                                 <Text size="sm" variant="muted">
                                   Timezone
@@ -712,17 +658,38 @@ export function UsersPage({
                               <Text size="sm">
                                 <strong>Departments</strong>
                               </Text>
-                              <div className="org-users-checks">
-                                {departments.map((d) => (
-                                  <Checkbox
-                                    key={d.id}
-                                    label={`${d.short_code} · ${d.name}`}
-                                    disabled={!canManageUsers}
-                                    checked={(selectedUser.department_ids ?? []).includes(d.id)}
-                                    onChange={() => void handleToggleUserDept(selectedUser, d.id)}
-                                  />
-                                ))}
-                              </div>
+                              <DepartmentMultiSelect
+                                ariaLabel="User departments"
+                                departments={departments}
+                                selectedIds={selectedUser.department_ids ?? []}
+                                disabled={!canManageUsers}
+                                onChange={(ids) => void handleSetUserDepts(selectedUser, ids)}
+                              />
+                            </div>
+
+                            <div className="org-users-section" data-ui="user-work-hours">
+                              <Text size="sm">
+                                <strong>Working Hours</strong>
+                              </Text>
+                              <WorkHoursEditor
+                                key={selectedUser.id}
+                                userId={selectedUser.id}
+                                projectUuid={projectUuid}
+                                editable={canManageUsers || selectedUser.id === auth?.user.id}
+                              />
+                            </div>
+
+                            <div className="org-users-section">
+                              <Text size="sm">
+                                <strong>Activation Periods</strong>
+                              </Text>
+                              <ActivationPeriodsEditor
+                                key={selectedUser.id}
+                                targetKind="user"
+                                targetId={selectedUser.id}
+                                projectUuid={projectUuid}
+                                editable={canEditActivation}
+                              />
                             </div>
 
                             <div className="org-users-section">
@@ -754,83 +721,15 @@ export function UsersPage({
                 id: 'companies',
                 label: `Companies (${companies.length})`,
                 content: (
-                  <div className="org-users-split">
-                    <div className="org-users-left">
-                      {canManageUsers && (
-                        <form onSubmit={handleCreateCompany} className="org-users-toolbar">
-                          <TextField
-                            value={newCompanyName}
-                            onChange={(e) => setNewCompanyName(e.target.value)}
-                            placeholder="Company name"
-                            required
-                          />
-                          <TextField
-                            value={newCompanyCode}
-                            onChange={(e) => setNewCompanyCode(e.target.value)}
-                            placeholder="CODE"
-                            required
-                          />
-                          <Select
-                            ariaLabel="New company kind"
-                            value={newCompanyKind}
-                            onChange={(v) =>
-                              setNewCompanyKind(v as 'internal' | 'external' | 'group')
-                            }
-                            options={[
-                              { value: 'internal', label: 'internal' },
-                              { value: 'external', label: 'external' },
-                              { value: 'group', label: 'group' },
-                            ]}
-                          />
-                          <Button type="submit" size="sm" variant="primary">
-                            Add
-                          </Button>
-                        </form>
-                      )}
-                      <div className="org-users-simple-list">
-                        {companies.map((c) => (
-                          <button
-                            key={c.id}
-                            type="button"
-                            className="org-users-simple-row"
-                            data-selected={selectedCompany?.id === c.id ? 'true' : undefined}
-                            onClick={() => setSelectedCompanyId(c.id)}
-                          >
-                            <Badge tone="accent">{c.short_code}</Badge>
-                            <span className="org-users-vrow__name">{c.name}</span>
-                            <Badge tone="neutral">{c.kind}</Badge>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="org-users-right">
-                      {selectedCompany && (
-                        <Panel title={`Company — ${selectedCompany.name}`}>
-                          <Stack gap="2">
-                            <Text size="sm" variant="muted">
-                              Kind: {selectedCompany.kind} · Code: {selectedCompany.short_code}
-                            </Text>
-                            <Text size="sm">
-                              <strong>Responsible Departments</strong>
-                            </Text>
-                            <div className="org-users-checks">
-                              {departments.map((d) => (
-                                <Checkbox
-                                  key={d.id}
-                                  label={`${d.short_code} · ${d.name}`}
-                                  disabled={!canManageUsers}
-                                  checked={(selectedCompany.department_ids ?? []).includes(d.id)}
-                                  onChange={() =>
-                                    void handleToggleCompanyDept(selectedCompany, d.id)
-                                  }
-                                />
-                              ))}
-                            </div>
-                          </Stack>
-                        </Panel>
-                      )}
-                    </div>
-                  </div>
+                  <CompaniesSection
+                    companies={companies}
+                    departments={departments}
+                    users={users}
+                    projectUuid={projectUuid}
+                    canManage={canManageUsers}
+                    canEditActivation={canEditActivation}
+                    currentUserId={auth?.user.id ?? null}
+                  />
                 ),
               },
               {
@@ -864,6 +763,7 @@ export function UsersPage({
                             <th>Short Code</th>
                             <th>Color</th>
                             <th>Status</th>
+                            <th>Activation</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -898,6 +798,15 @@ export function UsersPage({
                                   onChange={(v) => void handlePatchDept(d, { is_active: v })}
                                 />
                               </td>
+                              <td>
+                                <Button
+                                  size="sm"
+                                  aria-label={`Activation periods of ${d.name}`}
+                                  onClick={() => setDeptPeriodsFor(d)}
+                                >
+                                  Periods…
+                                </Button>
+                              </td>
                             </tr>
                           ))}
                         </tbody>
@@ -924,6 +833,21 @@ export function UsersPage({
           })()}
         </div>
       </div>
+
+      <Dialog
+        open={Boolean(deptPeriodsFor)}
+        onOpenChange={(o) => !o && setDeptPeriodsFor(null)}
+        title={`Activation periods — ${deptPeriodsFor?.name ?? ''}`}
+      >
+        {deptPeriodsFor && (
+          <ActivationPeriodsEditor
+            targetKind="department"
+            targetId={deptPeriodsFor.id}
+            projectUuid={projectUuid}
+            editable={canEditActivation}
+          />
+        )}
+      </Dialog>
 
       <Dialog open={createUserOpen} onOpenChange={setCreateUserOpen} title="Create New User">
         <form onSubmit={handleCreateUser} className="org-users-modal">

@@ -78,6 +78,7 @@ from app.schemas.api import (
     WorkloadResponse,
     WorkloadRowSchema,
 )
+from app.services.availability import active_on, load_periods, load_schedules
 from app.services.entity_links_service import get_linked_entity_ids
 from app.services.entity_service import rename_task
 from app.services.permissions import (
@@ -1414,6 +1415,20 @@ async def workload_endpoint(
         if lg.user_id is not None
     ]
 
+    schedules = await load_schedules(db, [u.id for u in users])
+    user_periods = {
+        tid: rng for (kind, tid), rng in (await load_periods(db)).items() if kind == "user"
+    }
+    capacity_by_day: dict[tuple[UUID, date], float] = {}
+    span_day = d_from
+    while span_day <= d_to:
+        for u in users:
+            sched = schedules.get(u.id)
+            active = active_on(user_periods.get(u.id, []), span_day)
+            capacity_by_day[(u.id, span_day)] = (
+                sched.hours_on(span_day) if sched is not None and active else 0.0
+            )
+        span_day += timedelta(days=1)
     grid = compute_workload_grid(
         w_users,
         w_tasks,
@@ -1422,6 +1437,7 @@ async def workload_endpoint(
         date_to=d_to,
         working_days=working_days,
         today=today_utc,
+        capacity_by_day=capacity_by_day,
     )
     unsched_tasks = [t_by_id[tid] for tid in grid.unscheduled_task_ids if tid in t_by_id]
     unsched_items = await _hydrate_task_list_items(

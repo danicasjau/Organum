@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 from datetime import date, datetime
 from typing import Any, Literal
 from uuid import UUID
@@ -497,9 +498,18 @@ class LoginProjectOption(BaseModel):
     name: str
 
 
+class StaleProjectOut(BaseModel):
+    """A known project whose folder is missing or no longer holds a project."""
+
+    uuid: str
+    name: str
+    path: str
+
+
 class BootstrapInfoOut(BaseModel):
     bootstrap_allowed: bool
     projects: list[LoginProjectOption] = Field(default_factory=list)
+    stale_projects: list[StaleProjectOut] = Field(default_factory=list)
 
 
 class LoginRequest(BaseModel):
@@ -602,7 +612,7 @@ class CompanyOut(BaseModel):
     id: UUID
     name: str
     short_code: str
-    kind: Literal["internal", "external", "group"]
+    kind: Literal["internal", "external", "client", "group"]
     color: str
     notes: str
     department_ids: list[UUID] = Field(default_factory=list)
@@ -613,7 +623,7 @@ class CompanyOut(BaseModel):
 class CompanyCreateRequest(BaseModel):
     name: str
     short_code: str
-    kind: Literal["internal", "external", "group"] = "internal"
+    kind: Literal["internal", "external", "client", "group"] = "internal"
     color: str = "--series-1"
     notes: str = ""
     department_ids: list[UUID] = Field(default_factory=list)
@@ -622,7 +632,7 @@ class CompanyCreateRequest(BaseModel):
 class CompanyUpdateRequest(BaseModel):
     name: str | None = None
     short_code: str | None = None
-    kind: Literal["internal", "external", "group"] | None = None
+    kind: Literal["internal", "external", "client", "group"] | None = None
     color: str | None = None
     notes: str | None = None
 
@@ -638,6 +648,8 @@ class RoleOut(BaseModel):
     rank: int
     is_system: bool
     permissions: dict[str, str] = Field(default_factory=dict)
+    # Seeded scopes for built-in roles (None for custom roles): powers "differences only".
+    default_permissions: dict[str, str] | None = None
 
 
 class RoleCreateRequest(BaseModel):
@@ -678,6 +690,7 @@ class ProjectSettingsOut(BaseModel):
     enforce_dependencies_in_gantt: bool
     admin_sql_console_enabled: bool
     link_dependency_depth: int
+    styled_exports: bool = True
 
 
 class ProjectSettingsPatchRequest(BaseModel):
@@ -690,6 +703,7 @@ class ProjectSettingsPatchRequest(BaseModel):
     enforce_dependencies_in_gantt: bool | None = None
     admin_sql_console_enabled: bool | None = None
     link_dependency_depth: int | None = Field(default=None, ge=1, le=2)
+    styled_exports: bool | None = None
 
 
 class AuditLogOut(BaseModel):
@@ -901,7 +915,7 @@ class TaskEventOut(BaseModel):
     user_id: UUID | None = None
     username: str | None = None
     acted_as: str
-    source: Literal["user", "rule", "system"]
+    source: Literal["user", "rule", "system", "schedule"]
     field: str
     old_value: str | None = None
     new_value: str | None = None
@@ -1433,3 +1447,410 @@ class DbQueryResultOut(BaseModel):
     row_count: int
     truncated: bool
     elapsed_ms: float
+
+
+# ---------------------------------------------------------------- CR04 §3 Confo
+
+
+class ConfoColumnOut(BaseModel):
+    id: UUID
+    key: str
+    label: str
+    col_type: str
+    options: list[str] = Field(default_factory=list)
+    default_text: str | None = None
+    validation: dict[str, Any] = Field(default_factory=dict)
+    sort_order: int
+    is_visible: bool
+    edit_roles: list[str] = Field(default_factory=list)
+    can_edit: bool = False
+    deleted_at: datetime | None = None
+
+
+class ConfoColumnCreate(BaseModel):
+    key: str = Field(min_length=1, max_length=64)
+    label: str = Field(min_length=1, max_length=128)
+    col_type: str
+    options: list[str] = Field(default_factory=list)
+    default_text: str | None = None
+    validation: dict[str, Any] = Field(default_factory=dict)
+    is_visible: bool = True
+    edit_roles: list[str] = Field(default_factory=list)
+
+
+class ConfoColumnUpdate(BaseModel):
+    key: str | None = Field(default=None, min_length=1, max_length=64)
+    label: str | None = Field(default=None, min_length=1, max_length=128)
+    col_type: str | None = None
+    options: list[str] | None = None
+    default_text: str | None = None
+    validation: dict[str, Any] | None = None
+    is_visible: bool | None = None
+    edit_roles: list[str] | None = None
+
+
+class ConfoRowOut(BaseModel):
+    entity_id: UUID
+    name: str
+    rel_path: str
+    entity_type: str | None = None
+    values: dict[str, Any] = Field(default_factory=dict)
+
+
+class ConfoGridOut(BaseModel):
+    columns: list[ConfoColumnOut] = Field(default_factory=list)
+    rows: list[ConfoRowOut] = Field(default_factory=list)
+    can_edit: bool = False
+    can_manage: bool = False
+    can_create_entities: bool = False
+
+
+class ConfoCellChangeIn(BaseModel):
+    entity_id: UUID
+    column_key: str
+    value: Any = None
+
+
+class ConfoCellsPatch(BaseModel):
+    changes: list[ConfoCellChangeIn] = Field(min_length=1, max_length=20000)
+
+
+class ConfoCellsResult(BaseModel):
+    applied: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class ConfoReorderRequest(BaseModel):
+    ids: list[UUID]
+
+
+class ConfoImportMappingIn(BaseModel):
+    header: str
+    target_key: str | None = None
+    new_label: str | None = None
+    new_type: str | None = None
+    new_options: list[str] = Field(default_factory=list)
+
+
+class ConfoImportRequest(BaseModel):
+    csv_text: str
+    match_by: str = "auto"  # auto | id | path | name
+    match_header: str | None = None
+    mapping: list[ConfoImportMappingIn] | None = None
+    create_missing: bool = False
+    skip_unmatched: bool = False
+
+
+class ConfoImportRowOut(BaseModel):
+    line: int
+    identity: str
+    status: str
+    entity_id: UUID | None = None
+    entity_name: str | None = None
+    message: str | None = None
+    cells: dict[str, Any] = Field(default_factory=dict)
+
+
+class ConfoImportPreviewOut(BaseModel):
+    headers: list[str]
+    match_by: str
+    match_header: str | None = None
+    mapping: list[ConfoImportMappingIn]
+    rows: list[ConfoImportRowOut]
+    errors: list[dict[str, Any]] = Field(default_factory=list)
+    summary: dict[str, int] = Field(default_factory=dict)
+
+
+class ConfoImportCommitOut(BaseModel):
+    updated_cells: int
+    created_columns: list[str] = Field(default_factory=list)
+    created_entities: int = 0
+
+
+# ---------------------------------------------------------------- CR04 §6/§8/§11 people & time
+
+
+class WorkInterval(BaseModel):
+    start: str = Field(pattern=r"^\d{1,2}:\d{2}$")
+    end: str = Field(pattern=r"^\d{1,2}:\d{2}$")
+
+
+class WorkDay(BaseModel):
+    weekday: int = Field(ge=1, le=7)
+    intervals: list[WorkInterval] = Field(default_factory=list)
+
+
+class WorkException(BaseModel):
+    day: date
+    off: bool = False
+    intervals: list[WorkInterval] = Field(default_factory=list)
+    note: str = ""
+
+
+class WorkHoursOut(BaseModel):
+    user_id: UUID
+    timezone: str
+    is_default: bool
+    weekly: list[WorkDay]
+    exceptions: list[WorkException] = Field(default_factory=list)
+    daily_capacity_hours: float
+    weekly_hours: float
+
+
+class WorkHoursPut(BaseModel):
+    timezone: str | None = None
+    use_project_default: bool = False
+    weekly: list[WorkDay] = Field(default_factory=list)
+    exceptions: list[WorkException] = Field(default_factory=list)
+
+
+class ActivationPeriodOut(BaseModel):
+    id: UUID
+    target_kind: Literal["department", "company", "user"]
+    target_id: UUID
+    start_date: date
+    end_date: date
+    note: str = ""
+
+
+class ActivationPeriodIn(BaseModel):
+    target_kind: Literal["department", "company", "user"]
+    target_id: UUID
+    start_date: date
+    end_date: date
+    note: str = Field(default="", max_length=256)
+
+
+class ActivationPeriodUpdate(BaseModel):
+    start_date: date | None = None
+    end_date: date | None = None
+    note: str | None = Field(default=None, max_length=256)
+
+
+class CompanyCommentOut(BaseModel):
+    id: UUID
+    company_id: UUID
+    author_id: UUID | None = None
+    author_name: str | None = None
+    body: str
+    created_at: datetime
+
+
+class CompanyCommentIn(BaseModel):
+    body: str = Field(min_length=1, max_length=4000)
+
+
+class CompanyMembersOut(BaseModel):
+    company_id: UUID
+    primary_user_ids: list[UUID] = Field(default_factory=list)
+    linked_user_ids: list[UUID] = Field(default_factory=list)
+
+
+class CompanyMembersPut(BaseModel):
+    user_ids: list[UUID] = Field(default_factory=list)
+
+
+class ScheduleWarningOut(BaseModel):
+    task_id: UUID
+    kind: str
+    target_id: UUID
+    target_name: str
+    message: str
+
+
+# ---------------------------------------------------------------- CR04 §5/§7 schedule & milestones
+
+
+class MilestoneOut(BaseModel):
+    id: UUID
+    name: str
+    date: dt.date
+    kind: Literal["deliver", "milestone"]
+    target_kind: Literal["none", "department", "user", "entity", "task", "company"]
+    target_id: UUID | None = None
+    note: str = ""
+    status: Literal["open", "done"] = "open"
+    client_visible: bool = False
+    late_task_ids: list[UUID] = Field(default_factory=list)
+
+
+class MilestoneIn(BaseModel):
+    name: str = Field(min_length=1, max_length=128)
+    date: dt.date
+    kind: Literal["deliver", "milestone"] = "milestone"
+    target_kind: Literal["none", "department", "user", "entity", "task", "company"] = "none"
+    target_id: UUID | None = None
+    note: str = ""
+    status: Literal["open", "done"] = "open"
+    client_visible: bool = False
+
+
+class MilestonePatch(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=128)
+    date: dt.date | None = None
+    kind: Literal["deliver", "milestone"] | None = None
+    target_kind: Literal["none", "department", "user", "entity", "task", "company"] | None = None
+    target_id: UUID | None = None
+    note: str | None = None
+    status: Literal["open", "done"] | None = None
+    client_visible: bool | None = None
+
+
+class DraftChangeIn(BaseModel):
+    kind: Literal["task", "milestone", "activation"]
+    op: Literal["create", "update", "delete", "assign"]
+    target_id: UUID
+    payload: dict[str, Any] = Field(default_factory=dict)
+
+
+class DraftChangesIn(BaseModel):
+    changes: list[DraftChangeIn] = Field(min_length=1, max_length=2000)
+
+
+class DraftChangeOut(BaseModel):
+    id: UUID
+    kind: str
+    op: str
+    target_id: UUID
+    payload: dict[str, Any] = Field(default_factory=dict)
+    label: str
+    created_at: datetime
+
+
+class DraftOut(BaseModel):
+    id: UUID | None = None
+    base_version_id: UUID | None = None
+    base_version_label: str | None = None
+    changes: list[DraftChangeOut] = Field(default_factory=list)
+    count: int = 0
+
+
+class ScheduleDiffItemOut(BaseModel):
+    kind: str
+    target_id: str
+    op: str
+    label: str
+    fields: dict[str, list[Any]] = Field(default_factory=dict)
+
+
+class DraftPreviewOut(BaseModel):
+    diff: list[ScheduleDiffItemOut] = Field(default_factory=list)
+    summary: dict[str, int] = Field(default_factory=dict)
+    conflicts: list[dict[str, Any]] = Field(default_factory=list)
+    can_save: bool = False
+
+
+class DraftSaveIn(BaseModel):
+    comment: str = Field(min_length=1, max_length=2000)
+    overwrite_conflicts: bool = False
+
+
+class ScheduleVersionOut(BaseModel):
+    id: UUID
+    number: int
+    label: str
+    comment: str
+    author_id: UUID | None = None
+    author_name: str | None = None
+    created_at: datetime
+    is_starred: bool
+    is_current: bool = False
+    diff_summary: dict[str, Any] = Field(default_factory=dict)
+
+
+class VersionStarIn(BaseModel):
+    starred: bool = True
+
+
+class ScheduleCompareOut(BaseModel):
+    a: str
+    b: str
+    diff: list[ScheduleDiffItemOut] = Field(default_factory=list)
+    summary: dict[str, int] = Field(default_factory=dict)
+
+
+# ---------------------------------------------------------------- CR04 §4/§10 calendar & exports
+
+
+class CalendarTaskOut(BaseModel):
+    id: UUID
+    code: str
+    name: str
+    status: str
+    priority: str
+    entity_id: UUID
+    entity_name: str
+    entity_path: str
+    entity_type: str | None = None
+    department_id: UUID
+    start: date | None = None
+    finish: date | None = None
+    assignments: list[list[str]] = Field(default_factory=list)  # [user_id, role]
+
+
+class CalendarUserOut(BaseModel):
+    id: UUID
+    full_name: str
+    role_name: str
+    role_label: str
+    company_id: UUID | None = None
+    department_ids: list[UUID] = Field(default_factory=list)
+
+
+class CalendarScheduleOut(BaseModel):
+    """Weekly intervals per ISO weekday ("1".."7") and dated exceptions, in minutes."""
+
+    weekly: dict[str, list[list[int]]] = Field(default_factory=dict)
+    exceptions: dict[str, list[list[int]]] = Field(default_factory=dict)
+
+
+class CalendarDepartmentOut(BaseModel):
+    id: UUID
+    name: str
+    short_code: str
+    color: str
+
+
+class CalendarCompanyOut(BaseModel):
+    id: UUID
+    name: str
+    kind: str
+    color: str
+
+
+class CalendarOut(BaseModel):
+    working_days: list[int]
+    tasks: list[CalendarTaskOut] = Field(default_factory=list)
+    departments: list[CalendarDepartmentOut] = Field(default_factory=list)
+    companies: list[CalendarCompanyOut] = Field(default_factory=list)
+    users: list[CalendarUserOut] = Field(default_factory=list)
+    schedules: dict[str, CalendarScheduleOut] = Field(default_factory=dict)
+    activations: list[ActivationPeriodOut] = Field(default_factory=list)
+    milestones: list[MilestoneOut] = Field(default_factory=list)
+    can_edit_schedule: bool = False
+
+
+class ExportColumnIn(BaseModel):
+    key: str = Field(min_length=1, max_length=128)
+    header: str = Field(max_length=256)
+    group: str | None = Field(default=None, max_length=128)
+    kind: Literal[
+        "text", "number", "integer", "date", "status", "priority", "boolean", "color"
+    ] = "text"
+    width: int | None = Field(default=None, ge=4, le=120)
+
+
+class ExportSheetIn(BaseModel):
+    name: str = Field(min_length=1, max_length=64)
+    columns: list[ExportColumnIn] = Field(min_length=1, max_length=500)
+    rows: list[dict[str, Any]] = Field(default_factory=list, max_length=200000)
+
+
+class ExportXlsxIn(BaseModel):
+    title: str = Field(min_length=1, max_length=128)
+    filename: str = Field(min_length=1, max_length=128)
+    sheets: list[ExportSheetIn] = Field(min_length=1, max_length=20)
+    styled: bool = True
+
+
+class ExportSettingsOut(BaseModel):
+    styled_exports: bool = True

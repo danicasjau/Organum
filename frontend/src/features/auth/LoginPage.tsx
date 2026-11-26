@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Banner,
@@ -50,10 +50,26 @@ export function LoginPage({
   const [browseOpen, setBrowseOpen] = useState(false);
   const [browseData, setBrowseData] = useState<FsBrowseResponse | null>(null);
   const [browseError, setBrowseError] = useState<string | null>(null);
+  /** What "Use Current Folder" does: fill the create form, or locate a moved project. */
+  const [browseMode, setBrowseMode] = useState<'create' | 'locate'>('create');
+  const [bootError, setBootError] = useState<string | null>(null);
+
+  const loadBootstrap = useCallback(async () => {
+    try {
+      await refreshBootstrap();
+      setBootError(null);
+    } catch (err) {
+      setBootError(
+        err instanceof Error && err.message
+          ? `Cannot reach the ORGANUM server: ${err.message}`
+          : 'Cannot reach the ORGANUM server.',
+      );
+    }
+  }, [refreshBootstrap]);
 
   useEffect(() => {
-    void refreshBootstrap();
-  }, [refreshBootstrap]);
+    void loadBootstrap();
+  }, [loadBootstrap]);
 
   useEffect(() => {
     if (auth && !auth.user.must_change_password) {
@@ -97,10 +113,18 @@ export function LoginPage({
     }
   };
 
-  const openBrowser = async (path = '') => {
+  const openBrowser = async (path = '', mode?: 'create' | 'locate') => {
+    if (mode) setBrowseMode(mode);
     setBrowseError(null);
     try {
-      const data = await apiClient.browseFs(path);
+      let data: FsBrowseResponse;
+      try {
+        data = await apiClient.browseFs(path);
+      } catch (err) {
+        // A stale/missing folder: start browsing from the default location instead.
+        if (!path) throw err;
+        data = await apiClient.browseFs('');
+      }
       setBrowseData(data);
       setBrowseOpen(true);
     } catch (err) {
@@ -135,7 +159,23 @@ export function LoginPage({
     }
   };
 
+  const locateProject = async (path: string) => {
+    setError(null);
+    setSubmitting(true);
+    try {
+      const opened = await apiClient.openProject(path);
+      setBrowseOpen(false);
+      await refreshBootstrap();
+      setSelectedProjectUuid(opened.uuid);
+    } catch (err) {
+      setBrowseError(err instanceof Error ? err.message : 'Could not open that folder');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const isBootstrapMode = Boolean(bootstrap?.bootstrap_allowed);
+  const staleProjects = bootstrap?.stale_projects ?? [];
 
   return (
     <div className="org-login-shell" data-ui="login-page">
@@ -156,18 +196,66 @@ export function LoginPage({
 
       <main className="org-login-main">
         <div className="org-login-card">
-          <Panel title={isBootstrapMode ? 'Bootstrap First Project' : 'Sign In — ORGANUM'}>
+          <Panel
+            title={
+              bootError
+                ? 'Server Unreachable'
+                : isBootstrapMode
+                  ? 'Create Project'
+                  : 'Sign In — ORGANUM'
+            }
+          >
             <Stack gap="2">
+              {bootError && (
+                <>
+                  <Banner severity="danger">{bootError}</Banner>
+                  <Text size="sm" variant="muted">
+                    Start the backend (see docs/LAUNCHING.md), then retry.
+                  </Text>
+                  <div className="org-auth-actions">
+                    <Button size="sm" variant="primary" onClick={() => void loadBootstrap()}>
+                      Retry
+                    </Button>
+                  </div>
+                </>
+              )}
               {autoLogoutNotice && <Banner severity="warning">{autoLogoutNotice}</Banner>}
               {error && <Banner severity="danger">{error}</Banner>}
-              {browseError && <Banner severity="danger">{browseError}</Banner>}
+              {!browseOpen && browseError && <Banner severity="danger">{browseError}</Banner>}
 
-              {isBootstrapMode ? (
-                <form onSubmit={handleCreateFirstProject} className="org-auth-form">
+              {bootError ? null : !bootstrap ? (
+                <Text size="sm" variant="muted">Checking server…</Text>
+              ) : isBootstrapMode ? (
+                <form
+                  onSubmit={handleCreateFirstProject}
+                  className="org-auth-form"
+                  data-ui="bootstrap-create-project"
+                >
                   <Stack gap="2">
+                    {staleProjects.length > 0 && (
+                      <Banner severity="warning">
+                        <div data-ui="stale-projects">
+                          {staleProjects.map((sp) => (
+                            <div key={sp.uuid} className="org-auth-stale">
+                              <span>
+                                Project <strong>{sp.name}</strong> was not found at{' '}
+                                <code>{sp.path}</code>.
+                              </span>
+                              <Button
+                                size="sm"
+                                onClick={() => void openBrowser(sp.path, 'locate')}
+                              >
+                                Locate…
+                              </Button>
+                            </div>
+                          ))}
+                          <span>Locate the moved folder, or create a new project below.</span>
+                        </div>
+                      </Banner>
+                    )}
                     <Banner severity="info">
                       No projects exist yet. Create the first project to seed the initial
-                      administrator account (<code>admin</code>).
+                      administrator account (<code>admin</code>). You will sign in right after.
                     </Banner>
                     <label className="org-auth-field">
                       <Text size="sm" variant="muted">Project Name</Text>
@@ -187,7 +275,7 @@ export function LoginPage({
                           placeholder="M:\Projects\MyShow"
                           required
                         />
-                        <Button size="sm" onClick={() => void openBrowser(projPath)}>
+                        <Button size="sm" onClick={() => void openBrowser(projPath, 'create')}>
                           Browse…
                         </Button>
                       </div>
@@ -260,9 +348,14 @@ export function LoginPage({
         </div>
       </main>
 
-      <Dialog open={browseOpen} onOpenChange={setBrowseOpen} title="Choose Project Directory">
+      <Dialog
+        open={browseOpen}
+        onOpenChange={setBrowseOpen}
+        title={browseMode === 'locate' ? 'Locate Existing Project' : 'Choose Project Directory'}
+      >
         <Panel title={browseData?.current_path ?? 'Filesystem'}>
           <Stack gap="2">
+            {browseOpen && browseError && <Banner severity="danger">{browseError}</Banner>}
             <div className="org-auth-row">
               {browseData?.parent_path && (
                 <Button size="sm" onClick={() => void openBrowser(browseData.parent_path ?? '')}>
@@ -272,12 +365,18 @@ export function LoginPage({
               <Button
                 size="sm"
                 variant="primary"
+                disabled={submitting}
                 onClick={() => {
-                  if (browseData) setProjPath(browseData.current_path);
+                  if (!browseData) return;
+                  if (browseMode === 'locate') {
+                    void locateProject(browseData.current_path);
+                    return;
+                  }
+                  setProjPath(browseData.current_path);
                   setBrowseOpen(false);
                 }}
               >
-                Use Current Folder
+                {browseMode === 'locate' ? 'Open Project Here' : 'Use Current Folder'}
               </Button>
             </div>
             <div className="org-fs-list">

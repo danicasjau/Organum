@@ -97,6 +97,35 @@ export type EntityLinksGraphOut = components['schemas']['EntityLinksGraphOut'];
 export type SuggestedDependencyOut = components['schemas']['SuggestedDependencyOut'];
 export type ApplyDependenciesRequest = components['schemas']['ApplyDependenciesRequest'];
 export type SavedViewOut = components['schemas']['SavedViewOut'];
+export type ConfoGridOut = components['schemas']['ConfoGridOut'];
+export type WorkHoursOut = components['schemas']['WorkHoursOut'];
+export type MilestoneOut = components['schemas']['MilestoneOut'];
+export type MilestoneIn = components['schemas']['MilestoneIn'];
+export type DraftOut = components['schemas']['DraftOut'];
+export type DraftChangeIn = components['schemas']['DraftChangeIn'];
+export type DraftChangeOut = components['schemas']['DraftChangeOut'];
+export type DraftPreviewOut = components['schemas']['DraftPreviewOut'];
+export type ScheduleVersionOut = components['schemas']['ScheduleVersionOut'];
+export type ScheduleCompareOut = components['schemas']['ScheduleCompareOut'];
+export type WorkHoursPut = components['schemas']['WorkHoursPut'];
+export type WorkDay = components['schemas']['WorkDay'];
+export type WorkException = components['schemas']['WorkException'];
+export type ActivationPeriodOut = components['schemas']['ActivationPeriodOut'];
+export type ActivationPeriodIn = components['schemas']['ActivationPeriodIn'];
+export type ActivationPeriodUpdate = components['schemas']['ActivationPeriodUpdate'];
+export type CompanyCommentOut = components['schemas']['CompanyCommentOut'];
+export type CompanyMembersOut = components['schemas']['CompanyMembersOut'];
+export type ScheduleWarningOut = components['schemas']['ScheduleWarningOut'];
+export type ConfoColumnOut = components['schemas']['ConfoColumnOut'];
+export type ConfoColumnCreate = components['schemas']['ConfoColumnCreate'];
+export type ConfoColumnUpdate = components['schemas']['ConfoColumnUpdate'];
+export type ConfoRowOut = components['schemas']['ConfoRowOut'];
+export type ConfoCellChangeIn = components['schemas']['ConfoCellChangeIn'];
+export type ConfoCellsResult = components['schemas']['ConfoCellsResult'];
+export type ConfoImportRequest = components['schemas']['ConfoImportRequest'];
+export type ConfoImportPreviewOut = components['schemas']['ConfoImportPreviewOut'];
+export type ConfoImportCommitOut = components['schemas']['ConfoImportCommitOut'];
+export type ConfoImportMappingIn = components['schemas']['ConfoImportMappingIn'];
 export type SavedViewCreateRequest = components['schemas']['SavedViewCreateRequest'];
 export type RuleOut = components['schemas']['RuleOut'];
 export type RuleCreateRequest = components['schemas']['RuleCreateRequest'];
@@ -244,11 +273,14 @@ export function registerAuthHandlers(handlers: {
 export class ApiHttpError extends Error {
   status: number;
   code: string;
+  /** Structured error details (e.g. per-cell validation issues on 422). */
+  details: unknown;
 
-  constructor(status: number, code: string, message: string) {
+  constructor(status: number, code: string, message: string, details?: unknown) {
     super(message);
     this.status = status;
     this.code = code;
+    this.details = details;
   }
 }
 
@@ -270,10 +302,12 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   if (!response.ok) {
     let message = `HTTP ${response.status}`;
     let code = 'http_error';
+    let details: unknown;
     try {
       const body = (await response.json()) as ApiErrorEnvelope;
       if (body?.error?.message) message = body.error.message;
       if (body?.error?.code) code = body.error.code;
+      details = body?.error?.details;
     } catch {
       // ignore non-JSON body
     }
@@ -289,7 +323,7 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     if (response.status === 403 && code === 'password_change_required') {
       passwordChangeRequiredHandler?.();
     }
-    throw new ApiHttpError(response.status, code, message);
+    throw new ApiHttpError(response.status, code, message, details);
   }
   if (response.status === 204) {
     return undefined as T;
@@ -667,6 +701,149 @@ export const apiClient = {
   deleteSavedView: (viewId: string, projectUuid?: string | null) =>
     apiFetch<void>(`${getProjBase(projectUuid)}/saved-views/${viewId}`, {
       method: 'DELETE',
+    }),
+  // CR04 §5/§7 schedule drafts, versions, milestones
+  listMilestones: (projectUuid?: string | null) =>
+    apiFetch<MilestoneOut[]>(`${getProjBase(projectUuid)}/milestones`),
+  getScheduleDraft: (projectUuid?: string | null) =>
+    apiFetch<DraftOut>(`${getProjBase(projectUuid)}/schedule/draft`),
+  addScheduleDraftChanges: (changes: DraftChangeIn[], projectUuid?: string | null) =>
+    apiFetch<DraftOut>(`${getProjBase(projectUuid)}/schedule/draft/changes`, {
+      method: 'POST',
+      body: JSON.stringify({ changes }),
+    }),
+  revertScheduleDraftChange: (changeId: string, projectUuid?: string | null) =>
+    apiFetch<DraftOut>(`${getProjBase(projectUuid)}/schedule/draft/changes/${changeId}`, {
+      method: 'DELETE',
+    }),
+  discardScheduleDraft: (projectUuid?: string | null) =>
+    apiFetch<void>(`${getProjBase(projectUuid)}/schedule/draft`, { method: 'DELETE' }),
+  previewScheduleDraft: (projectUuid?: string | null) =>
+    apiFetch<DraftPreviewOut>(`${getProjBase(projectUuid)}/schedule/draft/preview`),
+  saveScheduleDraft: (
+    payload: { comment: string; overwrite_conflicts?: boolean },
+    projectUuid?: string | null,
+  ) =>
+    apiFetch<ScheduleVersionOut>(`${getProjBase(projectUuid)}/schedule/draft/save`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  listScheduleVersions: (projectUuid?: string | null) =>
+    apiFetch<ScheduleVersionOut[]>(`${getProjBase(projectUuid)}/schedule/versions`),
+  starScheduleVersion: (id: string, starred: boolean, projectUuid?: string | null) =>
+    apiFetch<ScheduleVersionOut>(`${getProjBase(projectUuid)}/schedule/versions/${id}/star`, {
+      method: 'POST',
+      body: JSON.stringify({ starred }),
+    }),
+  jumpToScheduleVersion: (id: string, projectUuid?: string | null) =>
+    apiFetch<DraftOut>(`${getProjBase(projectUuid)}/schedule/versions/${id}/jump`, {
+      method: 'POST',
+    }),
+  compareScheduleVersions: (a: string, b: string, projectUuid?: string | null) =>
+    apiFetch<ScheduleCompareOut>(
+      `${getProjBase(projectUuid)}/schedule/versions/compare?a=${encodeURIComponent(a)}&b=${encodeURIComponent(b)}`,
+    ),
+  // CR04 §6/§8/§11 people & time
+  getWorkHours: (userId: string, projectUuid?: string | null) =>
+    apiFetch<WorkHoursOut>(`${getProjBase(projectUuid)}/users/${userId}/work-hours`),
+  putWorkHours: (userId: string, payload: WorkHoursPut, projectUuid?: string | null) =>
+    apiFetch<WorkHoursOut>(`${getProjBase(projectUuid)}/users/${userId}/work-hours`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+  listActivationPeriods: (
+    query: { target_kind?: string; target_id?: string } = {},
+    projectUuid?: string | null,
+  ) => {
+    const qs = new URLSearchParams();
+    if (query.target_kind) qs.set('target_kind', query.target_kind);
+    if (query.target_id) qs.set('target_id', query.target_id);
+    const suffix = qs.toString() ? `?${qs.toString()}` : '';
+    return apiFetch<ActivationPeriodOut[]>(`${getProjBase(projectUuid)}/activation-periods${suffix}`);
+  },
+  createActivationPeriod: (payload: ActivationPeriodIn, projectUuid?: string | null) =>
+    apiFetch<ActivationPeriodOut>(`${getProjBase(projectUuid)}/activation-periods`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  updateActivationPeriod: (
+    id: string,
+    patch: ActivationPeriodUpdate,
+    projectUuid?: string | null,
+  ) =>
+    apiFetch<ActivationPeriodOut>(`${getProjBase(projectUuid)}/activation-periods/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
+  deleteActivationPeriod: (id: string, projectUuid?: string | null) =>
+    apiFetch<void>(`${getProjBase(projectUuid)}/activation-periods/${id}`, { method: 'DELETE' }),
+  listScheduleWarnings: (taskId?: string | null, projectUuid?: string | null) =>
+    apiFetch<ScheduleWarningOut[]>(
+      `${getProjBase(projectUuid)}/schedule/warnings${taskId ? `?task_id=${taskId}` : ''}`,
+    ),
+  listCompanyComments: (companyId: string, projectUuid?: string | null) =>
+    apiFetch<CompanyCommentOut[]>(`${getProjBase(projectUuid)}/companies/${companyId}/comments`),
+  addCompanyComment: (companyId: string, body: string, projectUuid?: string | null) =>
+    apiFetch<CompanyCommentOut>(`${getProjBase(projectUuid)}/companies/${companyId}/comments`, {
+      method: 'POST',
+      body: JSON.stringify({ body }),
+    }),
+  deleteCompanyComment: (companyId: string, commentId: string, projectUuid?: string | null) =>
+    apiFetch<void>(
+      `${getProjBase(projectUuid)}/companies/${companyId}/comments/${commentId}`,
+      { method: 'DELETE' },
+    ),
+  getCompanyMembers: (companyId: string, projectUuid?: string | null) =>
+    apiFetch<CompanyMembersOut>(`${getProjBase(projectUuid)}/companies/${companyId}/members`),
+  putCompanyMembers: (companyId: string, userIds: string[], projectUuid?: string | null) =>
+    apiFetch<CompanyMembersOut>(`${getProjBase(projectUuid)}/companies/${companyId}/members`, {
+      method: 'PUT',
+      body: JSON.stringify({ user_ids: userIds }),
+    }),
+  // CR04 §3 Confo
+  getConfo: (projectUuid?: string | null) =>
+    apiFetch<ConfoGridOut>(`${getProjBase(projectUuid)}/confo`),
+  patchConfoCells: (changes: ConfoCellChangeIn[], projectUuid?: string | null) =>
+    apiFetch<ConfoCellsResult>(`${getProjBase(projectUuid)}/confo/cells`, {
+      method: 'PATCH',
+      body: JSON.stringify({ changes }),
+    }),
+  createConfoColumn: (payload: ConfoColumnCreate, projectUuid?: string | null) =>
+    apiFetch<ConfoColumnOut>(`${getProjBase(projectUuid)}/confo/columns`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  updateConfoColumn: (id: string, patch: ConfoColumnUpdate, projectUuid?: string | null) =>
+    apiFetch<ConfoColumnOut>(`${getProjBase(projectUuid)}/confo/columns/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
+  reorderConfoColumns: (ids: string[], projectUuid?: string | null) =>
+    apiFetch<ConfoColumnOut[]>(`${getProjBase(projectUuid)}/confo/columns/order`, {
+      method: 'PUT',
+      body: JSON.stringify({ ids }),
+    }),
+  deleteConfoColumn: (id: string, projectUuid?: string | null) =>
+    apiFetch<void>(`${getProjBase(projectUuid)}/confo/columns/${id}`, { method: 'DELETE' }),
+  listConfoTrash: (projectUuid?: string | null) =>
+    apiFetch<ConfoColumnOut[]>(`${getProjBase(projectUuid)}/confo/columns/trash`),
+  restoreConfoColumn: (id: string, projectUuid?: string | null) =>
+    apiFetch<ConfoColumnOut>(`${getProjBase(projectUuid)}/confo/columns/${id}/restore`, {
+      method: 'POST',
+    }),
+  purgeConfoColumn: (id: string, projectUuid?: string | null) =>
+    apiFetch<void>(`${getProjBase(projectUuid)}/confo/columns/${id}/purge`, {
+      method: 'DELETE',
+    }),
+  previewConfoImport: (payload: ConfoImportRequest, projectUuid?: string | null) =>
+    apiFetch<ConfoImportPreviewOut>(`${getProjBase(projectUuid)}/confo/import/preview`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  commitConfoImport: (payload: ConfoImportRequest, projectUuid?: string | null) =>
+    apiFetch<ConfoImportCommitOut>(`${getProjBase(projectUuid)}/confo/import/commit`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
     }),
   getEntityLinks: (entityId: string, depth = 3, projectUuid?: string | null) =>
     apiFetch<EntityLinksResponse>(

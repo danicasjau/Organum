@@ -166,3 +166,16 @@
   }
 }
 
+
+@layer components {
+  /* CR04: condition/action rows inside SortableList take the full row width. */
+  .org-rules__block .org-sortable {
+    border: none;
+    background: transparent;
+  }
+
+  .org-rules__block .org-sortable__body > * {
+    flex: 1;
+    min-width: 0;
+  }
+}

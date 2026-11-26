@@ -1,0 +1,69 @@
+@layer components {
+  .org-sortable {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border: var(--border-w) solid var(--border-dark);
+    background: var(--surface-field);
+  }
+
+  .org-sortable__row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: var(--min-hit);
+    padding: 0 var(--space-1);
+    border-bottom: var(--border-w) solid var(--border-dark);
+  }
+
+  .org-sortable__row:last-child {
+    border-bottom: none;
+  }
+
+  .org-sortable__row[data-selected='true'] {
+    outline: var(--border-w) solid var(--accent);
+    outline-offset: calc(-1 * var(--border-w));
+    background: var(--accent-soft);
+  }
+
+  .org-sortable__row[data-dragging='true'] {
+    opacity: 0.5;
+  }
+
+  /* Drop indicator: a thick bar on the insertion edge (shape, not colour alone). */
+  .org-sortable__row[data-drop='before'] {
+    border-top: var(--border-w-strong) solid var(--highlight);
+  }
+
+  .org-sortable__row[data-drop='after'] {
+    border-bottom: var(--border-w-strong) solid var(--highlight);
+  }
+
+  .org-sortable__grip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--min-hit);
+    min-height: var(--min-hit);
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: grab;
+  }
+
+  .org-sortable__grip:focus-visible {
+    outline: var(--border-w) dashed var(--highlight);
+  }
+
+  .org-sortable__body {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: var(--space-1);
+    min-width: 0;
+  }
+}

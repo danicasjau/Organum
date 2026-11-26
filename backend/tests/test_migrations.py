@@ -57,6 +57,18 @@ def test_alembic_upgrade_downgrade_sqlite(tmp_path: Path) -> None:
         "annotations",
         "annotation_revisions",
         "jobs",
+        "confo_columns",
+        "confo_values",
+        "confo_value_items",
+        "user_work_hours",
+        "user_work_exceptions",
+        "activation_periods",
+        "company_comments",
+        "company_members",
+        "milestones",
+        "schedule_versions",
+        "schedule_drafts",
+        "schedule_draft_changes",
     }.issubset(tables)
     sync_engine.dispose()
 
@@ -66,6 +78,9 @@ def test_alembic_upgrade_downgrade_sqlite(tmp_path: Path) -> None:
     assert "files" not in tables_after
     assert "entities" not in tables_after
     assert "rules" not in tables_after
+    assert "confo_values" not in tables_after
+    assert "activation_periods" not in tables_after
+    assert "schedule_versions" not in tables_after
     sync_engine.dispose()
 
     command.upgrade(cfg, "head")
