@@ -1,0 +1,32 @@
+A lo que comenta Mica, sumo:
+
+- Recibir informes semanales y diarios de status: lo que debería estar ocurriendo, lo que se está retrasando, lo que está a punto de finalizar. 
+
+- Sección en la que, mediante un tablero tipo Kanban, se pueda tener un overview de las tareas semanales. 
+
+- Debe permitir flexibilidad: mover tareas de un día a otro, etc. 
+- Debe poder mostrar dependencias entre tareas. 
+
+- Calendario general de la producción que beba de otros calendarios y al revés: el calendario general se basa en los calendarios pequeñitos, y los cambios se pueden aplicar tanto desde el general como de los pequeñitos. Que estén conectados. 
+- Que se pueda generar un calendario pequeño (por ejemplo, del doblaje de un idioma concreto), y tener la opción de incorporarlo al calendario grande (o no). Esta incorporación puede ser simplemente un filtro o una activación de visualización, similar a la opción de GCalendar de mostrar uno o varios calendarios a la vez. 
+
+- También, que se puedan filtrar por procesos (parecido a lo que comenta Mica de poder exportar calendarios filtrados para artistas) Por ejemplo: ver sólo los calendarios de doblaje. 
+
+- Es importante, como en la producción se mueven tantas cosas con el tiempo, poder tener acceso a un histórico, sobretodo a nivel de fechas, donde poder consultar como estaban las cosas hace una semana, dos semanas, y así poder hacer comparativas del estilo "desde lo que nos planteamos al inicio, nos hemos retrasado dos semanas". O bien: "he movido esto de sitio y creo que la he liado, donde estaba antes?!". 
+
+- Herramienta para que te diga la opción más óptima de organizar tareas o calendarizar algo - por ejemplo, si 20 tareas deben suceder en paralelo y todas deben pasar por la revisión de alguien, que el software te sugiera un primer planteamiento donde se optimize el tiempo.
+
+Seguro que se me ocurren más cositas. Siento la tardanza al contestar. 
+
+
+Gracias por gestionarlo Ivet.
+
+Te comparto mis sugerencias:
+A nivel de calendario, estaría bien poder indicar las deadlines y que se actualicen por encadenamiento entre tareas/procesos. También sería un buen punto que notificara cuando quedan "x" días para que ese deadline se cumpla. Serviría que en lugar de actualizarlo directamente, primero propusiera los cambios para que podamos revisarlos y corregirlos manualmente y luego ejecutarlos, en caso de que hubiera alguna excepción a la regla (que las suelen haber)
+También estaría bien que los status de las tareas cambiaran automáticamente en encadenamiento. Es decir, si el Layout Reel de edit depende de recibir el doblaje y el layout final, cuando tengamos esos dos status en Received (por ejemplo) esa tarea cambie automáticamente a Ready to Start.
+En tema de almacenamiento, necesitamos resolver el problema de los archivos duplicados y las carpetas redundantes. No sé si es buena idea depender del software para esto, pero quizá subiendo las versiones finales de cada tarea al software podemos mantener el drive solo como archivo, es decir, eliminar todas las carpetas destinadas a compartir información con directores y artistas y crear solo carpetas por episodio con subcarpetas por departamento con las versiones finales correspondientes. De esta forma podemos compartir materiales a través del software de forma efectiva y tener todos acceso a la misma versión final sin necesidad de estar actualizando materiales en cada carpeta cada vez que hay versiones nueva.
+Sobre la data que cuantificamos en este excel MLL_CONFO_DATA, es un documento que iría muy bien tener actualizado todo el tiempo, pero que requiere tiempo y no siempre puedo dedicárselo como me gustaría. Es un documento importante ya que gracias a este hemos detectado problemas de bidding o, al contrario, nos ha ayudado a justificar que no lo estábamos incumpliendo. Si pudiéramos de alguna forma importar en el software la información de las confos que nos interesa cuantificar y poder exportar un csv con esta información desde el software estaría muy bien para tenerla actualizada en cuanto la necesitemos.
+Nos iría bien también poder exportar calendarios filtrados para los artistas o partners. Por ejemplo, si no podemos dar acceso al software a un artista de storyboard o a los compañeros del estudio de doblaje, que podamos exportar un csv con las fechas de tareas, procesos y entregas que tenemos en ese departamento. De esta forma no hace falta tener que replicar lo que tengamos en el software en un google sheet para compartir externamente.
+De momento se me ocurre esto a nivel de producción. En temas de confo es seguir probando con Claude para optimizar tareas técnicas y/o repetitivas. 
+
+¡Un abrazo!
