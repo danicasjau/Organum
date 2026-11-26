@@ -7,6 +7,7 @@ import {
   Checkbox,
   Panel,
   Select,
+  SortableList,
   Stack,
   Text,
   TextField,
@@ -102,6 +103,24 @@ const ACTION_TYPES = [
   { value: 'add_dependency', label: 'Add dependency' },
 ];
 
+/** Inline validation for one condition (mirrors the server's checks). */
+export function validateConditionLeaf(leaf: { operator: string; value: string }): string | null {
+  const value = leaf.value.trim();
+  if (!value) return 'Value is required';
+  if (leaf.operator === 'in' && value.split(',').every((v) => !v.trim())) {
+    return 'List at least one value (a, b)';
+  }
+  if (leaf.operator === 'matches') {
+    if (value.length > 256) return 'Regex is too long (max 256)';
+    try {
+      new RegExp(value);
+    } catch {
+      return 'Invalid regular expression';
+    }
+  }
+  return null;
+}
+
 function defaultLeaf(): ConditionLeaf {
   return { kind: 'leaf', field: 'entity.type', operator: '=', value: 'shot' };
 }
@@ -162,7 +181,9 @@ function parseConditionsFromRule(raw: Record<string, unknown> | undefined): {
   return { rootOp: op, items: items.length > 0 ? items : [defaultLeaf()] };
 }
 
-function parseActionsFromRule(rawList: Array<Record<string, unknown>> | undefined): RuleActionDraft[] {
+function parseActionsFromRule(
+  rawList: Array<Record<string, unknown>> | undefined,
+): RuleActionDraft[] {
   if (!Array.isArray(rawList) || rawList.length === 0) return [defaultAction()];
   return rawList.map((raw) => ({
     ...defaultAction(),
@@ -177,8 +198,7 @@ function parseActionsFromRule(rawList: Array<Record<string, unknown>> | undefine
     needs_sup_review: raw.needs_sup_review !== undefined ? Boolean(raw.needs_sup_review) : false,
     needs_client_review:
       raw.needs_client_review !== undefined ? Boolean(raw.needs_client_review) : false,
-    start_offset_days:
-      raw.start_offset_days !== undefined ? String(raw.start_offset_days) : '0',
+    start_offset_days: raw.start_offset_days !== undefined ? String(raw.start_offset_days) : '0',
     duration_days: raw.duration_days !== undefined ? String(raw.duration_days) : '3',
     tag: String(raw.tag ?? ''),
     scope: (raw.scope as RuleActionDraft['scope']) ?? 'same',
@@ -189,7 +209,10 @@ function parseActionsFromRule(rawList: Array<Record<string, unknown>> | undefine
   }));
 }
 
-function serializeConditions(rootOp: 'AND' | 'OR', items: ConditionItem[]): Record<string, unknown> {
+function serializeConditions(
+  rootOp: 'AND' | 'OR',
+  items: ConditionItem[],
+): Record<string, unknown> {
   return {
     op: rootOp,
     items: items.map((it) => {
@@ -263,7 +286,9 @@ function buildSentencePreview(
   const condStr = items
     .map((it) => {
       if (it.kind === 'group') {
-        const inner = it.items.map((l) => `${l.field} ${l.operator} ${l.value || '?'}`).join(` ${it.op} `);
+        const inner = it.items
+          .map((l) => `${l.field} ${l.operator} ${l.value || '?'}`)
+          .join(` ${it.op} `);
         return `(${inner})`;
       }
       return `${it.field} ${it.operator} ${it.value || '?'}`;
@@ -293,11 +318,7 @@ function buildSentencePreview(
   return `WHEN [${trigger}] IF ${condStr || 'always'} THEN ${actStr || '—'}`;
 }
 
-export function AdminRulesSection({
-  projectUuid,
-}: {
-  projectUuid: string | null;
-}) {
+export function AdminRulesSection({ projectUuid }: { projectUuid: string | null }) {
   const queryClient = useQueryClient();
 
   const rulesQuery = useQuery({
@@ -388,13 +409,16 @@ export function AdminRulesSection({
     if (!name.trim()) errs.name = 'Rule name is required';
     condItems.forEach((it, idx) => {
       if (it.kind === 'leaf') {
-        if (!it.value.trim()) errs[`cond-${idx}`] = 'Value is required';
+        const msg = validateConditionLeaf(it);
+        if (msg) errs[`cond-${idx}`] = msg;
       } else {
         it.items.forEach((leaf, sIdx) => {
-          if (!leaf.value.trim()) errs[`cond-${idx}-${sIdx}`] = 'Value is required';
+          const msg = validateConditionLeaf(leaf);
+          if (msg) errs[`cond-${idx}-${sIdx}`] = msg;
         });
       }
     });
+    if (actions.length === 0) errs.actions = 'Add at least one action';
     actions.forEach((a, idx) => {
       if (a.type === 'assign' && !a.user_id) {
         errs[`act-${idx}`] = 'Select a target user';
@@ -402,7 +426,10 @@ export function AdminRulesSection({
         errs[`act-${idx}`] = 'Tag name is required';
       } else if (a.type === 'add_dependency' && !a.upstream_department.trim()) {
         errs[`act-${idx}`] = 'Upstream department is required';
-      } else if (a.type === 'set_bid_hours' && (Number.isNaN(Number(a.bid_hours)) || Number(a.bid_hours) < 0)) {
+      } else if (
+        a.type === 'set_bid_hours' &&
+        (Number.isNaN(Number(a.bid_hours)) || Number(a.bid_hours) < 0)
+      ) {
         errs[`act-${idx}`] = 'Bid hours must be >= 0';
       }
     });
@@ -448,10 +475,7 @@ export function AdminRulesSection({
       if (selectedRuleId && selectedRuleId !== '__new__') {
         saved = await apiClient.updateRule(selectedRuleId, payload, projectUuid);
       } else {
-        saved = await apiClient.createRule(
-          { ...payload, sort_order: rules.length },
-          projectUuid,
-        );
+        saved = await apiClient.createRule({ ...payload, sort_order: rules.length }, projectUuid);
       }
       setSelectedRuleId(saved.id);
       await queryClient.invalidateQueries({ queryKey: ['admin-rules', projectUuid] });
@@ -578,7 +602,8 @@ export function AdminRulesSection({
           {rules.length === 0 ? (
             <div className="org-rules__empty">
               <Text size="sm" variant="muted">
-                No rules yet. Click + New Rule to automate assignments, priorities, and dependencies.
+                No rules yet. Click + New Rule to automate assignments, priorities, and
+                dependencies.
               </Text>
             </div>
           ) : (
@@ -645,11 +670,17 @@ export function AdminRulesSection({
         {errorMsg && <Banner severity="danger">{errorMsg}</Banner>}
         {statusMsg && <Banner severity="success">{statusMsg}</Banner>}
 
-        <Panel title={selectedRuleId && selectedRuleId !== '__new__' ? `Rule Editor — ${name}` : 'New Rule'}>
+        <Panel
+          title={
+            selectedRuleId && selectedRuleId !== '__new__' ? `Rule Editor — ${name}` : 'New Rule'
+          }
+        >
           <Stack gap="2">
             <div className="org-rules__form-row">
               <label className="org-rules__field">
-                <Text size="sm" variant="muted">Rule Name</Text>
+                <Text size="sm" variant="muted">
+                  Rule Name
+                </Text>
                 <TextField
                   aria-label="Rule Name"
                   value={name}
@@ -660,12 +691,16 @@ export function AdminRulesSection({
                   }}
                 />
                 {validationErrors.name && (
-                  <Text size="sm" variant="danger">{validationErrors.name}</Text>
+                  <Text size="sm" variant="danger">
+                    {validationErrors.name}
+                  </Text>
                 )}
               </label>
 
               <label className="org-rules__field">
-                <Text size="sm" variant="muted">WHEN Trigger</Text>
+                <Text size="sm" variant="muted">
+                  WHEN Trigger
+                </Text>
                 <Select
                   ariaLabel="Rule trigger"
                   value={trigger}
@@ -732,197 +767,226 @@ export function AdminRulesSection({
                 </div>
               </div>
 
-              {condItems.map((it, idx) =>
-                it.kind === 'leaf' ? (
-                  <div key={`c-${idx}`} className="org-rules__cond-row">
-                    <Select
-                      ariaLabel={`Condition ${idx + 1} field`}
-                      value={it.field}
-                      onChange={(v) => {
-                        setCondItems((prev) =>
-                          prev.map((x, i) => (i === idx && x.kind === 'leaf' ? { ...x, field: v } : x)),
-                        );
-                        invalidatePreview();
-                      }}
-                      options={CONDITION_FIELDS}
-                    />
-                    <Select
-                      ariaLabel={`Condition ${idx + 1} operator`}
-                      value={it.operator}
-                      onChange={(v) => {
-                        setCondItems((prev) =>
-                          prev.map((x, i) =>
-                            i === idx && x.kind === 'leaf' ? { ...x, operator: v } : x,
-                          ),
-                        );
-                        invalidatePreview();
-                      }}
-                      options={CONDITION_OPS}
-                    />
-                    <TextField
-                      aria-label={`Condition ${idx + 1} value`}
-                      list="org-rule-value-suggestions"
-                      value={it.value}
-                      error={Boolean(validationErrors[`cond-${idx}`])}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setCondItems((prev) =>
-                          prev.map((x, i) =>
-                            i === idx && x.kind === 'leaf' ? { ...x, value: val } : x,
-                          ),
-                        );
-                        invalidatePreview();
-                      }}
-                    />
-                    {validationErrors[`cond-${idx}`] && (
-                      <Text size="sm" variant="danger">{validationErrors[`cond-${idx}`]}</Text>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      disabled={condItems.length <= 1}
-                      onClick={() => {
-                        setCondItems((prev) => prev.filter((_, i) => i !== idx));
-                        invalidatePreview();
-                      }}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                ) : (
-                  <div key={`g-${idx}`} className="org-rules__subgroup">
-                    <div className="org-rules__block-hdr">
+              {condItems.length === 0 && (
+                <Text size="sm" variant="muted" data-ui="rule-no-conditions">
+                  No conditions: the rule applies to every task (always).
+                </Text>
+              )}
+              <SortableList
+                ariaLabel="Conditions"
+                items={condItems.map((it, idx) => ({ it, idx }))}
+                getId={(x) => String(x.idx)}
+                getLabel={(x) =>
+                  x.it.kind === 'leaf' ? `condition ${x.idx + 1}` : `subgroup ${x.idx + 1}`
+                }
+                onReorder={(ids) => {
+                  setCondItems((prev) => ids.map((i) => prev[Number(i)]!));
+                  invalidatePreview();
+                }}
+                renderItem={({ it, idx }) =>
+                  it.kind === 'leaf' ? (
+                    <div key={`c-${idx}`} className="org-rules__cond-row">
                       <Select
-                        ariaLabel={`Subgroup ${idx + 1} combinator`}
-                        value={it.op}
+                        ariaLabel={`Condition ${idx + 1} field`}
+                        value={it.field}
                         onChange={(v) => {
                           setCondItems((prev) =>
                             prev.map((x, i) =>
-                              i === idx && x.kind === 'group' ? { ...x, op: v as 'AND' | 'OR' } : x,
+                              i === idx && x.kind === 'leaf' ? { ...x, field: v } : x,
                             ),
                           );
                           invalidatePreview();
                         }}
-                        options={[
-                          { value: 'AND', label: 'Subgroup AND' },
-                          { value: 'OR', label: 'Subgroup OR' },
-                        ]}
+                        options={CONDITION_FIELDS}
                       />
-                      <div className="org-rules__inline">
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            setCondItems((prev) =>
-                              prev.map((x, i) =>
-                                i === idx && x.kind === 'group'
-                                  ? { ...x, items: [...x.items, defaultLeaf()] }
-                                  : x,
-                              ),
-                            );
-                            invalidatePreview();
-                          }}
-                        >
-                          + Leaf
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          disabled={condItems.length <= 1}
-                          onClick={() => {
-                            setCondItems((prev) => prev.filter((_, i) => i !== idx));
-                            invalidatePreview();
-                          }}
-                        >
-                          Remove group
-                        </Button>
-                      </div>
+                      <Select
+                        ariaLabel={`Condition ${idx + 1} operator`}
+                        value={it.operator}
+                        onChange={(v) => {
+                          setCondItems((prev) =>
+                            prev.map((x, i) =>
+                              i === idx && x.kind === 'leaf' ? { ...x, operator: v } : x,
+                            ),
+                          );
+                          invalidatePreview();
+                        }}
+                        options={CONDITION_OPS}
+                      />
+                      <TextField
+                        aria-label={`Condition ${idx + 1} value`}
+                        list="org-rule-value-suggestions"
+                        value={it.value}
+                        error={Boolean(validationErrors[`cond-${idx}`])}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setCondItems((prev) =>
+                            prev.map((x, i) =>
+                              i === idx && x.kind === 'leaf' ? { ...x, value: val } : x,
+                            ),
+                          );
+                          invalidatePreview();
+                        }}
+                      />
+                      {validationErrors[`cond-${idx}`] && (
+                        <Text size="sm" variant="danger">
+                          {validationErrors[`cond-${idx}`]}
+                        </Text>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        aria-label={`Remove condition ${idx + 1}`}
+                        onClick={() => {
+                          setCondItems((prev) => prev.filter((_, i) => i !== idx));
+                          invalidatePreview();
+                        }}
+                      >
+                        Remove
+                      </Button>
                     </div>
-                    {it.items.map((leaf, sIdx) => (
-                      <div key={`g-${idx}-${sIdx}`} className="org-rules__cond-row">
+                  ) : (
+                    <div key={`g-${idx}`} className="org-rules__subgroup">
+                      <div className="org-rules__block-hdr">
                         <Select
-                          ariaLabel={`Subgroup ${idx + 1} condition ${sIdx + 1} field`}
-                          value={leaf.field}
+                          ariaLabel={`Subgroup ${idx + 1} combinator`}
+                          value={it.op}
                           onChange={(v) => {
                             setCondItems((prev) =>
                               prev.map((x, i) =>
                                 i === idx && x.kind === 'group'
-                                  ? {
-                                      ...x,
-                                      items: x.items.map((l, j) =>
-                                        j === sIdx ? { ...l, field: v } : l,
-                                      ),
-                                    }
+                                  ? { ...x, op: v as 'AND' | 'OR' }
                                   : x,
                               ),
                             );
                             invalidatePreview();
                           }}
-                          options={CONDITION_FIELDS}
+                          options={[
+                            { value: 'AND', label: 'Subgroup AND' },
+                            { value: 'OR', label: 'Subgroup OR' },
+                          ]}
                         />
-                        <Select
-                          ariaLabel={`Subgroup ${idx + 1} condition ${sIdx + 1} operator`}
-                          value={leaf.operator}
-                          onChange={(v) => {
-                            setCondItems((prev) =>
-                              prev.map((x, i) =>
-                                i === idx && x.kind === 'group'
-                                  ? {
-                                      ...x,
-                                      items: x.items.map((l, j) =>
-                                        j === sIdx ? { ...l, operator: v } : l,
-                                      ),
-                                    }
-                                  : x,
-                              ),
-                            );
-                            invalidatePreview();
-                          }}
-                          options={CONDITION_OPS}
-                        />
-                        <TextField
-                          aria-label={`Subgroup ${idx + 1} condition ${sIdx + 1} value`}
-                          list="org-rule-value-suggestions"
-                          value={leaf.value}
-                          error={Boolean(validationErrors[`cond-${idx}-${sIdx}`])}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setCondItems((prev) =>
-                              prev.map((x, i) =>
-                                i === idx && x.kind === 'group'
-                                  ? {
-                                      ...x,
-                                      items: x.items.map((l, j) =>
-                                        j === sIdx ? { ...l, value: val } : l,
-                                      ),
-                                    }
-                                  : x,
-                              ),
-                            );
-                            invalidatePreview();
-                          }}
-                        />
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          disabled={it.items.length <= 1}
-                          onClick={() => {
-                            setCondItems((prev) =>
-                              prev.map((x, i) =>
-                                i === idx && x.kind === 'group'
-                                  ? { ...x, items: x.items.filter((_, j) => j !== sIdx) }
-                                  : x,
-                              ),
-                            );
-                            invalidatePreview();
-                          }}
-                        >
-                          Remove
-                        </Button>
+                        <div className="org-rules__inline">
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              setCondItems((prev) =>
+                                prev.map((x, i) =>
+                                  i === idx && x.kind === 'group'
+                                    ? { ...x, items: [...x.items, defaultLeaf()] }
+                                    : x,
+                                ),
+                              );
+                              invalidatePreview();
+                            }}
+                          >
+                            + Leaf
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            aria-label={`Remove subgroup ${idx + 1}`}
+                            onClick={() => {
+                              setCondItems((prev) => prev.filter((_, i) => i !== idx));
+                              invalidatePreview();
+                            }}
+                          >
+                            Remove group
+                          </Button>
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                ),
-              )}
+                      {it.items.map((leaf, sIdx) => (
+                        <div key={`g-${idx}-${sIdx}`} className="org-rules__cond-row">
+                          <Select
+                            ariaLabel={`Subgroup ${idx + 1} condition ${sIdx + 1} field`}
+                            value={leaf.field}
+                            onChange={(v) => {
+                              setCondItems((prev) =>
+                                prev.map((x, i) =>
+                                  i === idx && x.kind === 'group'
+                                    ? {
+                                        ...x,
+                                        items: x.items.map((l, j) =>
+                                          j === sIdx ? { ...l, field: v } : l,
+                                        ),
+                                      }
+                                    : x,
+                                ),
+                              );
+                              invalidatePreview();
+                            }}
+                            options={CONDITION_FIELDS}
+                          />
+                          <Select
+                            ariaLabel={`Subgroup ${idx + 1} condition ${sIdx + 1} operator`}
+                            value={leaf.operator}
+                            onChange={(v) => {
+                              setCondItems((prev) =>
+                                prev.map((x, i) =>
+                                  i === idx && x.kind === 'group'
+                                    ? {
+                                        ...x,
+                                        items: x.items.map((l, j) =>
+                                          j === sIdx ? { ...l, operator: v } : l,
+                                        ),
+                                      }
+                                    : x,
+                                ),
+                              );
+                              invalidatePreview();
+                            }}
+                            options={CONDITION_OPS}
+                          />
+                          <TextField
+                            aria-label={`Subgroup ${idx + 1} condition ${sIdx + 1} value`}
+                            list="org-rule-value-suggestions"
+                            value={leaf.value}
+                            error={Boolean(validationErrors[`cond-${idx}-${sIdx}`])}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setCondItems((prev) =>
+                                prev.map((x, i) =>
+                                  i === idx && x.kind === 'group'
+                                    ? {
+                                        ...x,
+                                        items: x.items.map((l, j) =>
+                                          j === sIdx ? { ...l, value: val } : l,
+                                        ),
+                                      }
+                                    : x,
+                                ),
+                              );
+                              invalidatePreview();
+                            }}
+                          />
+                          {validationErrors[`cond-${idx}-${sIdx}`] && (
+                            <Text size="sm" variant="danger">
+                              {validationErrors[`cond-${idx}-${sIdx}`]}
+                            </Text>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            aria-label={`Remove subgroup ${idx + 1} condition ${sIdx + 1}`}
+                            onClick={() => {
+                              // Removing the last leaf removes the now-empty subgroup.
+                              setCondItems((prev) =>
+                                prev.flatMap((x, i) => {
+                                  if (i !== idx || x.kind !== 'group') return [x];
+                                  const items = x.items.filter((_, j) => j !== sIdx);
+                                  return items.length > 0 ? [{ ...x, items }] : [];
+                                }),
+                              );
+                              invalidatePreview();
+                            }}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                }
+              />
             </div>
 
             <div className="org-rules__block">
@@ -939,200 +1003,217 @@ export function AdminRulesSection({
                 </Button>
               </div>
 
-              {actions.map((act, idx) => {
-                const updateAct = (patch: Partial<RuleActionDraft>) => {
-                  setActions((prev) => prev.map((x, i) => (i === idx ? { ...x, ...patch } : x)));
+              {validationErrors.actions && (
+                <Text size="sm" variant="danger" role="alert">
+                  {validationErrors.actions}
+                </Text>
+              )}
+              <SortableList
+                ariaLabel="Actions"
+                items={actions.map((act, idx) => ({ act, idx }))}
+                getId={(x) => String(x.idx)}
+                getLabel={(x) => `action ${x.idx + 1}`}
+                onReorder={(ids) => {
+                  setActions((prev) => ids.map((i) => prev[Number(i)]!));
                   invalidatePreview();
-                };
-                return (
-                  <div key={`a-${idx}`} className="org-rules__action-card">
-                    <div className="org-rules__action-row">
-                      <Select
-                        ariaLabel={`Action ${idx + 1} type`}
-                        value={act.type}
-                        onChange={(v) => updateAct({ type: v as RuleActionDraft['type'] })}
-                        options={ACTION_TYPES}
-                      />
-                      <Select
-                        ariaLabel={`Action ${idx + 1} target department`}
-                        value={act.department}
-                        onChange={(v) => updateAct({ department: v })}
-                        options={[
-                          { value: '', label: 'Any department' },
-                          ...departments.map((d) => ({ value: d.name, label: d.name })),
-                        ]}
-                      />
-                      <TextField
-                        aria-label={`Action ${idx + 1} task name filter`}
-                        placeholder="task_name or *"
-                        value={act.task_name}
-                        onChange={(e) => updateAct({ task_name: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="org-rules__action-row">
-                      {act.type === 'assign' && (
-                        <>
-                          <Select
-                            ariaLabel={`Action ${idx + 1} role`}
-                            value={act.role}
-                            onChange={(v) =>
-                              updateAct({ role: v as 'artist' | 'lead' | 'supervisor' })
-                            }
-                            options={[
-                              { value: 'artist', label: 'DO (artist)' },
-                              { value: 'lead', label: 'LEAD' },
-                              { value: 'supervisor', label: 'SUP' },
-                            ]}
-                          />
-                          <Select
-                            ariaLabel={`Action ${idx + 1} user`}
-                            value={act.user_id}
-                            onChange={(v) => updateAct({ user_id: v })}
-                            options={[
-                              { value: '', label: 'Select user…' },
-                              ...users.map((u) => ({
-                                value: u.id,
-                                label: `${u.full_name} (@${u.username})`,
-                              })),
-                            ]}
-                          />
-                        </>
-                      )}
-
-                      {act.type === 'set_priority' && (
+                }}
+                renderItem={({ act, idx }) => {
+                  const updateAct = (patch: Partial<RuleActionDraft>) => {
+                    setActions((prev) => prev.map((x, i) => (i === idx ? { ...x, ...patch } : x)));
+                    invalidatePreview();
+                  };
+                  return (
+                    <div key={`a-${idx}`} className="org-rules__action-card">
+                      <div className="org-rules__action-row">
                         <Select
-                          ariaLabel={`Action ${idx + 1} priority`}
-                          value={act.priority}
-                          onChange={(v) =>
-                            updateAct({ priority: v as 'normal' | 'high' | 'stopper' })
-                          }
+                          ariaLabel={`Action ${idx + 1} type`}
+                          value={act.type}
+                          onChange={(v) => updateAct({ type: v as RuleActionDraft['type'] })}
+                          options={ACTION_TYPES}
+                        />
+                        <Select
+                          ariaLabel={`Action ${idx + 1} target department`}
+                          value={act.department}
+                          onChange={(v) => updateAct({ department: v })}
                           options={[
-                            { value: 'normal', label: 'normal' },
-                            { value: 'high', label: 'high' },
-                            { value: 'stopper', label: 'stopper' },
+                            { value: '', label: 'Any department' },
+                            ...departments.map((d) => ({ value: d.name, label: d.name })),
                           ]}
                         />
-                      )}
-
-                      {act.type === 'set_bid_hours' && (
                         <TextField
-                          aria-label={`Action ${idx + 1} bid hours`}
-                          type="number"
-                          value={act.bid_hours}
-                          onChange={(e) => updateAct({ bid_hours: e.target.value })}
+                          aria-label={`Action ${idx + 1} task name filter`}
+                          placeholder="task_name or *"
+                          value={act.task_name}
+                          onChange={(e) => updateAct({ task_name: e.target.value })}
                         />
-                      )}
+                      </div>
 
-                      {act.type === 'set_review_flags' && (
-                        <div className="org-rules__inline">
-                          <Checkbox
-                            label="Lead"
-                            checked={act.needs_lead_review}
-                            onChange={(v) => updateAct({ needs_lead_review: v })}
-                          />
-                          <Checkbox
-                            label="Sup"
-                            checked={act.needs_sup_review}
-                            onChange={(v) => updateAct({ needs_sup_review: v })}
-                          />
-                          <Checkbox
-                            label="Client"
-                            checked={act.needs_client_review}
-                            onChange={(v) => updateAct({ needs_client_review: v })}
-                          />
-                        </div>
-                      )}
+                      <div className="org-rules__action-row">
+                        {act.type === 'assign' && (
+                          <>
+                            <Select
+                              ariaLabel={`Action ${idx + 1} role`}
+                              value={act.role}
+                              onChange={(v) =>
+                                updateAct({ role: v as 'artist' | 'lead' | 'supervisor' })
+                              }
+                              options={[
+                                { value: 'artist', label: 'DO (artist)' },
+                                { value: 'lead', label: 'LEAD' },
+                                { value: 'supervisor', label: 'SUP' },
+                              ]}
+                            />
+                            <Select
+                              ariaLabel={`Action ${idx + 1} user`}
+                              value={act.user_id}
+                              onChange={(v) => updateAct({ user_id: v })}
+                              options={[
+                                { value: '', label: 'Select user…' },
+                                ...users.map((u) => ({
+                                  value: u.id,
+                                  label: `${u.full_name} (@${u.username})`,
+                                })),
+                              ]}
+                            />
+                          </>
+                        )}
 
-                      {act.type === 'set_ideal_dates' && (
-                        <div className="org-rules__inline">
-                          <TextField
-                            aria-label="Start offset days"
-                            type="number"
-                            placeholder="offset d"
-                            value={act.start_offset_days}
-                            onChange={(e) => updateAct({ start_offset_days: e.target.value })}
-                          />
-                          <TextField
-                            aria-label="Duration days"
-                            type="number"
-                            placeholder="duration d"
-                            value={act.duration_days}
-                            onChange={(e) => updateAct({ duration_days: e.target.value })}
-                          />
-                        </div>
-                      )}
-
-                      {act.type === 'add_tag' && (
-                        <TextField
-                          aria-label={`Action ${idx + 1} tag`}
-                          placeholder="Tag name"
-                          value={act.tag}
-                          onChange={(e) => updateAct({ tag: e.target.value })}
-                        />
-                      )}
-
-                      {act.type === 'add_dependency' && (
-                        <>
+                        {act.type === 'set_priority' && (
                           <Select
-                            ariaLabel="Dependency scope"
-                            value={act.scope}
+                            ariaLabel={`Action ${idx + 1} priority`}
+                            value={act.priority}
                             onChange={(v) =>
-                              updateAct({ scope: v as 'same' | 'uses' | 'used_in' })
+                              updateAct({ priority: v as 'normal' | 'high' | 'stopper' })
                             }
                             options={[
-                              { value: 'same', label: 'same entity' },
-                              { value: 'uses', label: 'uses entities' },
-                              { value: 'used_in', label: 'used_in entities' },
+                              { value: 'normal', label: 'normal' },
+                              { value: 'high', label: 'high' },
+                              { value: 'stopper', label: 'stopper' },
                             ]}
                           />
-                          <Select
-                            ariaLabel="Upstream department"
-                            value={act.upstream_department}
-                            onChange={(v) => updateAct({ upstream_department: v })}
-                            options={[
-                              { value: '', label: 'Upstream dept…' },
-                              ...departments.map((d) => ({ value: d.name, label: d.name })),
-                            ]}
-                          />
-                          <Select
-                            ariaLabel="Dependency threshold"
-                            value={act.threshold}
-                            onChange={(v) =>
-                              updateAct({ threshold: v as 'APP' | 'PUBLISHED' | 'ANY_STATUS' })
-                            }
-                            options={[
-                              { value: 'APP', label: 'APP' },
-                              { value: 'PUBLISHED', label: 'PUBLISHED' },
-                              { value: 'ANY_STATUS', label: 'ANY_STATUS' },
-                            ]}
-                          />
-                        </>
-                      )}
+                        )}
 
-                      <Checkbox
-                        label="Override manual"
-                        checked={act.override_manual}
-                        onChange={(v) => updateAct({ override_manual: v })}
-                      />
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        disabled={actions.length <= 1}
-                        onClick={() => {
-                          setActions((prev) => prev.filter((_, i) => i !== idx));
-                          invalidatePreview();
-                        }}
-                      >
-                        Remove
-                      </Button>
+                        {act.type === 'set_bid_hours' && (
+                          <TextField
+                            aria-label={`Action ${idx + 1} bid hours`}
+                            type="number"
+                            value={act.bid_hours}
+                            onChange={(e) => updateAct({ bid_hours: e.target.value })}
+                          />
+                        )}
+
+                        {act.type === 'set_review_flags' && (
+                          <div className="org-rules__inline">
+                            <Checkbox
+                              label="Lead"
+                              checked={act.needs_lead_review}
+                              onChange={(v) => updateAct({ needs_lead_review: v })}
+                            />
+                            <Checkbox
+                              label="Sup"
+                              checked={act.needs_sup_review}
+                              onChange={(v) => updateAct({ needs_sup_review: v })}
+                            />
+                            <Checkbox
+                              label="Client"
+                              checked={act.needs_client_review}
+                              onChange={(v) => updateAct({ needs_client_review: v })}
+                            />
+                          </div>
+                        )}
+
+                        {act.type === 'set_ideal_dates' && (
+                          <div className="org-rules__inline">
+                            <TextField
+                              aria-label="Start offset days"
+                              type="number"
+                              placeholder="offset d"
+                              value={act.start_offset_days}
+                              onChange={(e) => updateAct({ start_offset_days: e.target.value })}
+                            />
+                            <TextField
+                              aria-label="Duration days"
+                              type="number"
+                              placeholder="duration d"
+                              value={act.duration_days}
+                              onChange={(e) => updateAct({ duration_days: e.target.value })}
+                            />
+                          </div>
+                        )}
+
+                        {act.type === 'add_tag' && (
+                          <TextField
+                            aria-label={`Action ${idx + 1} tag`}
+                            placeholder="Tag name"
+                            value={act.tag}
+                            onChange={(e) => updateAct({ tag: e.target.value })}
+                          />
+                        )}
+
+                        {act.type === 'add_dependency' && (
+                          <>
+                            <Select
+                              ariaLabel="Dependency scope"
+                              value={act.scope}
+                              onChange={(v) =>
+                                updateAct({ scope: v as 'same' | 'uses' | 'used_in' })
+                              }
+                              options={[
+                                { value: 'same', label: 'same entity' },
+                                { value: 'uses', label: 'uses entities' },
+                                { value: 'used_in', label: 'used_in entities' },
+                              ]}
+                            />
+                            <Select
+                              ariaLabel="Upstream department"
+                              value={act.upstream_department}
+                              onChange={(v) => updateAct({ upstream_department: v })}
+                              options={[
+                                { value: '', label: 'Upstream dept…' },
+                                ...departments.map((d) => ({ value: d.name, label: d.name })),
+                              ]}
+                            />
+                            <Select
+                              ariaLabel="Dependency threshold"
+                              value={act.threshold}
+                              onChange={(v) =>
+                                updateAct({ threshold: v as 'APP' | 'PUBLISHED' | 'ANY_STATUS' })
+                              }
+                              options={[
+                                { value: 'APP', label: 'APP' },
+                                { value: 'PUBLISHED', label: 'PUBLISHED' },
+                                { value: 'ANY_STATUS', label: 'ANY_STATUS' },
+                              ]}
+                            />
+                          </>
+                        )}
+
+                        <Checkbox
+                          label="Override manual"
+                          checked={act.override_manual}
+                          onChange={(v) => updateAct({ override_manual: v })}
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          aria-label={`Remove action ${idx + 1}`}
+                          onClick={() => {
+                            setActions((prev) => prev.filter((_, i) => i !== idx));
+                            invalidatePreview();
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                      {validationErrors[`act-${idx}`] && (
+                        <Text size="sm" variant="danger">
+                          {validationErrors[`act-${idx}`]}
+                        </Text>
+                      )}
                     </div>
-                    {validationErrors[`act-${idx}`] && (
-                      <Text size="sm" variant="danger">{validationErrors[`act-${idx}`]}</Text>
-                    )}
-                  </div>
-                );
-              })}
+                  );
+                }}
+              />
             </div>
 
             <div className="org-rules__sentence" data-ui="rule-sentence">
@@ -1162,7 +1243,12 @@ export function AdminRulesSection({
                 Apply to existing tasks
               </Button>
               {selectedRuleId && selectedRuleId !== '__new__' && (
-                <Button size="sm" variant="danger" disabled={busy} onClick={() => void handleDelete()}>
+                <Button
+                  size="sm"
+                  variant="danger"
+                  disabled={busy}
+                  onClick={() => void handleDelete()}
+                >
                   Delete Rule
                 </Button>
               )}
@@ -1171,7 +1257,9 @@ export function AdminRulesSection({
         </Panel>
 
         {preview && (
-          <Panel title={`Preview Matches (${preview.matched_tasks} tasks, ${preview.changes?.length ?? 0} changes)`}>
+          <Panel
+            title={`Preview Matches (${preview.matched_tasks} tasks, ${preview.changes?.length ?? 0} changes)`}
+          >
             {(preview.changes ?? []).length === 0 ? (
               <Text size="sm" variant="muted">
                 No changes predicted for existing tasks.
@@ -1214,4 +1302,3 @@ export function AdminRulesSection({
     </div>
   );
 }
-

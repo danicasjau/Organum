@@ -67,6 +67,7 @@ export function ContextMenu({
   children: ReactNode;
   items: ReadonlyArray<MenuEntry>;
 }) {
+  if (items.length === 0) return <>{children}</>;
   return (
     <ContextMenuPrimitive.Root>
       <ContextMenuPrimitive.Trigger asChild>{children}</ContextMenuPrimitive.Trigger>
@@ -92,4 +93,3 @@ export function ContextMenu({
     </ContextMenuPrimitive.Root>
   );
 }
-

@@ -9,6 +9,7 @@ import {
   Spinner,
   StatusChip,
   Text,
+  DatePicker,
 } from '../../components/ui';
 import {
   apiClient,
@@ -24,6 +25,7 @@ import {
   addDays,
   aggregateWorkloadWeeks,
   isWorkingDay,
+  isoToZeroMonDays,
   todayIsoUtc,
   utilizationTier,
 } from './planningHelpers';
@@ -72,15 +74,12 @@ export function WorkloadView({
     enabled: Boolean(activeProjectUuid),
   });
 
-  const { data: workload, isLoading, error } = useQuery({
-    queryKey: [
-      'workload',
-      activeProjectUuid,
-      dateFrom,
-      dateTo,
-      deptFilter,
-      companyFilter,
-    ],
+  const {
+    data: workload,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['workload', activeProjectUuid, dateFrom, dateTo, deptFilter, companyFilter],
     queryFn: () =>
       apiClient.getWorkload(
         {
@@ -94,7 +93,10 @@ export function WorkloadView({
     enabled: Boolean(activeProjectUuid),
   });
 
-  const workingDays = settings?.working_days ?? DEFAULT_WORKING_DAYS;
+  // API values are ISO weekdays (1=Mon); helpers use 0=Mon.
+  const workingDays = settings?.working_days
+    ? isoToZeroMonDays(settings.working_days)
+    : DEFAULT_WORKING_DAYS;
 
   const tasksById = useMemo(() => {
     const m = new Map<string, TaskListItemOut>();
@@ -180,24 +182,28 @@ export function WorkloadView({
             <Text size="sm" variant="muted">
               From
             </Text>
-            <input
-              type="date"
-              aria-label="Workload start date"
-              className="org-workload__date"
+            <DatePicker
+              ariaLabel="Workload start date"
+              clearable={false}
               value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
+              max={dateTo || null}
+              onChange={(v) => {
+                if (v) setDateFrom(v);
+              }}
             />
           </label>
           <label className="org-workload__field">
             <Text size="sm" variant="muted">
               To
             </Text>
-            <input
-              type="date"
-              aria-label="Workload end date"
-              className="org-workload__date"
+            <DatePicker
+              ariaLabel="Workload end date"
+              clearable={false}
               value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
+              min={dateFrom || null}
+              onChange={(v) => {
+                if (v) setDateTo(v);
+              }}
             />
           </label>
           <div className="org-workload__seg" role="group" aria-label="Workload time granularity">
@@ -265,9 +271,7 @@ export function WorkloadView({
         >
           <Icon name={unscheduledOpen ? 'chevron-down' : 'chevron-right'} size="sm" />
           <Text size="sm">Unscheduled tasks</Text>
-          <Badge tone={unscheduled.length > 0 ? 'warning' : 'neutral'}>
-            {unscheduled.length}
-          </Badge>
+          <Badge tone={unscheduled.length > 0 ? 'warning' : 'neutral'}>{unscheduled.length}</Badge>
         </button>
         {unscheduledOpen && (
           <div className="org-workload__unsched-list">
@@ -351,12 +355,11 @@ export function WorkloadView({
           <aside className="org-workload__drawer" aria-label="Contributing tasks">
             <div className="org-workload__drawer-hdr">
               <div>
-                <Text size="sm">
-                  {selectedCell.user.full_name || selectedCell.user.username}
-                </Text>
+                <Text size="sm">{selectedCell.user.full_name || selectedCell.user.username}</Text>
                 <Text size="sm" variant="muted">
                   {selectedCell.cell.day} · {selectedCell.cell.hours}h /{' '}
-                  {selectedCell.cell.capacity_hours}h ({Math.round(selectedCell.cell.utilization_pct)}%)
+                  {selectedCell.cell.capacity_hours}h (
+                  {Math.round(selectedCell.cell.utilization_pct)}%)
                 </Text>
               </div>
               <Button
@@ -446,8 +449,7 @@ function WorkloadSectionRows({
             const tier = utilizationTier(cell.utilization_pct);
             const active =
               selectedCell?.user.user_id === u.user_id && selectedCell.cell.day === cell.day;
-            const pctText =
-              cell.utilization_pct > 0 ? `${Math.round(cell.utilization_pct)}%` : '-';
+            const pctText = cell.utilization_pct > 0 ? `${Math.round(cell.utilization_pct)}%` : '-';
             return (
               <td
                 key={cell.day}

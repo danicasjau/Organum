@@ -1,6 +1,7 @@
 from app.models.annotation import Annotation, AnnotationRevision
 from app.models.app_db import AppBase, KnownProject, Launcher, UiPref, UserProjectIndex
 from app.models.artifact import Artifact
+from app.models.confo import ConfoColumn, ConfoValue, ConfoValueItem
 from app.models.job import Job
 from app.models.project_db import (
     Department,
@@ -16,6 +17,14 @@ from app.models.project_db import (
     Tag,
     Task,
     TaskLink,
+)
+from app.models.schedule import Milestone, ScheduleDraft, ScheduleDraftChange, ScheduleVersion
+from app.models.scheduling import (
+    ActivationPeriod,
+    CompanyComment,
+    CompanyMember,
+    UserWorkException,
+    UserWorkHours,
 )
 from app.models.tasks import (
     DependencyTemplate,
@@ -45,6 +54,7 @@ from app.models.user import (
 )
 
 __all__ = [
+    "ActivationPeriod",
     "Annotation",
     "AnnotationRevision",
     "AppBase",
@@ -52,7 +62,12 @@ __all__ = [
     "AuditLog",
     "CapacityPermission",
     "Company",
+    "CompanyComment",
     "CompanyDepartment",
+    "CompanyMember",
+    "ConfoColumn",
+    "ConfoValue",
+    "ConfoValueItem",
     "Department",
     "DepartmentDefaultTask",
     "DependencyTemplate",
@@ -65,6 +80,7 @@ __all__ = [
     "Job",
     "KnownProject",
     "Launcher",
+    "Milestone",
     "Product",
     "ProductVersion",
     "ProjectMeta",
@@ -72,6 +88,9 @@ __all__ = [
     "RolePermission",
     "Rule",
     "SavedView",
+    "ScheduleDraft",
+    "ScheduleDraftChange",
+    "ScheduleVersion",
     "Tag",
     "Task",
     "TaskAssignment",
@@ -88,5 +107,7 @@ __all__ = [
     "UserDepartment",
     "UserProjectIndex",
     "UserSession",
+    "UserWorkException",
+    "UserWorkHours",
     "VersionShare",
 ]

@@ -81,6 +81,7 @@ def compute_workload_grid(
     date_to: date,
     working_days: set[int],
     today: date,
+    capacity_by_day: dict[tuple[UUID, date], float] | None = None,
 ) -> WorkloadResult:
     """Pure §10.4 artist capacity vs demand workload grid calculation."""
     all_days = _daterange(date_from, date_to)
@@ -136,12 +137,15 @@ def compute_workload_grid(
         for d in all_days:
             key = (user.id, d)
             hrs = round(hours_map.get(key, 0.0), 2)
-            util = round((hrs / cap) * 100.0, 1)
+            # CR04 §8: per-day capacity from working hours, exceptions and activation periods.
+            day_cap = capacity_by_day.get(key, cap) if capacity_by_day is not None else cap
+            # A booking on a day with no working hours is flagged as fully over capacity.
+            util = round(hrs / day_cap * 100.0, 1) if day_cap > 0 else (0.0 if hrs == 0 else 999.9)
             cells.append(
                 WorkloadCellOut(
                     day=d,
                     hours=hrs,
-                    capacity_hours=cap,
+                    capacity_hours=day_cap,
                     utilization_pct=util,
                     contributing_task_ids=sorted(task_contrib.get(key, set()), key=str),
                 )

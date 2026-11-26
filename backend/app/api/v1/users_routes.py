@@ -190,10 +190,10 @@ async def create_user(
         comp = await db.get(Company, payload.company_id)
         if comp is None:
             raise NotFoundError("company", str(payload.company_id))
-        if comp.kind != "external":
+        if comp.kind not in ("external", "client"):
             raise AppError(
                 "invalid_user",
-                "Client users must belong to a company with kind 'external'",
+                "Client users must belong to a client or external company",
                 status_code=400,
             )
     elif payload.company_id is not None:
@@ -319,7 +319,7 @@ async def update_user(
 
     if new_role and new_role.name == "client":
         comp = await db.get(Company, user.company_id) if user.company_id else None
-        if comp is None or comp.kind != "external":
+        if comp is None or comp.kind not in ("external", "client"):
             raise AppError(
                 "invalid_user",
                 "Client users must belong to an external company",

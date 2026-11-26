@@ -2,6 +2,8 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
+  // Needs its own empty data root: run via `npm run test:e2e:bootstrap`.
+  testIgnore: /cr04_bootstrap\.spec\.ts/,
   workers: 1,
   timeout: 45_000,
   use: {

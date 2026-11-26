@@ -8,6 +8,8 @@ import {
   Timebar,
   TransportControls,
   type TimebarAnnotationMarker,
+  readCssToken,
+  readCssTokenRgb,
 } from '../../../components/ui';
 import { useCssVarRef } from '../../../components/ui/_internal/useCssVar';
 import {
@@ -275,6 +277,15 @@ export function AudioViewer({
     const vSpan = Math.max(0.002, v1 - v0);
     const totalSpan = Math.max(1, endFrame - startFrame);
 
+    // Theme-driven palette (tokens resolved once per draw)
+    const palAnn = readCssTokenRgb('--st-wip', [224, 179, 65]);
+    const palSel = readCssTokenRgb('--zone-production', [91, 147, 199]);
+    const palGrid = readCssToken('--grid-line-strong', 'rgb(69, 69, 69)');
+    const palCh0 = readCssToken('--series-2', 'rgb(111, 179, 160)');
+    const palCh1 = readCssToken('--series-1', 'rgb(122, 156, 198)');
+    const palHead = readCssToken('--zone-focus', 'rgb(232, 163, 61)');
+    const rgba = (c: [number, number, number], a: number) => `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${a})`;
+
     // Draw saved audio annotation bands
     for (const ann of savedAnnotations) {
       if (ann.frame_in === null || ann.frame_in === undefined) continue;
@@ -282,9 +293,9 @@ export function AudioViewer({
       const n1 = ((ann.frame_out ?? ann.frame_in + 1) - startFrame) / totalSpan;
       const x0 = ((n0 - v0) / vSpan) * w;
       const x1 = Math.max(x0 + 4, ((n1 - v0) / vSpan) * w);
-      ctx.fillStyle = 'rgba(245, 158, 11, 0.22)';
+      ctx.fillStyle = rgba(palAnn, 0.22);
       ctx.fillRect(x0, 0, x1 - x0, h);
-      ctx.strokeStyle = '#F59E0B';
+      ctx.strokeStyle = rgba(palAnn, 1);
       ctx.strokeRect(x0, 0, x1 - x0, h);
     }
 
@@ -293,9 +304,9 @@ export function AudioViewer({
       const n1 = (Math.max(dragRegion[0], dragRegion[1]) - startFrame) / totalSpan;
       const x0 = ((n0 - v0) / vSpan) * w;
       const x1 = Math.max(x0 + 3, ((n1 - v0) / vSpan) * w);
-      ctx.fillStyle = 'rgba(139, 92, 246, 0.25)';
+      ctx.fillStyle = rgba(palSel, 0.25);
       ctx.fillRect(x0, 0, x1 - x0, h);
-      ctx.strokeStyle = '#8B5CF6';
+      ctx.strokeStyle = rgba(palSel, 1);
       ctx.strokeRect(x0, 0, x1 - x0, h);
     }
 
@@ -313,7 +324,7 @@ export function AudioViewer({
           const bins = spec[c]!;
           for (let r = 0; r < rows; r++) {
             const mag = bins[rows - 1 - r] ?? 0;
-            ctx.fillStyle = `rgba(139, 92, 246, ${(mag * 0.9).toFixed(2)})`;
+            ctx.fillStyle = rgba(palSel, Number((mag * 0.9).toFixed(2)));
             ctx.fillRect(x, r * rowH, colW + 1, rowH + 1);
           }
         }
@@ -322,13 +333,13 @@ export function AudioViewer({
         const laneH = h / Math.max(1, channels.length);
         channels.forEach((chPeaks, chIdx) => {
           const mid = chIdx * laneH + laneH / 2;
-          ctx.strokeStyle = 'rgba(148, 163, 184, 0.35)';
+          ctx.strokeStyle = palGrid;
           ctx.beginPath();
           ctx.moveTo(0, mid);
           ctx.lineTo(w, mid);
           ctx.stroke();
 
-          ctx.fillStyle = chIdx === 0 ? '#10B981' : '#38BDF8';
+          ctx.fillStyle = chIdx === 0 ? palCh0 : palCh1;
           const len = chPeaks.length;
           for (let x = 0; x < w; x++) {
             const norm = v0 + (x / w) * vSpan;
@@ -345,7 +356,7 @@ export function AudioViewer({
     // Playhead
     const phNorm = (activeFrame - startFrame) / totalSpan;
     const phX = ((phNorm - v0) / vSpan) * w;
-    ctx.strokeStyle = '#8B5CF6';
+    ctx.strokeStyle = palHead;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(phX, 0);

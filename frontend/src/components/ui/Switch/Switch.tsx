@@ -40,6 +40,9 @@ export function Switch({
       onClick={() => onChange(!checked)}
     >
       <span className="org-switch__track" aria-hidden="true">
+        <span className="org-switch__glyph org-switch__glyph--on">I</span>
+        <span className="org-switch__glyph org-switch__glyph--off">O</span>
+        <span className="org-switch__led" />
         <span className="org-switch__thumb" />
       </span>
       {label && <span className="org-switch__label">{label}</span>}

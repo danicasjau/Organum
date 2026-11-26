@@ -60,6 +60,7 @@
     white-space: nowrap;
   }
 
+  /* Kbd: tiny RAISED keycap, mono */
   .org-kbd {
     display: inline-flex;
     align-items: center;
@@ -67,27 +68,49 @@
     min-width: var(--icon-lg);
     padding: 0 var(--space-1);
     height: var(--icon-lg);
-    border: 1px solid var(--border-dark);
-    border-radius: var(--radius-1);
-    background: var(--surface-field);
-    box-shadow: var(--bevel-inset);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    background: var(--bg-raised);
+    box-shadow: var(--sh-raised);
     font-family: var(--font-mono);
-    font-size: var(--font-size-sm);
-    color: var(--text-muted);
+    font-size: var(--font-size-label);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-dim);
   }
 
+  /* Separator: 2px groove (dark line above, light line below) */
   .org-separator[data-orientation='horizontal'] {
     width: 100%;
-    height: var(--space-1);
-    border-top: 1px solid var(--border-dark);
-    border-bottom: 1px solid var(--bevel-light);
+    height: var(--space-half);
+    border-top: 1px solid var(--groove-dark);
+    border-bottom: 1px solid var(--groove-light);
   }
 
   .org-separator[data-orientation='vertical'] {
-    width: var(--space-1);
+    width: var(--space-half);
     align-self: stretch;
-    border-left: 1px solid var(--border-dark);
-    border-right: 1px solid var(--bevel-light);
+    border-left: 1px solid var(--groove-dark);
+    border-right: 1px solid var(--groove-light);
+  }
+
+  /* Page title: 26px/600, never pure white */
+  .org-text[data-size='title'],
+  .org-page-title {
+    font-size: var(--font-size-title);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+
+  /* Etched section label */
+  .org-text[data-variant='label'],
+  .org-section-label {
+    font-size: var(--font-size-label);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--label-tracking);
+    color: var(--text-dim);
+    text-shadow: 0 1px 0 var(--groove-light);
   }
 }
 

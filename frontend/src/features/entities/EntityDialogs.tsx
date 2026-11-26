@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   Badge,
+  Banner,
   Button,
   Checkbox,
   Dialog,
@@ -337,6 +338,8 @@ export function EditEntityDialog({
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagDraft, setTagDraft] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (open && entity) {
@@ -345,6 +348,8 @@ export function EditEntityDialog({
       setDescription(entity.description ?? '');
       setTags(entity.tags ?? []);
       setTagDraft('');
+      setError(null);
+      setBusy(false);
     }
   }, [open, entity]);
 
@@ -364,26 +369,35 @@ export function EditEntityDialog({
       title={entity ? `Edit Entity — ${entity.name}` : 'Edit Entity'}
       footer={
         <>
-          <Button onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={() => onOpenChange(false)} disabled={busy}>
+            Cancel
+          </Button>
           <Button
             variant="primary"
-            disabled={!sanitizePreview(name)}
-            onClick={async () => {
-              await onSave({
+            disabled={!sanitizePreview(name) || busy}
+            onClick={() => {
+              setBusy(true);
+              setError(null);
+              void onSave({
                 name: name.trim(),
                 entity_type: entityType.trim() ? entityType.trim() : null,
                 description: description.trim() ? description.trim() : null,
                 tags,
-              });
-              onOpenChange(false);
+              })
+                .then(() => onOpenChange(false))
+                .catch((err: unknown) => {
+                  setError(err instanceof Error ? err.message : 'Unable to save entity');
+                })
+                .finally(() => setBusy(false));
             }}
           >
-            Save
+            {busy ? 'Saving...' : 'Save'}
           </Button>
         </>
       }
     >
       <Stack gap="2" className="org-edialog">
+        {error && <Banner severity="danger">{error}</Banner>}
         <div className="org-edialog__row">
           <Text size="sm">Name</Text>
           <TextField aria-label="Edit entity name" value={name} onChange={(e) => setName(e.target.value)} />
@@ -603,10 +617,31 @@ export function PromptNameDialog({
   onConfirm: (value: string) => Promise<void>;
 }) {
   const [value, setValue] = useState(initialValue);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (open) setValue(initialValue);
+    if (open) {
+      setValue(initialValue);
+      setError(null);
+      setBusy(false);
+    }
   }, [open, initialValue]);
+
+  const handleConfirm = async () => {
+    const clean = value.trim();
+    if (!clean || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await onConfirm(clean);
+      onOpenChange(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to save name');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <Dialog
@@ -615,30 +650,30 @@ export function PromptNameDialog({
       title={title}
       footer={
         <>
-          <Button onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={() => onOpenChange(false)} disabled={busy}>
+            Cancel
+          </Button>
           <Button
             variant="primary"
-            disabled={!value.trim()}
-            onClick={async () => {
-              await onConfirm(value.trim());
-              onOpenChange(false);
-            }}
+            disabled={!value.trim() || busy}
+            onClick={() => void handleConfirm()}
           >
-            {confirmLabel}
+            {busy ? 'Saving...' : confirmLabel}
           </Button>
         </>
       }
     >
       <Stack gap="1">
+        {error && <Banner severity="danger">{error}</Banner>}
         <Text size="sm">{label}</Text>
         <TextField
           aria-label={label}
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          onKeyDown={async (e) => {
+          onKeyDown={(e) => {
             if (e.key === 'Enter' && value.trim()) {
-              await onConfirm(value.trim());
-              onOpenChange(false);
+              e.preventDefault();
+              void handleConfirm();
             }
           }}
         />
@@ -714,4 +749,3 @@ export function OpenWithDialog({
     </Dialog>
   );
 }
-

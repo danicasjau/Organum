@@ -5,7 +5,8 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background: var(--surface-window);
+    background-color: var(--surface-window);
+    background-image: var(--grain);
     color: var(--text);
   }
 

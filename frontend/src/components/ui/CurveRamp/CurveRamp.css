@@ -15,9 +15,10 @@
   .org-ramp__svg {
     width: 100%;
     height: var(--ramp-h);
-    border: 1px solid var(--border-control);
-    border-radius: var(--radius-1);
+    border: 1px solid var(--groove-dark);
+    border-radius: var(--radius-well);
     background: var(--surface-field);
+    box-shadow: var(--sh-inset);
     cursor: crosshair;
   }
 

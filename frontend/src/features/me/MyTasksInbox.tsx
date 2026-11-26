@@ -27,17 +27,18 @@ import {
 import { useAuthStore } from '../auth/authStore';
 import { useProjectStore } from '../project/projectStore';
 import { ReviewQueueView } from '../tasks/ReviewQueueView';
-import {
-  categorizeMyTasks,
-  isOverdueDate,
-  PRIORITY_OPTIONS,
-} from '../tasks/taskHelpers';
+import { categorizeMyTasks, isOverdueDate, PRIORITY_OPTIONS } from '../tasks/taskHelpers';
 import { TaskTransitionDialog } from '../tasks/TaskTransitionDialog';
 import './MyTasksInbox.css';
+import { DepartmentTag } from '../departments/DepartmentTag';
+import { TaskUnreadDot } from '../reviews/TaskUnreadDot';
 
 type CapacityFilter = 'all' | 'artist' | 'lead' | 'supervisor';
 
-const CAPACITY_TITLES: Record<Exclude<CapacityFilter, 'all'>, { code: 'artist' | 'lead' | 'supervisor'; title: string }> = {
+const CAPACITY_TITLES: Record<
+  Exclude<CapacityFilter, 'all'>,
+  { code: 'artist' | 'lead' | 'supervisor'; title: string }
+> = {
   artist: { code: 'artist', title: 'I DO (Artist Execution)' },
   lead: { code: 'lead', title: 'I LEAD (Lead Coordination & First Review)' },
   supervisor: { code: 'supervisor', title: 'I SUPERVISE (Department Supervision & Approvals)' },
@@ -54,7 +55,19 @@ function InboxProgressFill({ logged, bid }: { logged: number; bid: number | null
   );
 }
 
-export function MyTasksInbox() {
+export interface MyTasksInboxProps {
+  /** When set, cards are selectable and the review queue is left to the caller. */
+  selectedTaskId?: string | null;
+  onSelectTask?: (taskId: string) => void;
+  /** Hide the embedded review queue (the /me page shows it in its preview column). */
+  hideReviewQueue?: boolean;
+}
+
+export function MyTasksInbox({
+  selectedTaskId = null,
+  onSelectTask,
+  hideReviewQueue = false,
+}: MyTasksInboxProps = {}) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -122,12 +135,18 @@ export function MyTasksInbox() {
     }
   };
 
-  const handleOpenSubmit = async (task: TaskListItemOut, desiredAction: 'submit' | 'approve' | 'retake') => {
+  const handleOpenSubmit = async (
+    task: TaskListItemOut,
+    desiredAction: 'submit' | 'approve' | 'retake',
+  ) => {
     try {
       const det = await apiClient.getTask(task.id, activeProjectUuid);
       const match = (det.allowed_transitions ?? []).find((o) => o.action === desiredAction);
       if (!match) {
-        toast.push('warning', `Action '${desiredAction}' is not available in status ${task.status}`);
+        toast.push(
+          'warning',
+          `Action '${desiredAction}' is not available in status ${task.status}`,
+        );
         return;
       }
       if (!match.requires_comment && !match.requires_version) {
@@ -155,7 +174,8 @@ export function MyTasksInbox() {
     const caps = task.my_capacities ?? [];
     const canDo = caps.includes('artist') || caps.includes('lead');
     const canReview = caps.includes('lead') || caps.includes('supervisor');
-    const inReview = task.status === 'P_LEAD' || task.status === 'P_SUP' || task.status === 'P_CLIENT';
+    const inReview =
+      task.status === 'P_LEAD' || task.status === 'P_SUP' || task.status === 'P_CLIENT';
 
     return (
       <div
@@ -163,17 +183,36 @@ export function MyTasksInbox() {
         className="org-inbox__card"
         data-ui="my-task-card"
         data-task-id={task.id}
+        data-selected={selectedTaskId === task.id ? 'true' : undefined}
+        aria-current={selectedTaskId === task.id ? 'true' : undefined}
+        onClick={(ev) => {
+          // Buttons inside the card keep their own actions.
+          if (!onSelectTask || (ev.target as HTMLElement).closest('button, a, input')) return;
+          onSelectTask(task.id);
+        }}
       >
         <div className="org-inbox__card-top">
           <span className="org-inbox__code">{task.task_code}</span>
+          <TaskUnreadDot
+            taskId={task.id}
+            feedbackAt={task.last_feedback_at}
+            by={task.last_feedback_by}
+          />
           <StatusChip status={task.status} compact />
           <PriorityMarker priority={task.priority ?? 'normal'} />
           <CapacityBadgeList capacities={caps} />
         </div>
         <div className="org-inbox__card-sub">
-          <Text size="sm">
-            {task.entity_name} · {task.department_name} — {task.name}
-          </Text>
+          <span className="org-inbox__line">
+            <DepartmentTag
+              id={task.department_id}
+              name={task.department_name}
+              color={task.department_color}
+            />
+            <Text size="sm">
+              {task.entity_name} — {task.name}
+            </Text>
+          </span>
           <Text size="sm" variant={overdue ? 'danger' : 'muted'}>
             Due: {task.ideal_finish_date ?? '—'} · Bid {task.bid_hours ?? 0}h / Logged{' '}
             {task.logged_hours ?? 0}h
@@ -235,10 +274,7 @@ export function MyTasksInbox() {
             size="sm"
             onClick={() => {
               void apiClient
-                .revealPath(
-                  `${task.entity_rel_path}/${task.department_name}`,
-                  activeProjectUuid,
-                )
+                .revealPath(`${task.entity_rel_path}/${task.department_name}`, activeProjectUuid)
                 .catch((err) =>
                   toast.push('warning', err instanceof Error ? err.message : 'Reveal unavailable'),
                 );
@@ -309,7 +345,7 @@ export function MyTasksInbox() {
       </div>
 
       <div className="org-inbox__scroll">
-        {(data?.to_review?.length ?? 0) > 0 && (
+        {!hideReviewQueue && (data?.to_review?.length ?? 0) > 0 && (
           <div className="org-inbox__revwrap">
             <ReviewQueueView
               searchQuery={search}
@@ -336,11 +372,7 @@ export function MyTasksInbox() {
             { title: 'Done Recently', list: buckets.doneRecently },
           ];
           return (
-            <section
-              key={capKey}
-              className="org-inbox__capgroup"
-              data-capacity={meta.code}
-            >
+            <section key={capKey} className="org-inbox__capgroup" data-capacity={meta.code}>
               <div className="org-inbox__capgroup-hdr">
                 <CapacityBadgeList capacities={[meta.code]} />
                 <Text size="lg" variant="accent">

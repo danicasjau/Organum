@@ -1,4 +1,6 @@
 @layer components {
+  /* v1 checkbox: 18x18 INSET well; checked shows a crisp 2px check in
+     production blue with a faint glow. */
   .org-checkbox {
     position: relative;
     display: inline-flex;
@@ -12,7 +14,7 @@
 
   .org-checkbox[data-disabled='true'] {
     cursor: not-allowed;
-    color: var(--text-disabled);
+    color: var(--text-off);
   }
 
   .org-checkbox__input {
@@ -28,39 +30,41 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
     width: var(--checkbox-size);
     height: var(--checkbox-size);
-    border: 1px solid var(--border-control);
-    border-radius: var(--radius-1);
-    background: var(--surface-field);
-    box-shadow: var(--bevel-inset-pressed);
-    color: var(--white);
+    border: 1px solid var(--groove-dark);
+    border-radius: var(--radius-well);
+    background: var(--bg-input);
+    box-shadow: var(--sh-inset);
+    color: var(--zone-production);
   }
 
-  .org-checkbox__input:checked + .org-checkbox__box,
-  .org-checkbox__input[aria-checked='mixed'] + .org-checkbox__box {
-    background: var(--btn-primary-bg);
-    border-color: var(--accent);
-    box-shadow: none;
+  .org-checkbox__box > svg {
+    stroke-width: 2.6;
+    filter: drop-shadow(0 0 var(--space-half) color-mix(in srgb, var(--zone-production) 60%, transparent));
   }
 
   .org-checkbox:hover:not([data-disabled='true']) .org-checkbox__box,
   .org-checkbox[data-force-state='hover']:not([data-disabled='true']) .org-checkbox__box {
-    border-color: var(--accent);
+    background: var(--bg-input);
+    filter: brightness(var(--hover-brightness));
   }
 
-  .org-checkbox[data-force-state='pressed']:not([data-disabled='true']) .org-checkbox__box {
-    background: var(--surface-pressed);
+  .org-checkbox[data-force-state='pressed']:not([data-disabled='true']) .org-checkbox__box,
+  .org-checkbox:active:not([data-disabled='true']) .org-checkbox__box {
+    box-shadow: var(--sh-pressed);
   }
 
   .org-checkbox__input:focus-visible + .org-checkbox__box,
   .org-checkbox[data-force-state='focus']:not([data-disabled='true']) .org-checkbox__box {
     outline: var(--focus-w) solid var(--focus-ring);
-    outline-offset: var(--focus-w);
+    outline-offset: var(--focus-offset);
   }
 
   .org-checkbox[data-error='true'] .org-checkbox__box {
-    border-color: var(--red-500);
+    border-color: var(--st-rejected);
+    box-shadow: var(--sh-inset), inset 0 0 var(--led-glow) color-mix(in srgb, var(--st-rejected) 35%, transparent);
   }
 
   .org-checkbox[data-dirty='true'] .org-checkbox__label {
@@ -68,9 +72,13 @@
   }
 
   .org-checkbox[data-disabled='true'] .org-checkbox__box {
-    background: var(--surface-panel);
-    border-color: var(--border-dark);
-    color: var(--text-disabled);
+    background: var(--bg-panel);
+    border-color: var(--border);
+    box-shadow: none;
+    color: var(--text-off);
+  }
+
+  .org-checkbox[data-disabled='true'] .org-checkbox__box > svg {
+    filter: none;
   }
 }
-

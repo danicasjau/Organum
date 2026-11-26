@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { cn } from '../_internal/cn';
+import { PriorityFlag, toPriorityLevel, type PriorityLevel } from '../PriorityFlag/PriorityFlag';
 import './Badge.css';
 
 export type Tone = 'neutral' | 'accent' | 'success' | 'warning' | 'danger' | 'info';
@@ -22,15 +23,24 @@ export function Badge({
 
 export function Tag({
   tone = 'neutral',
+  priority,
   children,
   className,
 }: {
   tone?: Tone;
-  children: ReactNode;
+  /** v1 priority variant: renders the coloured flag + label (children optional). */
+  priority?: PriorityLevel | string;
+  children?: ReactNode;
   className?: string;
 }) {
   return (
-    <span data-ui="tag" data-tone={tone} className={cn('org-tag', className)}>
+    <span
+      data-ui="tag"
+      data-tone={tone}
+      data-priority={priority !== undefined ? toPriorityLevel(priority) : undefined}
+      className={cn('org-tag', className)}
+    >
+      {priority !== undefined ? <PriorityFlag priority={priority} /> : null}
       {children}
     </span>
   );

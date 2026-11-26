@@ -3,9 +3,10 @@
     display: flex;
     align-items: center;
     gap: var(--space-2);
-    padding: var(--space-2) var(--space-3);
-    border: 1px solid var(--border-dark);
-    border-left: var(--dirty-bar-w) solid var(--info);
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid var(--border);
+    border-left: var(--status-bar-w) solid var(--info);
+    border-radius: var(--radius-sm);
     background: var(--info-soft);
     color: var(--text);
   }
@@ -69,11 +70,13 @@
     justify-content: space-between;
     gap: var(--space-3);
     min-width: var(--popover-min-w);
-    padding: var(--space-2) var(--space-3);
-    border: 1px solid var(--border-dark);
-    border-left: var(--dirty-bar-w) solid var(--accent);
-    background: var(--surface-window);
-    box-shadow: var(--shadow-popup);
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid var(--border);
+    border-left: var(--status-bar-w) solid var(--st-review);
+    background: var(--bg-raised);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--sh-raised), var(--elev-2);
+    animation: org-pop-in var(--motion-popover);
   }
 
   .org-toast[data-severity='success'] {

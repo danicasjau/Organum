@@ -4,26 +4,50 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { Spinner, ToastProvider, TooltipProvider } from '../components/ui';
 import { ForcePasswordChangeDialog } from '../features/auth/ForcePasswordChangeDialog';
 import { LoginPage } from '../features/auth/LoginPage';
+import { DepartmentColorSync } from '../features/departments/DepartmentColorSync';
+import { ReviewFeedbackSync } from '../features/reviews/ReviewFeedbackSync';
 import { hasPerm, registerQueryClearer, useAuthStore } from '../features/auth/authStore';
+import { SettingsRouteBridge } from './SettingsRouteBridge';
 import './App.css';
 
-const ViewerPage = lazy(() =>
-  import('../features/viewer/ViewerPage').then((m) => ({ default: m.ViewerPage })),
-);
-const TasksPage = lazy(() =>
-  import('../features/tasks/TasksPage').then((m) => ({ default: m.TasksPage })),
-);
+const loadViewerPage = () => import('../features/viewer/ViewerPage');
+const loadTasksPage = () => import('../features/tasks/TasksPage');
+const loadUsersPage = () => import('../features/users/UsersPage');
+const loadSettingsPage = () => import('../features/settings/SettingsPage');
+
+const ViewerPage = lazy(() => loadViewerPage().then((m) => ({ default: m.ViewerPage })));
+const TasksPage = lazy(() => loadTasksPage().then((m) => ({ default: m.TasksPage })));
 const GalleryPage = lazy(() =>
   import('../gallery/GalleryPage').then((m) => ({ default: m.GalleryPage })),
 );
-const UsersPage = lazy(() =>
-  import('../features/users/UsersPage').then((m) => ({ default: m.UsersPage })),
-);
-const MyUserPage = lazy(() =>
-  import('../features/me/MyUserPage').then((m) => ({ default: m.MyUserPage })),
+const UsersPage = lazy(() => loadUsersPage().then((m) => ({ default: m.UsersPage })));
+const SettingsPage = lazy(() => loadSettingsPage().then((m) => ({ default: m.SettingsPage })));
+
+/** Warm the workspace chunks once signed in so the first tab switch doesn't wait on a download. */
+function PrefetchWorkspaces() {
+  const signedIn = useAuthStore((s) => Boolean(s.auth));
+  useEffect(() => {
+    if (!signedIn) return;
+    const id = window.setTimeout(() => {
+      void Promise.allSettled([
+        loadViewerPage(),
+        loadTasksPage(),
+        loadUsersPage(),
+        loadSettingsPage(),
+      ]);
+    }, 800);
+    return () => window.clearTimeout(id);
+  }, [signedIn]);
+  return null;
+}
+const LayeringFixture = lazy(() =>
+  import('../gallery/LayeringFixture').then((m) => ({ default: m.LayeringFixture })),
 );
 const AdminPage = lazy(() =>
   import('../features/admin/AdminPage').then((m) => ({ default: m.AdminPage })),
+);
+const MyUserPage = lazy(() =>
+  import('../features/me/MyUserPage').then((m) => ({ default: m.MyUserPage })),
 );
 
 const queryClient = new QueryClient({
@@ -102,6 +126,9 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <ToastProvider>
+          <DepartmentColorSync />
+          <ReviewFeedbackSync />
+          <PrefetchWorkspaces />
           <BrowserRouter>
             <Suspense fallback={<Spinner label="Loading module" />}>
               <Routes>
@@ -137,7 +164,7 @@ export function App() {
                 <Route
                   path="/users"
                   element={
-                    <RequireAuth requiredPerm="user.view">
+                    <RequireAuth requiredPerm={['user.view', 'role.manage', 'rules.manage']}>
                       <UsersPage theme={theme} onToggleTheme={toggleTheme} />
                     </RequireAuth>
                   }
@@ -156,6 +183,14 @@ export function App() {
                   }
                 />
                 <Route
+                  path="/settings"
+                  element={
+                    <RequireAuth>
+                      <SettingsPage theme={theme} onToggleTheme={toggleTheme} />
+                    </RequireAuth>
+                  }
+                />
+                <Route
                   path="/admin"
                   element={
                     <RequireAuth requiredPerm={['role.manage', 'rules.manage']}>
@@ -163,6 +198,7 @@ export function App() {
                     </RequireAuth>
                   }
                 />
+                <Route path="/gallery/layering" element={<LayeringFixture />} />
                 <Route
                   path="/gallery"
                   element={
@@ -180,6 +216,7 @@ export function App() {
                 />
               </Routes>
               <ForcePasswordChangeDialog />
+              <SettingsRouteBridge />
             </Suspense>
           </BrowserRouter>
         </ToastProvider>

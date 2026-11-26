@@ -21,6 +21,15 @@ import { AdminDatabaseSection } from './AdminDatabaseSection';
 import { AdminDefaultTasksSection } from './AdminDefaultTasksSection';
 import { AdminDepTemplatesSection } from './AdminDepTemplatesSection';
 import { AdminRulesSection } from './AdminRulesSection';
+import {
+  EMPTY_PERMISSION_FILTER,
+  differsFromDefault,
+  filterPermissionKeys,
+  isFilterActive,
+  permissionGroups,
+  visibleRoles,
+  type PermissionFilter,
+} from './permissionFilter';
 import './AdminPage.css';
 
 type AdminSection =
@@ -60,12 +69,18 @@ const CAPACITY_COLS: ReadonlyArray<'artist' | 'lead' | 'supervisor'> = [
   'supervisor',
 ];
 
-export function AdminPage({
+/**
+ * Administration sections (roles matrix, project settings, audit log) rendered
+ * inside the unified Users panel.
+ */
+export function AdminConsoleContent({
+  section: embeddedSection,
   theme,
   onToggleTheme,
 }: {
-  theme: ThemeMode;
-  onToggleTheme: () => void;
+  section?: AdminSection;
+  theme?: ThemeMode;
+  onToggleTheme?: () => void;
 }) {
   const navigate = useNavigate();
   const auth = useAuthStore((s) => s.auth);
@@ -74,13 +89,15 @@ export function AdminPage({
   const canManageRoles = hasPerm(auth?.permissions, 'role.manage');
   const canManageRules = hasPerm(auth?.permissions, 'rules.manage');
   const canManageEntities = hasPerm(auth?.permissions, 'entity.manage');
-  const canAdminDb =
-    auth?.user.role_name === 'admin' && hasPerm(auth?.permissions, 'admin.db');
+  const canAdminDb = auth?.user.role_name === 'admin' && hasPerm(auth?.permissions, 'admin.db');
   const canViewUsers = hasPerm(auth?.permissions, 'user.view');
 
-  const [section, setSection] = useState<AdminSection>(() =>
-    hasPerm(auth?.permissions, 'role.manage') ? 'roles' : 'rules',
+  const [currentSection, setCurrentSection] = useState<AdminSection>(
+    () => embeddedSection ?? (hasPerm(auth?.permissions, 'role.manage') ? 'roles' : 'rules'),
   );
+  useEffect(() => {
+    if (embeddedSection) setCurrentSection(embeddedSection);
+  }, [embeddedSection]);
   const [matrixTab, setMatrixTab] = useState('role-matrix');
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -109,7 +126,7 @@ export function AdminPage({
   const auditQuery = useQuery({
     queryKey: ['admin-audit', projectUuid, auditFilter],
     queryFn: () => apiClient.listAuditLogs(auditFilter || undefined, 150, projectUuid),
-    enabled: Boolean(projectUuid && canManageRoles && section === 'audit'),
+    enabled: Boolean(projectUuid && canManageRoles && currentSection === 'audit'),
   });
 
   const roles = useMemo(() => rolesQuery.data ?? [], [rolesQuery.data]);
@@ -140,6 +157,15 @@ export function AdminPage({
     const first = roles[0]?.permissions ?? {};
     return Object.keys(first).sort();
   }, [roles]);
+
+  const [permFilter, setPermFilter] = useState<PermissionFilter>(EMPTY_PERMISSION_FILTER);
+  const patchPermFilter = (patch: Partial<PermissionFilter>) =>
+    setPermFilter((prev) => ({ ...prev, ...patch }));
+  const shownRoles = useMemo(() => visibleRoles(roles, permFilter), [roles, permFilter]);
+  const shownKeys = useMemo(
+    () => filterPermissionKeys(permissionKeys, roles, permFilter),
+    [permissionKeys, roles, permFilter],
+  );
 
   const handleUpdateRoleScope = async (role: RoleOut, permKey: string, nextScope: PermScope) => {
     setErrorMsg(null);
@@ -225,13 +251,9 @@ export function AdminPage({
     }
   };
 
-  return (
-    <AuthenticatedShell
-      theme={theme}
-      onToggleTheme={onToggleTheme}
-      statusText={`Admin Console — ${auth?.project_status ?? 'active'}`}
-    >
-      <div className="org-admin-shell" data-ui="admin-page">
+  const content = (
+    <div className="org-admin-shell" data-ui="admin-page">
+      {!embeddedSection && (
         <aside className="org-admin-nav" aria-label="Admin sections">
           <div className="org-admin-nav__title">Admin Console</div>
           {(
@@ -253,316 +275,414 @@ export function AdminPage({
                 key={id}
                 type="button"
                 className="org-admin-nav__item"
-                data-active={section === id ? 'true' : undefined}
+                data-active={currentSection === id ? 'true' : undefined}
                 onClick={() => {
                   if (id === 'users') navigate('/users');
                   else if (id === 'departments') navigate('/users?tab=departments');
-                  else setSection(id);
+                  else setCurrentSection(id);
                 }}
               >
                 {label}
               </button>
             ))}
         </aside>
+      )}
 
-        <section className="org-admin-content">
-          {errorMsg && <Banner severity="danger">{errorMsg}</Banner>}
-          {statusMsg && <Banner severity="success">{statusMsg}</Banner>}
+      <section className="org-admin-content">
+        {errorMsg && <Banner severity="danger">{errorMsg}</Banner>}
+        {statusMsg && <Banner severity="success">{statusMsg}</Banner>}
+        {currentSection === 'roles' && (
+          <Tabs
+            activeId={matrixTab}
+            onChange={setMatrixTab}
+            items={[
+              {
+                id: 'role-matrix',
+                label: 'Role Permissions Matrix',
+                content: (
+                  <Stack gap="2">
+                    <div className="org-admin-toolbar">
+                      <TextField
+                        value={newRoleName}
+                        onChange={(e) => setNewRoleName(e.target.value)}
+                        placeholder="role_key (e.g. coordinator)"
+                      />
+                      <TextField
+                        value={newRoleLabel}
+                        onChange={(e) => setNewRoleLabel(e.target.value)}
+                        placeholder="Display Label"
+                      />
+                      <Button size="sm" variant="primary" onClick={() => void handleCreateRole()}>
+                        Add Custom Role
+                      </Button>
+                    </div>
 
-          {section === 'roles' && (
-            <Tabs
-              activeId={matrixTab}
-              onChange={setMatrixTab}
-              items={[
-                {
-                  id: 'role-matrix',
-                  label: 'Role Permissions Matrix',
-                  content: (
-                    <Stack gap="2">
-                      <div className="org-admin-toolbar">
-                        <TextField
-                          value={newRoleName}
-                          onChange={(e) => setNewRoleName(e.target.value)}
-                          placeholder="role_key (e.g. coordinator)"
-                        />
-                        <TextField
-                          value={newRoleLabel}
-                          onChange={(e) => setNewRoleLabel(e.target.value)}
-                          placeholder="Display Label"
-                        />
-                        <Button size="sm" variant="primary" onClick={() => void handleCreateRole()}>
-                          Add Custom Role
+                    <div
+                      className="org-admin-toolbar org-admin-permfilter"
+                      role="search"
+                      aria-label="Filter permissions"
+                    >
+                      <TextField
+                        aria-label="Search permissions"
+                        placeholder="Search key, role or scope (e.g. gantt, company)..."
+                        value={permFilter.text}
+                        onChange={(e) => patchPermFilter({ text: e.target.value })}
+                      />
+                      <Select
+                        ariaLabel="Permission group"
+                        value={permFilter.group}
+                        onChange={(group) => patchPermFilter({ group })}
+                        options={[
+                          { value: '', label: 'All groups' },
+                          ...permissionGroups(permissionKeys).map((g) => ({ value: g, label: g })),
+                        ]}
+                      />
+                      <Select
+                        ariaLabel="Role column"
+                        value={permFilter.roleId}
+                        onChange={(roleId) => patchPermFilter({ roleId })}
+                        options={[
+                          { value: '', label: 'All roles' },
+                          ...roles.map((r) => ({ value: r.id, label: r.label })),
+                        ]}
+                      />
+                      <Checkbox
+                        label="Only differences from default"
+                        checked={permFilter.onlyDifferences}
+                        onChange={(onlyDifferences) => patchPermFilter({ onlyDifferences })}
+                      />
+                      <Text size="sm" variant="muted" aria-live="polite">
+                        {shownKeys.length} of {permissionKeys.length} permissions
+                      </Text>
+                      {isFilterActive(permFilter) && (
+                        <Button size="sm" onClick={() => setPermFilter(EMPTY_PERMISSION_FILTER)}>
+                          Clear filters
                         </Button>
-                      </div>
+                      )}
+                    </div>
 
-                      <div className="org-admin-table-wrap">
-                        <table className="org-admin-matrix" aria-label="Role permissions matrix">
-                          <thead>
+                    <div className="org-admin-table-wrap">
+                      <table className="org-admin-matrix" aria-label="Role permissions matrix">
+                        <thead>
+                          <tr>
+                            <th>Permission</th>
+                            {shownRoles.map((r) => (
+                              <th key={r.id} title={r.name}>
+                                {r.label}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {shownKeys.length === 0 && (
                             <tr>
-                              <th>Permission</th>
-                              {roles.map((r) => (
-                                <th key={r.id} title={r.name}>
-                                  {r.label}
-                                </th>
+                              <td colSpan={shownRoles.length + 1}>
+                                <Text size="sm" variant="muted">
+                                  No permissions match the current filters.
+                                </Text>
+                              </td>
+                            </tr>
+                          )}
+                          {shownKeys.map((perm) => (
+                            <tr key={perm}>
+                              <td className="org-admin-matrix__perm">{perm}</td>
+                              {shownRoles.map((role) => {
+                                const scope = (role.permissions?.[perm] ?? 'none') as PermScope;
+                                const locked = role.name === 'admin';
+                                const changed = differsFromDefault(role, perm);
+                                return (
+                                  <td
+                                    key={`${role.id}:${perm}`}
+                                    data-changed={changed ? 'true' : undefined}
+                                    title={
+                                      changed
+                                        ? `Changed from default (${role.default_permissions?.[perm] ?? 'none'})`
+                                        : undefined
+                                    }
+                                  >
+                                    {changed && (
+                                      <span
+                                        className="org-admin-matrix__changed"
+                                        aria-label={`changed from default ${role.default_permissions?.[perm] ?? 'none'}`}
+                                      >
+                                        *
+                                      </span>
+                                    )}
+                                    {locked ? (
+                                      <Badge tone="neutral">all</Badge>
+                                    ) : (
+                                      <Select
+                                        ariaLabel={`${role.label} ${perm}`}
+                                        value={scope}
+                                        options={[...SCOPE_OPTIONS]}
+                                        onChange={(v) =>
+                                          void handleUpdateRoleScope(role, perm, v as PermScope)
+                                        }
+                                      />
+                                    )}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Stack>
+                ),
+              },
+              {
+                id: 'capacities',
+                label: 'Capacities Matrix',
+                content: (
+                  <Stack gap="2">
+                    <div className="org-admin-toolbar">
+                      <Text size="sm" variant="muted">
+                        Capacity permissions apply whenever a user is assigned as DO (artist), LEAD,
+                        or SUP (supervisor) on a specific task.
+                      </Text>
+                      <Button size="sm" variant="primary" onClick={() => void handleSaveCaps()}>
+                        Save Capacities
+                      </Button>
+                    </div>
+                    <div className="org-admin-table-wrap">
+                      <table className="org-admin-matrix" aria-label="Capacity permissions matrix">
+                        <thead>
+                          <tr>
+                            <th>Permission</th>
+                            <th>DO (artist)</th>
+                            <th>LEAD (lead)</th>
+                            <th>SUP (supervisor)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {permissionKeys.map((perm) => (
+                            <tr key={perm}>
+                              <td className="org-admin-matrix__perm">{perm}</td>
+                              {CAPACITY_COLS.map((cap) => (
+                                <td key={`${cap}:${perm}`}>
+                                  <Checkbox
+                                    ariaLabel={`${cap} ${perm}`}
+                                    checked={Boolean(capDraft?.[cap].includes(perm))}
+                                    onChange={() => handleToggleCapPerm(cap, perm)}
+                                  />
+                                </td>
                               ))}
                             </tr>
-                          </thead>
-                          <tbody>
-                            {permissionKeys.map((perm) => (
-                              <tr key={perm}>
-                                <td className="org-admin-matrix__perm">{perm}</td>
-                                {roles.map((role) => {
-                                  const scope = (role.permissions?.[perm] ?? 'none') as PermScope;
-                                  const locked = role.name === 'admin';
-                                  return (
-                                    <td key={`${role.id}:${perm}`}>
-                                      {locked ? (
-                                        <Badge tone="neutral">all</Badge>
-                                      ) : (
-                                        <Select
-                                          ariaLabel={`${role.label} ${perm}`}
-                                          value={scope}
-                                          options={[...SCOPE_OPTIONS]}
-                                          onChange={(v) =>
-                                            void handleUpdateRoleScope(role, perm, v as PermScope)
-                                          }
-                                        />
-                                      )}
-                                    </td>
-                                  );
-                                })}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </Stack>
-                  ),
-                },
-                {
-                  id: 'capacities',
-                  label: 'Capacities Matrix',
-                  content: (
-                    <Stack gap="2">
-                      <div className="org-admin-toolbar">
-                        <Text size="sm" variant="muted">
-                          Capacity permissions apply whenever a user is assigned as DO (artist), LEAD,
-                          or SUP (supervisor) on a specific task.
-                        </Text>
-                        <Button size="sm" variant="primary" onClick={() => void handleSaveCaps()}>
-                          Save Capacities
-                        </Button>
-                      </div>
-                      <div className="org-admin-table-wrap">
-                        <table className="org-admin-matrix" aria-label="Capacity permissions matrix">
-                          <thead>
-                            <tr>
-                              <th>Permission</th>
-                              <th>DO (artist)</th>
-                              <th>LEAD (lead)</th>
-                              <th>SUP (supervisor)</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {permissionKeys.map((perm) => (
-                              <tr key={perm}>
-                                <td className="org-admin-matrix__perm">{perm}</td>
-                                {CAPACITY_COLS.map((cap) => (
-                                  <td key={`${cap}:${perm}`}>
-                                    <Checkbox
-                                      ariaLabel={`${cap} ${perm}`}
-                                      checked={Boolean(capDraft?.[cap].includes(perm))}
-                                      onChange={() => handleToggleCapPerm(cap, perm)}
-                                    />
-                                  </td>
-                                ))}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </Stack>
-                  ),
-                },
-              ]}
-            />
-          )}
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Stack>
+                ),
+              },
+            ]}
+          />
+        )}
 
-          {section === 'project' && projDraft && (
-            <Panel title="Project Lifecycle & Security Settings">
-              <Stack gap="2">
-                <label className="org-admin-field">
-                  <Text size="sm" variant="muted">Project Status</Text>
-                  <Select
-                    ariaLabel="Project Status"
-                    value={projDraft.status}
-                    onChange={(v) =>
-                      setProjDraft({
-                        ...projDraft,
-                        status: v as ProjectSettingsOut['status'],
-                      })
-                    }
-                    options={[
-                      { value: 'active', label: 'active (read/write)' },
-                      { value: 'on_hold', label: 'on_hold' },
-                      { value: 'completed', label: 'completed' },
-                      { value: 'archived', label: 'archived (read-only for non-admins)' },
-                    ]}
-                  />
-                </label>
-                <label className="org-admin-field">
-                  <Text size="sm" variant="muted">Hours per Day</Text>
-                  <TextField
-                    type="number"
-                    value={String(projDraft.hours_per_day)}
-                    onChange={(e) =>
-                      setProjDraft({
-                        ...projDraft,
-                        hours_per_day: Number(e.target.value) || 8,
-                      })
-                    }
-                  />
-                </label>
-                <label className="org-admin-field">
-                  <Text size="sm" variant="muted">Task Code Pattern</Text>
-                  <TextField
-                    value={projDraft.task_code_pattern}
-                    onChange={(e) =>
-                      setProjDraft({ ...projDraft, task_code_pattern: e.target.value })
-                    }
-                  />
-                </label>
-                <div className="org-admin-field">
-                  <Text size="sm" variant="muted">Working Days</Text>
-                  <div className="org-admin-toolbar">
-                    {WEEKDAY_OPTIONS.map((w) => {
-                      const active = (projDraft.working_days ?? []).includes(w.day);
-                      return (
-                        <Checkbox
-                          key={w.day}
-                          label={w.label}
-                          checked={active}
-                          onChange={(checked) => {
-                            const next = new Set(projDraft.working_days ?? []);
-                            if (checked) next.add(w.day);
-                            else next.delete(w.day);
-                            setProjDraft({
-                              ...projDraft,
-                              working_days: Array.from(next).sort((a, b) => a - b),
-                            });
-                          }}
-                        />
-                      );
-                    })}
-                  </div>
-                </div>
-                <label className="org-admin-field">
-                  <Text size="sm" variant="muted">Link Dependency Depth</Text>
-                  <Select
-                    ariaLabel="Link Dependency Depth"
-                    value={String(projDraft.link_dependency_depth ?? 1)}
-                    onChange={(v) =>
-                      setProjDraft({ ...projDraft, link_dependency_depth: Number(v) })
-                    }
-                    options={[
-                      { value: '1', label: '1 hop (direct links)' },
-                      { value: '2', label: '2 hops (indirect links)' },
-                    ]}
-                  />
-                </label>
-                <Checkbox
-                  label="Require published version to submit for review"
-                  checked={projDraft.require_version_to_submit}
+        {currentSection === 'project' && projDraft && (
+          <Panel title="Project Lifecycle & Security Settings">
+            <Stack gap="2">
+              <label className="org-admin-field">
+                <Text size="sm" variant="muted">
+                  Project Status
+                </Text>
+                <Select
+                  ariaLabel="Project Status"
+                  value={projDraft.status}
                   onChange={(v) =>
-                    setProjDraft({ ...projDraft, require_version_to_submit: v })
+                    setProjDraft({
+                      ...projDraft,
+                      status: v as ProjectSettingsOut['status'],
+                    })
+                  }
+                  options={[
+                    { value: 'active', label: 'active (read/write)' },
+                    { value: 'on_hold', label: 'on_hold' },
+                    { value: 'completed', label: 'completed' },
+                    { value: 'archived', label: 'archived (read-only for non-admins)' },
+                  ]}
+                />
+              </label>
+              <label className="org-admin-field">
+                <Text size="sm" variant="muted">
+                  Hours per Day
+                </Text>
+                <TextField
+                  type="number"
+                  value={String(projDraft.hours_per_day)}
+                  onChange={(e) =>
+                    setProjDraft({
+                      ...projDraft,
+                      hours_per_day: Number(e.target.value) || 8,
+                    })
                   }
                 />
-                <Checkbox
-                  label="Enforce blocking dependencies on Gantt drag"
-                  checked={projDraft.enforce_dependencies_in_gantt}
-                  onChange={(v) =>
-                    setProjDraft({ ...projDraft, enforce_dependencies_in_gantt: v })
+              </label>
+              <label className="org-admin-field">
+                <Text size="sm" variant="muted">
+                  Task Code Pattern
+                </Text>
+                <TextField
+                  value={projDraft.task_code_pattern}
+                  onChange={(e) =>
+                    setProjDraft({ ...projDraft, task_code_pattern: e.target.value })
                   }
                 />
-                <Checkbox
-                  label="Enable read-only admin SQL console"
-                  checked={projDraft.admin_sql_console_enabled}
-                  onChange={(v) =>
-                    setProjDraft({ ...projDraft, admin_sql_console_enabled: v })
-                  }
-                />
+              </label>
+              <div className="org-admin-field">
+                <Text size="sm" variant="muted">
+                  Working Days
+                </Text>
                 <div className="org-admin-toolbar">
-                  <Button size="sm" variant="primary" onClick={() => void handleSaveProjectSettings()}>
-                    Save Project Settings
-                  </Button>
+                  {WEEKDAY_OPTIONS.map((w) => {
+                    const active = (projDraft.working_days ?? []).includes(w.day);
+                    return (
+                      <Checkbox
+                        key={w.day}
+                        label={w.label}
+                        checked={active}
+                        onChange={(checked) => {
+                          const next = new Set(projDraft.working_days ?? []);
+                          if (checked) next.add(w.day);
+                          else next.delete(w.day);
+                          setProjDraft({
+                            ...projDraft,
+                            working_days: Array.from(next).sort((a, b) => a - b),
+                          });
+                        }}
+                      />
+                    );
+                  })}
                 </div>
-              </Stack>
-            </Panel>
-          )}
+              </div>
+              <label className="org-admin-field">
+                <Text size="sm" variant="muted">
+                  Link Dependency Depth
+                </Text>
+                <Select
+                  ariaLabel="Link Dependency Depth"
+                  value={String(projDraft.link_dependency_depth ?? 1)}
+                  onChange={(v) => setProjDraft({ ...projDraft, link_dependency_depth: Number(v) })}
+                  options={[
+                    { value: '1', label: '1 hop (direct links)' },
+                    { value: '2', label: '2 hops (indirect links)' },
+                  ]}
+                />
+              </label>
+              <Checkbox
+                label="Require published version to submit for review"
+                checked={projDraft.require_version_to_submit}
+                onChange={(v) => setProjDraft({ ...projDraft, require_version_to_submit: v })}
+              />
+              <Checkbox
+                label="Enforce blocking dependencies on Gantt drag"
+                checked={projDraft.enforce_dependencies_in_gantt}
+                onChange={(v) => setProjDraft({ ...projDraft, enforce_dependencies_in_gantt: v })}
+              />
+              <Checkbox
+                label="Enable read-only admin SQL console (Phase 7E)"
+                checked={projDraft.admin_sql_console_enabled}
+                onChange={(v) => setProjDraft({ ...projDraft, admin_sql_console_enabled: v })}
+              />
+              <div className="org-admin-toolbar">
+                <Button
+                  size="sm"
+                  variant="primary"
+                  onClick={() => void handleSaveProjectSettings()}
+                >
+                  Save Project Settings
+                </Button>
+              </div>
+            </Stack>
+          </Panel>
+        )}
 
-          {section === 'default_tasks' && canManageEntities && (
-            <AdminDefaultTasksSection projectUuid={projectUuid} />
-          )}
+        {currentSection === 'default_tasks' && canManageEntities && (
+          <AdminDefaultTasksSection projectUuid={projectUuid} />
+        )}
 
-          {section === 'dep_templates' && canManageEntities && (
-            <AdminDepTemplatesSection projectUuid={projectUuid} />
-          )}
+        {currentSection === 'dep_templates' && canManageEntities && (
+          <AdminDepTemplatesSection projectUuid={projectUuid} />
+        )}
 
-          {section === 'rules' && canManageRules && (
-            <AdminRulesSection projectUuid={projectUuid} />
-          )}
+        {currentSection === 'rules' && canManageRules && (
+          <AdminRulesSection projectUuid={projectUuid} />
+        )}
 
-          {section === 'database' && canAdminDb && (
-            <AdminDatabaseSection
-              projectUuid={projectUuid}
-              sqlConsoleEnabled={Boolean(projSettingsQuery.data?.admin_sql_console_enabled)}
-            />
-          )}
+        {currentSection === 'database' && canAdminDb && (
+          <AdminDatabaseSection
+            projectUuid={projectUuid}
+            sqlConsoleEnabled={Boolean(projSettingsQuery.data?.admin_sql_console_enabled)}
+          />
+        )}
 
-          {section === 'audit' && (
-            <Panel title="Security & Production Audit Log">
-              <Stack gap="2">
-                <div className="org-admin-toolbar">
-                  <TextField
-                    value={auditFilter}
-                    onChange={(e) => setAuditFilter(e.target.value)}
-                    placeholder="Filter by action (e.g. auth.login)"
-                  />
-                  <Button size="sm" onClick={() => void auditQuery.refetch()}>
-                    Refresh
-                  </Button>
-                </div>
-                <div className="org-admin-table-wrap">
-                  <table className="org-admin-matrix" aria-label="Audit log">
-                    <thead>
-                      <tr>
-                        <th>Timestamp (UTC)</th>
-                        <th>User</th>
-                        <th>Action</th>
-                        <th>Target</th>
-                        <th>IP</th>
-                        <th>Detail</th>
+        {currentSection === 'audit' && (
+          <Panel title="Security & Production Audit Log">
+            <Stack gap="2">
+              <div className="org-admin-toolbar">
+                <TextField
+                  value={auditFilter}
+                  onChange={(e) => setAuditFilter(e.target.value)}
+                  placeholder="Filter by action (e.g. auth.login)"
+                />
+                <Button size="sm" onClick={() => void auditQuery.refetch()}>
+                  Refresh
+                </Button>
+              </div>
+              <div className="org-admin-table-wrap">
+                <table className="org-admin-matrix" aria-label="Audit log">
+                  <thead>
+                    <tr>
+                      <th>Timestamp (UTC)</th>
+                      <th>User</th>
+                      <th>Action</th>
+                      <th>Target</th>
+                      <th>IP</th>
+                      <th>Detail</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(auditQuery.data ?? []).map((row) => (
+                      <tr key={row.id}>
+                        <td>{new Date(row.at).toISOString()}</td>
+                        <td>{row.username ?? '—'}</td>
+                        <td>{row.action}</td>
+                        <td>{row.target_type ? `${row.target_type}:${row.target_id}` : '—'}</td>
+                        <td>{row.ip ?? '—'}</td>
+                        <td>{JSON.stringify(row.detail_json)}</td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {(auditQuery.data ?? []).map((row) => (
-                        <tr key={row.id}>
-                          <td>{new Date(row.at).toISOString()}</td>
-                          <td>{row.username ?? '—'}</td>
-                          <td>{row.action}</td>
-                          <td>{row.target_type ? `${row.target_type}:${row.target_id}` : '—'}</td>
-                          <td>{row.ip ?? '—'}</td>
-                          <td>{JSON.stringify(row.detail_json)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </Stack>
-            </Panel>
-          )}
-        </section>
-      </div>
-    </AuthenticatedShell>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Stack>
+          </Panel>
+        )}
+      </section>
+    </div>
   );
+
+  if (theme && onToggleTheme) {
+    return (
+      <AuthenticatedShell
+        theme={theme}
+        onToggleTheme={onToggleTheme}
+        statusText={`Admin Console — ${auth?.project_status ?? 'active'}`}
+      >
+        {content}
+      </AuthenticatedShell>
+    );
+  }
+  return content;
+}
+
+export function AdminPage({
+  theme,
+  onToggleTheme,
+}: {
+  theme: ThemeMode;
+  onToggleTheme: () => void;
+}) {
+  return <AdminConsoleContent theme={theme} onToggleTheme={onToggleTheme} />;
 }

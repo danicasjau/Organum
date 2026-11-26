@@ -33,7 +33,7 @@
   }
 
   .org-proprow[data-dirty='true'] {
-    border-left-color: var(--accent);
+    border-left-color: var(--zone-accent);
   }
 
   .org-proprow__label {
@@ -43,7 +43,7 @@
     gap: var(--space-1);
     flex: 0 0 var(--label-col-w);
     min-width: 0;
-    color: var(--text-muted);
+    color: var(--text-dim);
     font-size: var(--font-size);
     overflow: hidden;
     text-overflow: ellipsis;

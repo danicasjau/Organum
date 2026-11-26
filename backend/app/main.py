@@ -15,7 +15,7 @@ from app.core.errors import register_exception_handlers
 from app.core.logging import configure_logging, request_id_var
 from app.core.project_registry import ProjectRegistry
 from app.core.settings import Settings, get_settings
-from app.db.session import create_engine_and_sessionmaker
+from app.db.session import create_engine_and_sessionmaker, ensure_sqlite_parent_dir
 from app.formats.registry import build_default_registry
 from app.jobs.inprocess import InProcessRunner
 from app.models.app_db import AppBase, KnownProject
@@ -34,6 +34,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+        # A fresh checkout has no data/ folder: create it before SQLite opens app.db.
+        ensure_sqlite_parent_dir(cfg.app_db_url)
         async with app_engine.begin() as conn:
             await conn.run_sync(AppBase.metadata.create_all)
 

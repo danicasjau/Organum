@@ -131,17 +131,20 @@
     display: flex;
     align-items: center;
     gap: var(--space-2);
-    padding: var(--space-2);
-    border: 1px solid var(--border-dark);
-    background: var(--surface-field);
+    padding: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-panel);
   }
 
   .org-token-tile__chip {
     width: var(--dial-size);
     height: var(--dial-size);
     flex-shrink: 0;
-    border: 1px solid var(--border-control);
+    border: 1px solid var(--groove-dark);
+    border-radius: var(--radius-sm);
     background: var(--tile-bg, var(--surface-panel));
+    box-shadow: var(--sh-bevel);
   }
 
   .org-token-tile__meta {
@@ -157,8 +160,8 @@
 
   .org-token-tile__var {
     font-family: var(--font-mono);
-    font-size: var(--font-size-sm);
-    color: var(--accent-text);
+    font-size: var(--font-size-label);
+    color: var(--text-production);
   }
 
   .org-token-tile__role {

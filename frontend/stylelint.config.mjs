@@ -6,6 +6,7 @@ export default {
     'organum/no-transitions': true,
     'organum/no-disallowed-shadows': true,
     'organum/no-large-radius': true,
+    'organum/z-index-token': true,
   },
 };
 

@@ -1,6 +1,6 @@
 @layer components {
   .org-enttab {
-    padding: var(--space-1);
+    padding: var(--space-3);
   }
 
   .org-enttab__header {
@@ -45,7 +45,15 @@
   }
 
   .org-enttab__kvrow {
+    display: flex;
+    align-items: center;
     width: 100%;
+    min-width: 0;
+  }
+
+  .org-enttab__tag {
+    display: inline-flex;
+    cursor: context-menu;
   }
 
   .org-enttab__kvrow > *:first-child {
@@ -101,4 +109,3 @@
     border-left: var(--border-double-w) double var(--border-control);
   }
 }
-

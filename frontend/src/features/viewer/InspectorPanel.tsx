@@ -1,19 +1,18 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import {
+  Avatar,
   Badge,
   Banner,
   Button,
+  ContextMenu,
   Histogram,
   Icon,
-  NumberField,
   Panel,
   ScrollArea,
   SearchField,
-  Separator,
   Stack,
   Table,
-  Tabs,
   Text,
   TextArea,
   Tree,
@@ -30,17 +29,9 @@ import {
   type InspectionDocument,
 } from '../../lib/api/client';
 import { useAuthStore } from '../auth/authStore';
-import { EntityInspectorTab } from '../entities/EntityInspectorTab';
 import { useProjectStore } from '../project/projectStore';
-import { TaskDetail } from '../tasks/TaskDetail';
 import { hasLayerStripContent } from './LayerStrip';
-import { rescalePlaneDistance, type Stroke3D } from './modules/annotationPlane3D';
-import {
-  useViewerStore,
-  type AnnotationPlaneData,
-  type CameraPose,
-  type PerFileViewerState,
-} from './viewerStore';
+import { useViewerStore, type CameraPose, type PerFileViewerState } from './viewerStore';
 import './InspectorPanel.css';
 
 function formatBytes(n: number): string {
@@ -93,10 +84,17 @@ const INFO_COLS: TableColumn[] = [
   { key: 'value', header: 'Value', mono: true },
 ];
 
-const META_COLS: TableColumn[] = [
-  { key: 'key', header: 'Attribute', mono: true },
-  { key: 'value', header: 'Value', mono: true },
-];
+function formatAnnotationDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString(undefined, {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
 
 const STREAM_COLS: TableColumn[] = [
   { key: 'type', header: 'Type' },
@@ -118,7 +116,6 @@ export interface InspectorPanelProps {
 export function InspectorPanel({
   file,
   inspection,
-  selectedEntity = null,
   selectedTaskId = null,
   viewerState,
   onUpdateState,
@@ -130,7 +127,6 @@ export function InspectorPanel({
   const auth = useAuthStore((s) => s.auth);
   const isClientRole = auth?.user.role_name === 'client';
   const activeProjectUuid = useProjectStore((s) => s.activeProjectUuid);
-  const [activeTab, setActiveTab] = useState('structure');
   const [metaQuery, setMetaQuery] = useState('');
   const [scopesOpen, setScopesOpen] = useState(true);
   const imageHistogram = useViewerStore((s) => s.imageHistogram);
@@ -185,11 +181,20 @@ export function InspectorPanel({
 
   const metaRows = useMemo(() => {
     const meta = inspection?.metadata ?? {};
+    return Object.entries(meta).map(([k, v]) => ({
+      key: k,
+      value: typeof v === 'object' ? JSON.stringify(v) : String(v),
+    }));
+  }, [inspection]);
+
+  // File identity + every metadata key in one grid (searchable).
+  const fileFacts = useMemo(() => {
     const q = metaQuery.trim().toLowerCase();
-    return Object.entries(meta)
-      .filter(([k, v]) => !q || k.toLowerCase().includes(q) || String(v).toLowerCase().includes(q))
-      .map(([k, v]) => ({ key: k, value: typeof v === 'object' ? JSON.stringify(v) : String(v) }));
-  }, [inspection, metaQuery]);
+    const all = [...infoRows, ...metaRows.map((m) => ({ field: m.key, value: m.value }))];
+    return q
+      ? all.filter((r) => r.field.toLowerCase().includes(q) || r.value.toLowerCase().includes(q))
+      : all;
+  }, [infoRows, metaRows, metaQuery]);
 
   const sceneNodes = useMemo(
     () => toSceneTreeNodes((inspection?.tree ?? []) as Array<Record<string, unknown>>),
@@ -198,43 +203,14 @@ export function InspectorPanel({
   const expandedSceneIds = useMemo(() => collectAllNodeIds(sceneNodes), [sceneNodes]);
 
   if (!file || !inspection) {
-    if (selectedEntity || selectedTaskId) {
-      return (
-        <Panel title="Inspector" className="org-inspector-panel">
-          <Tabs
-            activeId={activeTab === 'task' && selectedTaskId ? 'task' : 'entity'}
-            onChange={setActiveTab}
-            items={[
-              ...(selectedEntity
-                ? [
-                  {
-                    id: 'entity',
-                    label: 'Entity',
-                    content: (
-                      <ScrollArea>
-                        <EntityInspectorTab entity={selectedEntity} />
-                      </ScrollArea>
-                    ),
-                  },
-                ]
-                : []),
-              ...(selectedTaskId
-                ? [
-                  {
-                    id: 'task',
-                    label: 'Task',
-                    content: <TaskDetail taskId={selectedTaskId} compact />,
-                  },
-                ]
-                : []),
-            ]}
-          />
-        </Panel>
-      );
-    }
     return (
       <Panel title="Inspector" className="org-inspector-panel">
-        <Text variant="muted">Select a product or file from the left panel to inspect.</Text>
+        <div className="org-inspector__empty">
+          <Text variant="muted">Select a file to see its annotations and structure.</Text>
+          <Text size="sm" variant="muted">
+            Right-click an entity or a task and choose “Show …” to open its details.
+          </Text>
+        </div>
       </Panel>
     );
   }
@@ -255,7 +231,12 @@ export function InspectorPanel({
     : [];
   const layerStack = Array.isArray(meta.layerStack) ? (meta.layerStack as string[]) : [];
   const timelineClips = Array.isArray(meta.clips)
-    ? (meta.clips as Array<{ name: string; track?: string; start_frame?: number; duration_frames?: number }>)
+    ? (meta.clips as Array<{
+        name: string;
+        track?: string;
+        start_frame?: number;
+        duration_frames?: number;
+      }>)
     : [];
   const txMips = Array.isArray(meta.mips)
     ? (meta.mips as Array<{ level: number; width: number; height: number }>)
@@ -322,538 +303,476 @@ export function InspectorPanel({
 
   return (
     <Panel title="Inspector" className="org-inspector-panel">
-      <Tabs
-        activeId={activeTab}
-        onChange={setActiveTab}
-        items={[
-          {
-            id: 'structure',
-            label: 'Structure & Info',
-            content: (
-              <ScrollArea>
-                <Stack gap="3">
-                  {inspection.kind === 'unsupported' && (
-                    <Banner severity="warning" title="Unsupported format">
-                      Basic file identity only — preview is not available for this format.
-                    </Banner>
-                  )}
-
-                  {inspection.kind === 'scene3d' && (
-                    <>
-                      {sceneNodes.length > 0 && (
-                        <Stack gap="1">
-                          <Text size="sm" variant="muted">
-                            Scene / Prim Graph
-                          </Text>
-                          <Tree
-                            key={file.id}
-                            nodes={sceneNodes}
-                            selectedId={viewerState.selectedPrimPath}
-                            defaultExpandedIds={expandedSceneIds}
-                            ariaLabel="Scene hierarchy"
-                            className="org-inspector__scene-tree"
-                            onSelect={(node) => onUpdateState({ selectedPrimPath: node.id })}
+      <ScrollArea>
+        <div className="org-inspector__stack">
+          {/* ---------------- Annotations (top) ---------------- */}
+          <section className="org-inspector__section" aria-label="Annotations">
+            <div className="org-inspector__section-title">
+              Annotations <span className="org-inspector__count">{annotations.length}</span>
+            </div>
+            <TextArea
+              value={noteDraft}
+              placeholder="Add review note (Enter to submit, Shift+Enter newline)..."
+              aria-label="Review annotation note"
+              onChange={(e) => onNoteDraftChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  void submitAnnotation();
+                }
+              }}
+            />
+            <div className="org-inspector__note-actions">
+              <Button
+                variant="primary"
+                size="sm"
+                aria-label="Submit annotation"
+                onClick={() => void submitAnnotation()}
+              >
+                Submit
+              </Button>
+            </div>
+            {annotations.length === 0 ? (
+              <Text size="sm" variant="muted">
+                No annotations on this file yet.
+              </Text>
+            ) : (
+              <div className="org-inspector__ann-list">
+                {annotations.map((ann) => {
+                  const camPose = ann.camera_json as unknown as CameraPose | null;
+                  const hasFrame = ann.frame_in !== null && ann.frame_in !== undefined;
+                  const canJump = Boolean(camPose) || hasFrame;
+                  const strokes = (ann.vector_json ?? []).length;
+                  const authorLabel = ann.author_full_name || ann.author_username || 'Unknown user';
+                  const jump = () => {
+                    if (hasFrame) {
+                      window.dispatchEvent(
+                        new CustomEvent('organum:seek-frame', { detail: ann.frame_in }),
+                      );
+                    }
+                    if (camPose) {
+                      onUpdateState({ frozen: false, activeTextureIndex: null });
+                      window.setTimeout(() => {
+                        window.dispatchEvent(
+                          new CustomEvent('organum:jump-camera', { detail: camPose }),
+                        );
+                      }, 30);
+                    }
+                  };
+                  const postToTask = async () => {
+                    if (!selectedTaskId) return;
+                    try {
+                      await apiClient.createTaskComment(
+                        selectedTaskId,
+                        {
+                          body:
+                            ann.note_text?.trim() || `Media annotation (${ann.kind.toUpperCase()})`,
+                          kind: 'media',
+                          visibility: isClientRole ? 'client' : 'internal',
+                          file_id: file.id,
+                          annotation_id: ann.id,
+                          frame: ann.frame_in ?? null,
+                        },
+                        activeProjectUuid,
+                      );
+                      await queryClient.invalidateQueries({
+                        queryKey: ['task', activeProjectUuid, selectedTaskId],
+                      });
+                      toast.push('success', 'Posted annotation to task thread');
+                    } catch (err) {
+                      toast.push(
+                        'danger',
+                        err instanceof Error ? err.message : 'Failed to post to task',
+                      );
+                    }
+                  };
+                  return (
+                    <ContextMenu
+                      key={ann.id}
+                      items={[
+                        ...(canJump
+                          ? [{ id: 'jump', label: 'Jump to Annotation', onSelect: jump }]
+                          : []),
+                        ...(selectedTaskId && !isPreview
+                          ? [
+                              {
+                                id: 'post',
+                                label: 'Post to Task Thread',
+                                onSelect: () => void postToTask(),
+                              },
+                            ]
+                          : []),
+                        {
+                          id: 'export',
+                          label: 'Export All as JSON',
+                          onSelect: exportAnnotationsJson,
+                        },
+                        { id: 'sep', label: '', separator: true },
+                        {
+                          id: 'delete',
+                          label: 'Delete Annotation',
+                          onSelect: async () => {
+                            await apiClient.deleteAnnotation(file.id, ann.id);
+                            await queryClient.invalidateQueries({
+                              queryKey: ['annotations', activeProjectUuid, file.id],
+                            });
+                          },
+                        },
+                      ]}
+                    >
+                      <div className="org-inspector__ann-card">
+                        <div className="org-inspector__ann-meta">
+                          <Avatar
+                            username={ann.author_username ?? '?'}
+                            fullName={authorLabel}
+                            size="sm"
                           />
-                        </Stack>
-                      )}
-
-                      {variants.length > 0 && (
-                        <Stack gap="1">
-                          <Text size="sm" variant="muted">
-                            USD Variant Sets
-                          </Text>
-                          {variants.map((v) => (
-                            <div key={`${v.prim}:${v.set}`} className="org-inspector__aov-row">
-                              <span>
-                                {v.prim} [{v.set}]
-                              </span>
-                              <Badge tone="accent">{v.selected}</Badge>
-                            </div>
-                          ))}
-                        </Stack>
-                      )}
-
-                      {layerStack.length > 0 && (
-                        <Stack gap="1">
-                          <Text size="sm" variant="muted">
-                            USD Layer Stack
-                          </Text>
-                          {layerStack.map((l) => (
-                            <Text key={l} size="sm" variant="mono" truncate>
-                              {l}
-                            </Text>
-                          ))}
-                        </Stack>
-                      )}
-
-                      {materials.length > 0 && (
-                        <Stack gap="1">
-                          <Text size="sm" variant="muted">
-                            Materials ({materials.length})
-                          </Text>
-                          <div className="org-inspector__aovs">
-                            {materials.map((m, idx) => (
-                              <div key={idx} className="org-inspector__aov-row">
-                                <span>{m.name}</span>
-                                <Badge tone="neutral">PBR</Badge>
-                              </div>
-                            ))}
-                          </div>
-                        </Stack>
-                      )}
-
-                      {textures.length > 0 && (
-                        <Stack gap="1">
-                          <Text size="sm" variant="muted">
-                            Textures (click to inspect in 2D)
-                          </Text>
-                          <div className="org-inspector__aovs">
-                            {textures.map((t) => (
-                              <button
-                                key={t.index}
-                                type="button"
-                                data-selected={viewerState.activeTextureIndex === t.index ? 'true' : undefined}
-                                className="org-inspector__aov-row"
-                                onClick={() =>
-                                  onUpdateState({ activeTextureIndex: t.index, frozen: false })
-                                }
-                              >
-                                <span>{t.name}</span>
-                                <Badge tone="accent">2D View</Badge>
-                              </button>
-                            ))}
-                          </div>
-                        </Stack>
-                      )}
-                    </>
-                  )}
-
-                  {streamRows.length > 0 && (
-                    <Stack gap="1">
-                      <Text size="sm" variant="muted">
-                        Media Streams ({streamRows.length})
-                      </Text>
-                      <Table columns={STREAM_COLS} rows={streamRows} />
-                    </Stack>
-                  )}
-
-                  {timelineClips.length > 0 && (
-                    <Stack gap="1">
-                      <Text size="sm" variant="muted">
-                        Timeline Clips ({timelineClips.length})
-                      </Text>
-                      <div className="org-inspector__aovs">
-                        {timelineClips.map((c, idx) => (
-                          <button
-                            key={`${c.name}-${idx}`}
-                            type="button"
-                            className="org-inspector__aov-row"
-                            onClick={() =>
-                              window.dispatchEvent(
-                                new CustomEvent('organum:seek-frame', {
-                                  detail: c.start_frame ?? 0,
-                                }),
-                              )
-                            }
-                          >
-                            <span>{c.name}</span>
-                            <Badge tone="neutral">
-                              F{c.start_frame ?? 0} ({c.duration_frames ?? 0}f)
-                            </Badge>
-                          </button>
-                        ))}
+                          <span className="org-inspector__ann-author">{authorLabel}</span>
+                          <span className="org-inspector__ann-date">
+                            {formatAnnotationDate(ann.created_at)}
+                          </span>
+                        </div>
+                        <Text>{ann.note_text || '(Drawing without note)'}</Text>
+                        <div className="org-inspector__ann-foot">
+                          <span className="org-inspector__ann-strokes">
+                            <Icon name="pencil" size="sm" /> {strokes} stroke
+                            {strokes === 1 ? '' : 's'}
+                          </span>
+                          {canJump && (
+                            <Button size="sm" onClick={jump}>
+                              Jump
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                    </Stack>
-                  )}
+                    </ContextMenu>
+                  );
+                })}
+              </div>
+            )}
+          </section>
 
-                  {showLayerStripLink && (
-                    <Stack gap="1">
-                      <button
-                        type="button"
-                        className="org-inspector__aov-row"
-                        onClick={() => window.dispatchEvent(new CustomEvent('organum:focus-layer-strip'))}
-                      >
-                        <span>
-                          {inspection.capabilities?.udim
-                            ? `UDIM Tiles (${String(inspection.summary?.udim_tile_count ?? 0)})`
-                            : aovs.length > 0
-                              ? `EXR AOVs (${aovs.length})`
-                              : `Layers / Pages (${layers.length})`}
-                        </span>
-                        <Badge tone="accent">See layer strip</Badge>
-                      </button>
-                    </Stack>
-                  )}
+          {/* ---------------- Structure & Info (bottom) ---------------- */}
+          <section className="org-inspector__section" aria-label="Structure and info">
+            <div className="org-inspector__section-title">Structure &amp; Info</div>
+            <Stack gap="3">
+              {inspection.kind === 'unsupported' && (
+                <Banner severity="warning" title="Unsupported format">
+                  Basic file identity only — preview is not available for this format.
+                </Banner>
+              )}
 
-                  {!hasStructureContent && inspection.kind !== 'unsupported' && (
-                    <Text size="sm" variant="muted">
-                      Single-layer flat media.
-                    </Text>
-                  )}
-
-                  {txMips.length > 1 && (
+              {inspection.kind === 'scene3d' && (
+                <>
+                  {sceneNodes.length > 0 && (
                     <Stack gap="1">
                       <Text size="sm" variant="muted">
-                        TX Mipmap Levels ({txMips.length})
-                      </Text>
-                      <div className="org-inspector__aovs">
-                        {txMips.map((m) => (
-                          <button
-                            key={m.level}
-                            type="button"
-                            data-selected={viewerState.activePage === m.level ? 'true' : undefined}
-                            className="org-inspector__aov-row"
-                            onClick={() => onUpdateState({ activePage: m.level })}
-                          >
-                            <span>Mip {m.level}</span>
-                            <Badge tone={viewerState.activePage === m.level ? 'accent' : 'neutral'}>
-                              {m.width}×{m.height}
-                            </Badge>
-                          </button>
-                        ))}
-                      </div>
-                    </Stack>
-                  )}
-
-                  {inspection.kind === 'image2d' && animFrames > 1 && (
-                    <Stack gap="1">
-                      <Text size="sm" variant="muted">
-                        Animated Image Frames ({animFrames})
-                      </Text>
-                      <div className="org-inspector__aovs">
-                        {Array.from({ length: Math.min(24, animFrames) }, (_, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            data-selected={viewerState.activePage === idx ? 'true' : undefined}
-                            className="org-inspector__aov-row"
-                            onClick={() => onUpdateState({ activePage: idx })}
-                          >
-                            <span>Frame {idx + 1}</span>
-                            <Badge tone={viewerState.activePage === idx ? 'accent' : 'neutral'}>
-                              {idx === 0 ? 'Initial' : `#${idx}`}
-                            </Badge>
-                          </button>
-                        ))}
-                      </div>
-                    </Stack>
-                  )}
-
-                  {inspection.kind === 'document' && docPages.length > 0 && (
-                    <Stack gap="1">
-                      <Text size="sm" variant="muted">
-                        PDF Pages ({docPages.length})
-                      </Text>
-                      <div className="org-inspector__aovs">
-                        {docPages.map((p) => (
-                          <button
-                            key={p.index}
-                            type="button"
-                            className="org-inspector__aov-row"
-                            onClick={() =>
-                              window.dispatchEvent(
-                                new CustomEvent('organum:pdf-page', { detail: { page: p.index } }),
-                              )
-                            }
-                          >
-                            <span>{p.label}</span>
-                            <Badge tone="neutral">
-                              {Math.round(p.width)}×{Math.round(p.height)}pt
-                            </Badge>
-                          </button>
-                        ))}
-                      </div>
-                    </Stack>
-                  )}
-
-                  {inspection.kind === 'data' && dataCols.length > 0 && (
-                    <Stack gap="1">
-                      <Text size="sm" variant="muted">
-                        CSV Columns ({dataCols.length})
-                      </Text>
-                      <Table
-                        columns={[
-                          { key: 'name', header: 'Column', mono: true },
-                          { key: 'type', header: 'Type', mono: true },
-                        ]}
-                        rows={dataCols}
-                      />
-                    </Stack>
-                  )}
-
-                  {inspection.kind === 'data' && sceneNodes.length > 0 && (
-                    <Stack gap="1">
-                      <Text size="sm" variant="muted">
-                        Data Structure
+                        Scene / Prim Graph
                       </Text>
                       <Tree
                         key={file.id}
                         nodes={sceneNodes}
+                        selectedId={viewerState.selectedPrimPath}
                         defaultExpandedIds={expandedSceneIds}
-                        ariaLabel="Data structure tree"
+                        ariaLabel="Scene hierarchy"
                         className="org-inspector__scene-tree"
+                        onSelect={(node) => onUpdateState({ selectedPrimPath: node.id })}
                       />
                     </Stack>
                   )}
 
-                  {imageHistogram && (
+                  {variants.length > 0 && (
                     <Stack gap="1">
-                      <button
-                        type="button"
-                        className="org-inspector__aov-row"
-                        onClick={() => setScopesOpen((o) => !o)}
-                        aria-expanded={scopesOpen}
-                      >
-                        <span>Scopes (RGB / Luma Histogram)</span>
-                        <Badge tone="neutral">{scopesOpen ? 'Hide' : 'Show'}</Badge>
-                      </button>
-                      {scopesOpen && (
-                        <Histogram
-                          compact
-                          channels={[
-                            { id: 'r', label: 'R', bins: imageHistogram.r, color: 'var(--axis-x)' },
-                            { id: 'g', label: 'G', bins: imageHistogram.g, color: 'var(--axis-y)' },
-                            { id: 'b', label: 'B', bins: imageHistogram.b, color: 'var(--axis-z)' },
-                            { id: 'y', label: 'Y', bins: imageHistogram.luma, color: 'var(--series-8)' },
-                          ]}
-                        />
-                      )}
+                      <Text size="sm" variant="muted">
+                        USD Variant Sets
+                      </Text>
+                      {variants.map((v) => (
+                        <div key={`${v.prim}:${v.set}`} className="org-inspector__aov-row">
+                          <span>
+                            {v.prim} [{v.set}]
+                          </span>
+                          <Badge tone="accent">{v.selected}</Badge>
+                        </div>
+                      ))}
                     </Stack>
                   )}
 
-                  <Separator orientation="horizontal" />
+                  {layerStack.length > 0 && (
+                    <Stack gap="1">
+                      <Text size="sm" variant="muted">
+                        USD Layer Stack
+                      </Text>
+                      {layerStack.map((l) => (
+                        <Text key={l} size="sm" variant="mono" truncate>
+                          {l}
+                        </Text>
+                      ))}
+                    </Stack>
+                  )}
 
-                  <Stack gap="1">
-                    <Text size="sm" variant="muted">
-                      File Info
-                    </Text>
-                    <Table columns={INFO_COLS} rows={infoRows} />
-                  </Stack>
+                  {materials.length > 0 && (
+                    <Stack gap="1">
+                      <Text size="sm" variant="muted">
+                        Materials ({materials.length})
+                      </Text>
+                      <div className="org-inspector__aovs">
+                        {materials.map((m, idx) => (
+                          <div key={idx} className="org-inspector__aov-row">
+                            <span>{m.name}</span>
+                            <Badge tone="neutral">PBR</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </Stack>
+                  )}
+
+                  {textures.length > 0 && (
+                    <Stack gap="1">
+                      <Text size="sm" variant="muted">
+                        Textures (click to inspect in 2D)
+                      </Text>
+                      <div className="org-inspector__aovs">
+                        {textures.map((t) => (
+                          <button
+                            key={t.index}
+                            type="button"
+                            data-selected={
+                              viewerState.activeTextureIndex === t.index ? 'true' : undefined
+                            }
+                            className="org-inspector__aov-row"
+                            onClick={() =>
+                              onUpdateState({ activeTextureIndex: t.index, frozen: false })
+                            }
+                          >
+                            <span>{t.name}</span>
+                            <Badge tone="accent">2D View</Badge>
+                          </button>
+                        ))}
+                      </div>
+                    </Stack>
+                  )}
+                </>
+              )}
+
+              {streamRows.length > 0 && (
+                <Stack gap="1">
+                  <Text size="sm" variant="muted">
+                    Media Streams ({streamRows.length})
+                  </Text>
+                  <Table columns={STREAM_COLS} rows={streamRows} />
                 </Stack>
-              </ScrollArea>
-            ),
-          },
-          {
-            id: 'metadata',
-            label: 'Metadata',
-            content: (
-              <Stack gap="2" fill>
+              )}
+
+              {timelineClips.length > 0 && (
+                <Stack gap="1">
+                  <Text size="sm" variant="muted">
+                    Timeline Clips ({timelineClips.length})
+                  </Text>
+                  <div className="org-inspector__aovs">
+                    {timelineClips.map((c, idx) => (
+                      <button
+                        key={`${c.name}-${idx}`}
+                        type="button"
+                        className="org-inspector__aov-row"
+                        onClick={() =>
+                          window.dispatchEvent(
+                            new CustomEvent('organum:seek-frame', {
+                              detail: c.start_frame ?? 0,
+                            }),
+                          )
+                        }
+                      >
+                        <span>{c.name}</span>
+                        <Badge tone="neutral">
+                          F{c.start_frame ?? 0} ({c.duration_frames ?? 0}f)
+                        </Badge>
+                      </button>
+                    ))}
+                  </div>
+                </Stack>
+              )}
+
+              {showLayerStripLink && (
+                <Stack gap="1">
+                  <button
+                    type="button"
+                    className="org-inspector__aov-row"
+                    onClick={() =>
+                      window.dispatchEvent(new CustomEvent('organum:focus-layer-strip'))
+                    }
+                  >
+                    <span>
+                      {inspection.capabilities?.udim
+                        ? `UDIM Tiles (${String(inspection.summary?.udim_tile_count ?? 0)})`
+                        : aovs.length > 0
+                          ? `EXR AOVs (${aovs.length})`
+                          : `Layers / Pages (${layers.length})`}
+                    </span>
+                    <Badge tone="accent">See layer strip</Badge>
+                  </button>
+                </Stack>
+              )}
+
+              {!hasStructureContent && inspection.kind !== 'unsupported' && (
+                <Text size="sm" variant="muted">
+                  Single-layer flat media.
+                </Text>
+              )}
+
+              {txMips.length > 1 && (
+                <Stack gap="1">
+                  <Text size="sm" variant="muted">
+                    TX Mipmap Levels ({txMips.length})
+                  </Text>
+                  <div className="org-inspector__aovs">
+                    {txMips.map((m) => (
+                      <button
+                        key={m.level}
+                        type="button"
+                        data-selected={viewerState.activePage === m.level ? 'true' : undefined}
+                        className="org-inspector__aov-row"
+                        onClick={() => onUpdateState({ activePage: m.level })}
+                      >
+                        <span>Mip {m.level}</span>
+                        <Badge tone={viewerState.activePage === m.level ? 'accent' : 'neutral'}>
+                          {m.width}×{m.height}
+                        </Badge>
+                      </button>
+                    ))}
+                  </div>
+                </Stack>
+              )}
+
+              {inspection.kind === 'image2d' && animFrames > 1 && (
+                <Stack gap="1">
+                  <Text size="sm" variant="muted">
+                    Animated Image Frames ({animFrames})
+                  </Text>
+                  <div className="org-inspector__aovs">
+                    {Array.from({ length: Math.min(24, animFrames) }, (_, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        data-selected={viewerState.activePage === idx ? 'true' : undefined}
+                        className="org-inspector__aov-row"
+                        onClick={() => onUpdateState({ activePage: idx })}
+                      >
+                        <span>Frame {idx + 1}</span>
+                        <Badge tone={viewerState.activePage === idx ? 'accent' : 'neutral'}>
+                          {idx === 0 ? 'Initial' : `#${idx}`}
+                        </Badge>
+                      </button>
+                    ))}
+                  </div>
+                </Stack>
+              )}
+
+              {inspection.kind === 'document' && docPages.length > 0 && (
+                <Stack gap="1">
+                  <Text size="sm" variant="muted">
+                    PDF Pages ({docPages.length})
+                  </Text>
+                  <div className="org-inspector__aovs">
+                    {docPages.map((p) => (
+                      <button
+                        key={p.index}
+                        type="button"
+                        className="org-inspector__aov-row"
+                        onClick={() =>
+                          window.dispatchEvent(
+                            new CustomEvent('organum:pdf-page', { detail: { page: p.index } }),
+                          )
+                        }
+                      >
+                        <span>{p.label}</span>
+                        <Badge tone="neutral">
+                          {Math.round(p.width)}×{Math.round(p.height)}pt
+                        </Badge>
+                      </button>
+                    ))}
+                  </div>
+                </Stack>
+              )}
+
+              {inspection.kind === 'data' && dataCols.length > 0 && (
+                <Stack gap="1">
+                  <Text size="sm" variant="muted">
+                    CSV Columns ({dataCols.length})
+                  </Text>
+                  <Table
+                    columns={[
+                      { key: 'name', header: 'Column', mono: true },
+                      { key: 'type', header: 'Type', mono: true },
+                    ]}
+                    rows={dataCols}
+                  />
+                </Stack>
+              )}
+
+              {inspection.kind === 'data' && sceneNodes.length > 0 && (
+                <Stack gap="1">
+                  <Text size="sm" variant="muted">
+                    Data Structure
+                  </Text>
+                  <Tree
+                    key={file.id}
+                    nodes={sceneNodes}
+                    defaultExpandedIds={expandedSceneIds}
+                    ariaLabel="Data structure tree"
+                    className="org-inspector__scene-tree"
+                  />
+                </Stack>
+              )}
+
+              {imageHistogram && (
+                <Stack gap="1">
+                  <button
+                    type="button"
+                    className="org-inspector__aov-row"
+                    onClick={() => setScopesOpen((o) => !o)}
+                    aria-expanded={scopesOpen}
+                  >
+                    <span>Scopes (RGB / Luma Histogram)</span>
+                    <Badge tone="neutral">{scopesOpen ? 'Hide' : 'Show'}</Badge>
+                  </button>
+                  {scopesOpen && (
+                    <Histogram
+                      compact
+                      channels={[
+                        { id: 'r', label: 'R', bins: imageHistogram.r, color: 'var(--axis-x)' },
+                        { id: 'g', label: 'G', bins: imageHistogram.g, color: 'var(--axis-y)' },
+                        { id: 'b', label: 'B', bins: imageHistogram.b, color: 'var(--axis-z)' },
+                        {
+                          id: 'y',
+                          label: 'Y',
+                          bins: imageHistogram.luma,
+                          color: 'var(--series-8)',
+                        },
+                      ]}
+                    />
+                  )}
+                </Stack>
+              )}
+
+              <Stack gap="1">
                 <SearchField
                   value={metaQuery}
                   onChange={setMetaQuery}
-                  placeholder="Search metadata..."
-                  ariaLabel="Search metadata"
+                  placeholder="Search file info & metadata..."
+                  ariaLabel="Search file info and metadata"
                 />
-                <ScrollArea>
-                  {metaRows.length > 0 ? (
-                    <Table columns={META_COLS} rows={metaRows} />
-                  ) : (
-                    <Text variant="muted">No matching metadata keys.</Text>
-                  )}
-                </ScrollArea>
-              </Stack>
-            ),
-          },
-          {
-            id: 'annotations',
-            label: `Annotations (${annotations.length})`,
-            content: (
-              <Stack gap="2" fill>
-                <div className="org-inspector__ann-head">
+                {fileFacts.length > 0 ? (
+                  <Table columns={INFO_COLS} rows={fileFacts} />
+                ) : (
                   <Text size="sm" variant="muted">
-                    Saved Notes & Strokes
+                    No matching properties.
                   </Text>
-                  <Button
-                    size="sm"
-                    disabled={annotations.length === 0}
-                    onClick={exportAnnotationsJson}
-                  >
-                    Export JSON
-                  </Button>
-                </div>
-                <TextArea
-                  value={noteDraft}
-                  placeholder="Add review note (Enter to submit, Shift+Enter newline)..."
-                  aria-label="Review annotation note"
-                  onChange={(e) => onNoteDraftChange(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      void submitAnnotation();
-                    }
-                  }}
-                />
-                <div className="org-inspector__note-actions">
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    aria-label="Submit annotation"
-                    onClick={() => void submitAnnotation()}
-                  >
-                    Submit
-                  </Button>
-                </div>
-                <ScrollArea>
-                  <Stack gap="2">
-                    {annotations.length === 0 ? (
-                      <Text variant="muted">No saved annotations on this file yet.</Text>
-                    ) : (
-                      annotations.map((ann) => {
-                        const plane = ann.plane_json as unknown as AnnotationPlaneData | null;
-                        const camPose = ann.camera_json as unknown as CameraPose | null;
-                        const frameBadge =
-                          ann.frame_in !== null && ann.frame_in !== undefined
-                            ? ann.frame_out !== null &&
-                              ann.frame_out !== undefined &&
-                              ann.frame_out !== ann.frame_in
-                              ? `F${ann.frame_in}–${ann.frame_out}`
-                              : `F${ann.frame_in}`
-                            : null;
-                        return (
-                          <div key={ann.id} className="org-inspector__ann-card">
-                            <div className="org-inspector__ann-meta">
-                              <Badge tone="accent">{ann.kind.toUpperCase()}</Badge>
-                              {frameBadge && <Badge tone="neutral">{frameBadge}</Badge>}
-                              <Text size="sm" variant="mono">
-                                {(ann.vector_json ?? []).length} stroke(s)
-                              </Text>
-                              {(camPose || frameBadge) && (
-                                <Button
-                                  size="sm"
-                                  onClick={() => {
-                                    if (ann.frame_in !== null && ann.frame_in !== undefined) {
-                                      window.dispatchEvent(
-                                        new CustomEvent('organum:seek-frame', {
-                                          detail: ann.frame_in,
-                                        }),
-                                      );
-                                    }
-                                    if (camPose) {
-                                      onUpdateState({ frozen: false, activeTextureIndex: null });
-                                      window.setTimeout(() => {
-                                        window.dispatchEvent(
-                                          new CustomEvent('organum:jump-camera', {
-                                            detail: camPose,
-                                          }),
-                                        );
-                                      }, 30);
-                                    }
-                                  }}
-                                >
-                                  Jump
-                                </Button>
-                              )}
-                              {selectedTaskId && !isPreview && (
-                                <Button
-                                  size="sm"
-                                  onClick={async () => {
-                                    try {
-                                      await apiClient.createTaskComment(
-                                        selectedTaskId,
-                                        {
-                                          body:
-                                            ann.note_text?.trim() ||
-                                            `Media annotation (${ann.kind.toUpperCase()})`,
-                                          kind: 'media',
-                                          visibility: isClientRole ? 'client' : 'internal',
-                                          file_id: file.id,
-                                          annotation_id: ann.id,
-                                          frame: ann.frame_in ?? null,
-                                        },
-                                        activeProjectUuid,
-                                      );
-                                      await queryClient.invalidateQueries({
-                                        queryKey: ['task', activeProjectUuid, selectedTaskId],
-                                      });
-                                      toast.push('success', 'Posted annotation to task thread');
-                                    } catch (err) {
-                                      toast.push(
-                                        'danger',
-                                        err instanceof Error
-                                          ? err.message
-                                          : 'Failed to post to task',
-                                      );
-                                    }
-                                  }}
-                                >
-                                  Post to task
-                                </Button>
-                              )}
-                              <Button
-                                variant="icon"
-                                size="sm"
-                                aria-label="Delete annotation"
-                                onClick={async () => {
-                                  await apiClient.deleteAnnotation(file.id, ann.id);
-                                  await queryClient.invalidateQueries({
-                                    queryKey: ['annotations', activeProjectUuid, file.id],
-                                  });
-                                }}
-                              >
-                                <Icon name="close" size="sm" />
-                              </Button>
-                            </div>
-                            {ann.kind === '3d' && plane && camPose && (
-                              <NumberField
-                                label="Plane d"
-                                ariaLabel={`Annotation plane distance ${ann.id}`}
-                                value={plane.distance}
-                                min={0.05}
-                                max={200}
-                                step={0.1}
-                                precision={2}
-                                onChange={async (newD) => {
-                                  const rescaled = rescalePlaneDistance(
-                                    plane,
-                                    (ann.vector_json ?? []) as unknown as Stroke3D[],
-                                    camPose.position,
-                                    newD,
-                                  );
-                                  await apiClient.updateAnnotation(file.id, ann.id, {
-                                    plane_json: rescaled.plane as unknown as Record<string, unknown>,
-                                    vector_json:
-                                      rescaled.strokes as unknown as Array<Record<string, unknown>>,
-                                  });
-                                  await queryClient.refetchQueries({
-                                    queryKey: ['annotations', activeProjectUuid, file.id],
-                                  });
-                                }}
-                              />
-                            )}
-                            <Text>{ann.note_text || '(Vector annotation without note)'}</Text>
-                          </div>
-                        );
-                      })
-                    )}
-                  </Stack>
-                </ScrollArea>
+                )}
               </Stack>
-            ),
-          },
-          ...(selectedEntity
-            ? [
-              {
-                id: 'entity',
-                label: 'Entity',
-                content: (
-                  <ScrollArea>
-                    <EntityInspectorTab entity={selectedEntity} />
-                  </ScrollArea>
-                ),
-              },
-            ]
-            : []),
-          ...(selectedTaskId
-            ? [
-              {
-                id: 'task',
-                label: 'Task',
-                content: <TaskDetail taskId={selectedTaskId} compact />,
-              },
-            ]
-            : []),
-        ]}
-      />
+            </Stack>
+          </section>
+        </div>
+      </ScrollArea>
     </Panel>
   );
 }

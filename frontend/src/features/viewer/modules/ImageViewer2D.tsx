@@ -6,7 +6,12 @@ import {
   type PointerEvent,
   type WheelEvent,
 } from 'react';
-import { Banner, Spinner, Text } from '../../../components/ui';
+import {
+  Banner,
+  Spinner,
+  Text,
+  readCssToken,
+} from '../../../components/ui';
 import { apiClient, type FileSummaryOut, type InspectionDocument } from '../../../lib/api/client';
 import { AnnotationLayer2D } from '../AnnotationLayer2D';
 import {
@@ -380,7 +385,7 @@ export function ImageViewer2D({
             const g = buf.floatData ? buf.floatData[idx + 1]! : (buf.uint8Data?.[idx + 1] ?? 0) / 255;
             const b = buf.floatData ? buf.floatData[idx + 2]! : (buf.uint8Data?.[idx + 2] ?? 0) / 255;
             const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-            ctx.fillStyle = luma > 0.5 ? '#0F172A' : '#E2E8F0';
+            ctx.fillStyle = luma > 0.5 ? '#111111' : '#f0f0f0'; // contrast against pixel content, not theme
             const cx = imgOriginX + (px + 0.5) * effectiveZoom;
             const cy = imgOriginY + (py + 0.5) * effectiveZoom;
             ctx.fillText(`${r.toFixed(2)}`, cx, cy - 10);
@@ -397,7 +402,7 @@ export function ImageViewer2D({
       const sy = imgOriginY + Math.min(roiBox.y0, roiBox.y1) * effectiveZoom;
       const sw = Math.abs(roiBox.x1 - roiBox.x0) * effectiveZoom;
       const sh = Math.abs(roiBox.y1 - roiBox.y0) * effectiveZoom;
-      ctx.strokeStyle = '#38BDF8';
+      ctx.strokeStyle = readCssToken('--zone-focus', '#e8a33d');
       ctx.lineWidth = 1;
       ctx.setLineDash([4, 2]);
       ctx.strokeRect(sx, sy, sw, sh);

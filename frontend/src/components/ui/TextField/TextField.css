@@ -1,46 +1,71 @@
 @layer components {
+  /* v1 fields: INSET wells, 28px, 0 8px padding. Placeholder --text-off,
+     value --text. Error: red border + faint inner glow + 10px helper below. */
   .org-field-wrap {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: var(--space-1);
+    gap: var(--space-6px);
     height: var(--ctl-h);
     min-height: var(--min-hit);
     padding: 0 var(--space-2);
-    border: 1px solid var(--border-control);
-    border-radius: var(--radius-1);
-    background: var(--surface-field);
-    box-shadow: var(--bevel-inset-pressed);
+    border: 1px solid var(--groove-dark);
+    border-radius: var(--radius-well);
+    background: var(--bg-input);
+    box-shadow: var(--sh-inset);
     color: var(--text);
+    transition: filter var(--motion-fast);
   }
 
   .org-field-wrap:hover:not([data-disabled='true']),
   .org-field-wrap[data-force-state='hover']:not([data-disabled='true']) {
-    border-color: var(--accent);
+    filter: brightness(var(--hover-brightness));
   }
 
   .org-field-wrap[data-force-state='pressed']:not([data-disabled='true']) {
-    background: var(--surface-pressed);
+    box-shadow: var(--sh-pressed);
   }
 
   .org-field-wrap:focus-within:not([data-disabled='true']),
   .org-field-wrap[data-force-state='focus']:not([data-disabled='true']) {
     outline: var(--focus-w) solid var(--focus-ring);
-    outline-offset: var(--focus-w);
-    border-color: var(--accent);
+    outline-offset: var(--focus-offset);
+    filter: none;
   }
 
   .org-field-wrap[data-error='true'] {
-    border-color: var(--red-500);
+    border-color: var(--st-rejected);
+    box-shadow:
+      var(--sh-inset),
+      inset 0 0 var(--led-glow) color-mix(in srgb, var(--st-rejected) 35%, transparent);
+  }
+
+  /* Helper text under an errored field (only when the error carries a message) */
+  .org-field-wrap[data-error-text] {
+    margin-bottom: var(--tick-label-h);
+  }
+
+  .org-field-wrap[data-error-text]::after {
+    content: attr(data-error-text);
+    position: absolute;
+    left: 0;
+    top: calc(100% + var(--space-half));
+    font-size: var(--font-size-label);
+    line-height: 1.2;
+    color: var(--text-rejected);
+    white-space: nowrap;
+    pointer-events: none;
   }
 
   .org-field-wrap[data-dirty='true'] {
-    border-left: var(--dirty-bar-w) solid var(--accent);
+    border-left: var(--dirty-bar-w) solid var(--zone-accent);
   }
 
   .org-field-wrap[data-disabled='true'] {
-    background: var(--surface-panel);
-    color: var(--text-disabled);
-    border-color: var(--border-dark);
+    background: var(--bg-panel);
+    color: var(--text-off);
+    border-color: var(--border);
+    box-shadow: none;
     cursor: not-allowed;
   }
 
@@ -48,6 +73,7 @@
     width: 100%;
     min-width: 0;
     height: 100%;
+    padding: 0;
     border: 0;
     background: transparent;
     color: inherit;
@@ -56,19 +82,19 @@
   }
 
   .org-field__input::placeholder {
-    color: var(--text-muted);
+    color: var(--text-off);
   }
 
   .org-field__prefix {
     display: inline-flex;
-    color: var(--text-muted);
+    color: var(--text-dim);
   }
 
   .org-field__counter {
     font-family: var(--font-mono);
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-label);
     font-variant-numeric: tabular-nums;
-    color: var(--text-muted);
+    color: var(--text-dim);
     white-space: nowrap;
   }
 
@@ -80,8 +106,9 @@
     height: var(--icon-lg);
     padding: 0;
     border: 0;
+    border-radius: var(--radius-xs);
     background: transparent;
-    color: var(--text-muted);
+    color: var(--text-dim);
     cursor: pointer;
   }
 
@@ -91,28 +118,49 @@
 
   .org-field__error-icon {
     display: inline-flex;
-    color: var(--danger-text);
+    color: var(--text-rejected);
   }
 
   .org-textarea {
+    display: block;
     width: 100%;
-    min-height: var(--ramp-h);
+    min-height: var(--notes-min-h);
     padding: var(--space-2);
-    border: 1px solid var(--border-control);
-    border-radius: var(--radius-1);
-    background: var(--surface-field);
+    border: 1px solid var(--groove-dark);
+    border-radius: var(--radius-well);
+    background: var(--bg-input);
+    box-shadow: var(--sh-inset);
     color: var(--text);
     font-family: var(--font-ui);
     font-size: var(--font-size);
+    line-height: var(--line-body);
     resize: vertical;
   }
 
+  .org-textarea::placeholder {
+    color: var(--text-off);
+  }
+
+  .org-textarea:focus-visible {
+    outline: var(--focus-w) solid var(--focus-ring);
+    outline-offset: var(--focus-offset);
+  }
+
   .org-textarea[data-error='true'] {
-    border-color: var(--red-500);
+    border-color: var(--st-rejected);
+    box-shadow:
+      var(--sh-inset),
+      inset 0 0 var(--led-glow) color-mix(in srgb, var(--st-rejected) 35%, transparent);
   }
 
   .org-textarea[data-dirty='true'] {
-    border-left: var(--dirty-bar-w) solid var(--accent);
+    border-left: var(--dirty-bar-w) solid var(--zone-accent);
+  }
+
+  .org-textarea:disabled {
+    background: var(--bg-panel);
+    color: var(--text-off);
+    border-color: var(--border);
+    box-shadow: none;
   }
 }
-

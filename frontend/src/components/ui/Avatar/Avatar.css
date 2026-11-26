@@ -1,47 +1,126 @@
 @layer components {
+  /* v1 avatar: SQUARE image (never a circle). Radius 1px at ≤24px, 2px at ≥32px.
+     Edge is a bevel (border + inner highlight + soft drop), not a ring. */
   .org-avatar {
+    --avatar-size: var(--avatar-sm);
+
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    width: var(--avatar-sm);
-    height: var(--avatar-sm);
-    border-radius: var(--radius-1);
-    border: var(--border-w) solid var(--border-dark);
+    width: var(--avatar-size);
+    height: var(--avatar-size);
+    border-radius: var(--radius-xs);
+    border: 1px solid var(--border);
+    box-shadow: var(--sh-bevel);
     color: var(--avatar-fg);
     font-family: var(--font-ui);
-    font-size: var(--font-size-sm);
-    font-weight: 700;
+    font-size: var(--font-size-label);
+    font-weight: 600;
     line-height: 1;
-    overflow: hidden;
     user-select: none;
     background: var(--avatar-hue-0);
   }
 
-  .org-avatar[data-size="md"] {
-    width: var(--avatar-md);
-    height: var(--avatar-md);
-    font-size: var(--font-size);
+  .org-avatar[data-size='18'] {
+    --avatar-size: var(--icon-lg);
+    font-size: var(--font-size-glyph);
+  }
+  .org-avatar[data-size='sm'],
+  .org-avatar[data-size='20'] {
+    --avatar-size: var(--avatar-20);
+    font-size: var(--font-size-glyph);
+  }
+  .org-avatar[data-size='24'] {
+    --avatar-size: var(--avatar-24);
+  }
+  .org-avatar[data-size='md'],
+  .org-avatar[data-size='32'] {
+    --avatar-size: var(--avatar-32);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+  }
+  .org-avatar[data-size='lg'],
+  .org-avatar[data-size='40'] {
+    --avatar-size: var(--avatar-40);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-lg);
+  }
+  .org-avatar[data-size='56'] {
+    --avatar-size: var(--avatar-56);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xl);
+  }
+  .org-avatar[data-size='72'] {
+    --avatar-size: var(--avatar-72);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-title);
+    font-weight: 500;
   }
 
-  .org-avatar[data-avatar-tone="0"] { background: var(--avatar-hue-0); }
-  .org-avatar[data-avatar-tone="1"] { background: var(--avatar-hue-1); }
-  .org-avatar[data-avatar-tone="2"] { background: var(--avatar-hue-2); }
-  .org-avatar[data-avatar-tone="3"] { background: var(--avatar-hue-3); }
-  .org-avatar[data-avatar-tone="4"] { background: var(--avatar-hue-4); }
-  .org-avatar[data-avatar-tone="5"] { background: var(--avatar-hue-5); }
-  .org-avatar[data-avatar-tone="6"] { background: var(--avatar-hue-6); }
-  .org-avatar[data-avatar-tone="7"] { background: var(--avatar-hue-7); }
+  .org-avatar[data-avatar-tone='0'] {
+    background: var(--avatar-hue-0);
+  }
+  .org-avatar[data-avatar-tone='1'] {
+    background: var(--avatar-hue-1);
+  }
+  .org-avatar[data-avatar-tone='2'] {
+    background: var(--avatar-hue-2);
+  }
+  .org-avatar[data-avatar-tone='3'] {
+    background: var(--avatar-hue-3);
+  }
+  .org-avatar[data-avatar-tone='4'] {
+    background: var(--avatar-hue-4);
+  }
+  .org-avatar[data-avatar-tone='5'] {
+    background: var(--avatar-hue-5);
+  }
+  .org-avatar[data-avatar-tone='6'] {
+    background: var(--avatar-hue-6);
+  }
+  .org-avatar[data-avatar-tone='7'] {
+    background: var(--avatar-hue-7);
+  }
 
   .org-avatar__img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
+    border-radius: var(--radius-xs);
   }
 
   .org-avatar__initials {
-    letter-spacing: 0.02em;
+    letter-spacing: 0.03em;
+    text-shadow: 0 1px 0 var(--lo);
+  }
+
+  /* Presence LED: round dot with a 2px panel-coloured rim, bottom-right */
+  .org-avatar__presence {
+    --led: var(--presence-offline);
+
+    position: absolute;
+    right: calc(-1 * var(--space-1));
+    bottom: calc(-1 * var(--space-1));
+    width: calc(var(--presence-size) + 2 * var(--space-half));
+    height: calc(var(--presence-size) + 2 * var(--space-half));
+    border: var(--space-half) solid var(--bg-panel);
+    border-radius: 50%;
+    background: var(--led);
+    box-shadow: 0 0 var(--led-glow) color-mix(in srgb, var(--led) 55%, transparent);
+  }
+
+  .org-avatar[data-presence='online'] .org-avatar__presence {
+    --led: var(--presence-online);
+  }
+
+  .org-avatar[data-presence='away'] .org-avatar__presence {
+    --led: var(--presence-away);
+  }
+
+  .org-avatar[data-presence='offline'] .org-avatar__presence {
+    box-shadow: none;
   }
 }
-

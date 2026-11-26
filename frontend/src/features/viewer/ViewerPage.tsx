@@ -1,8 +1,9 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Suspense, useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { ThemeMode } from '../../app/App';
-import { getVisiblePanels } from '../../app/panels';
+import { useStandardMenus } from '../../app/useStandardMenus';
+import { useWorkspacePanels } from '../../app/useWorkspacePanels';
 import {
   AppShell,
   Banner,
@@ -20,7 +21,7 @@ import {
   Table,
   Text,
   useGroupRef,
-  type MenuBarMenu,
+  type MenuEntry,
   type TableColumn,
 } from '../../components/ui';
 import {
@@ -32,19 +33,15 @@ import {
 } from '../../lib/api/client';
 import { hasPerm, useAuthStore } from '../auth/authStore';
 import { EntitiesWorkspaceDock } from '../entities/EntitiesWorkspaceDock';
-import { useEntitiesStore, type LayoutPreset } from '../entities/entitiesStore';
+import { useEntitiesStore } from '../entities/entitiesStore';
 import { useProjectStore } from '../project/projectStore';
-import { SettingsDialog } from '../settings/SettingsDialog';
+import { InspectPopups } from './InspectPopups';
 import { InspectorPanel } from './InspectorPanel';
 import { LayerStrip, hasLayerStripContent } from './LayerStrip';
 import { ViewerToolStrip } from './ViewerToolStrip';
 import { ViewerTopbar, type UdimOverrideInfo } from './ViewerTopbar';
 import { getViewerModule } from './moduleRegistry';
-import {
-  DEFAULT_FILE_VIEWER_STATE,
-  useViewerStore,
-  type ChannelMode,
-} from './viewerStore';
+import { DEFAULT_FILE_VIEWER_STATE, useViewerStore, type ChannelMode } from './viewerStore';
 import './ViewerPage.css';
 
 const HOTKEY_COLS: TableColumn[] = [
@@ -59,14 +56,23 @@ const HOTKEY_ROWS = [
   { key: <Kbd>1 / 3 / 7</Kbd>, action: '100% zoom (2D) or Front / Right / Top view (3D)' },
   { key: <Kbd>R G B A Y</Kbd>, action: 'Isolate RGB / R / G / B / Alpha / Luma' },
   { key: <Kbd>S</Kbd>, action: 'Bypass color adjustments' },
-  { key: <Kbd>V R O B P E L</Kbd>, action: 'Select Pan / Rect / Ellipse / Free / Closed / Eraser / Laser' },
+  {
+    key: <Kbd>V R O B P E L</Kbd>,
+    action: 'Select Pan / Rect / Ellipse / Free / Closed / Eraser / Laser',
+  },
   { key: <Kbd>H</Kbd>, action: 'Show / Hide annotations' },
   { key: <Kbd>Alt+LMB / MMB</Kbd>, action: '3D Orbit / Pan (or Space+Drag in 2D)' },
   { key: <Kbd>Alt+Drag</Kbd>, action: '2D ROI marquee stats (min/max/mean)' },
   { key: <Kbd>Ctrl+Z / Ctrl+Y</Kbd>, action: 'Undo / Redo annotation stroke' },
   { key: <Kbd>[ / ]</Kbd>, action: 'Previous / Next layer, AOV, or UDIM tile in LayerStrip' },
-  { key: <Kbd>Space / J / K / L</Kbd>, action: 'Play/Pause, Play Backwards, Pause, Play Forward (time-based)' },
-  { key: <Kbd>Left / Right / I / O</Kbd>, action: 'Step 1 frame (Shift 10f) and set In/Out points' },
+  {
+    key: <Kbd>Space / J / K / L</Kbd>,
+    action: 'Play/Pause, Play Backwards, Pause, Play Forward (time-based)',
+  },
+  {
+    key: <Kbd>Left / Right / I / O</Kbd>,
+    action: 'Step 1 frame (Shift 10f) and set In/Out points',
+  },
   { key: <Kbd>Ctrl+E</Kbd>, action: 'Toggle maximize Entities browser over workspace' },
   { key: <Kbd>F2 / Backspace</Kbd>, action: 'Rename selected scenefile / Navigate up folder' },
   { key: <Kbd>?</Kbd>, action: 'Toggle this shortcuts dialog' },
@@ -82,13 +88,11 @@ export function ViewerPage({
   onToggleTheme: () => void;
 }) {
   const navigate = useNavigate();
-  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
 
   const activeProjectUuid = useProjectStore((s) => s.activeProjectUuid);
   const setActiveProject = useProjectStore((s) => s.setActiveProject);
-  const openSettings = useProjectStore((s) => s.openSettings);
   const auth = useAuthStore((s) => s.auth);
   const logout = useAuthStore((s) => s.logout);
 
@@ -139,8 +143,19 @@ export function ViewerPage({
     selectedEntityState && selectedEntityState.projectUuid === activeProjectUuid
       ? selectedEntityState.entity
       : null;
+  // Stable callback + bail-out when nothing changed: an inline arrow here re-ran the dock's
+  // effect every render and looped (it blocked route transitions away from /entities).
+  const handleSelectedEntityChange = useCallback(
+    (ent: EntityOut | null) => {
+      setSelectedEntityState((prev) => {
+        if (!ent || !activeProjectUuid) return prev === null ? prev : null;
+        if (prev && prev.projectUuid === activeProjectUuid && prev.entity === ent) return prev;
+        return { projectUuid: activeProjectUuid, entity: ent };
+      });
+    },
+    [activeProjectUuid],
+  );
   const outerGroupRef = useGroupRef();
-  const layoutPreset = useEntitiesStore((s) => s.layoutPreset);
   const entitiesMaximized = useEntitiesStore((s) => s.entitiesMaximized);
   const toggleEntitiesMaximized = useEntitiesStore((s) => s.toggleMaximized);
   const setOuterLayout = useEntitiesStore((s) => s.setOuterLayout);
@@ -170,8 +185,6 @@ export function ViewerPage({
     }
   }, [projects, activeProjectUuid, setActiveProject, queryClient]);
 
-  const activeProject = projects.find((p) => p.uuid === activeProjectUuid) ?? null;
-
   useEffect(() => {
     if (selectedFileState && selectedFileState.projectUuid !== activeProjectUuid) {
       setSelectedFileState(null);
@@ -199,7 +212,12 @@ export function ViewerPage({
     const requestedFileId = searchParams.get('file');
     const requestedFrame = searchParams.get('frame');
 
-    const allFiles: Array<{ file: FileSummaryOut; entityId: string; deptId: string; taskId: string }> = [];
+    const allFiles: Array<{
+      file: FileSummaryOut;
+      entityId: string;
+      deptId: string;
+      taskId: string;
+    }> = [];
     let taskMatchedFile: FileSummaryOut | null = null;
     for (const ent of tree.entities ?? []) {
       for (const dept of ent.departments ?? []) {
@@ -261,7 +279,11 @@ export function ViewerPage({
     ],
     queryFn: () =>
       selectedScenefileTaskId && selectedScenefileRelPath
-        ? apiClient.inspectScenefile(selectedScenefileTaskId, selectedScenefileRelPath, activeProjectUuid)
+        ? apiClient.inspectScenefile(
+            selectedScenefileTaskId,
+            selectedScenefileRelPath,
+            activeProjectUuid,
+          )
         : apiClient.inspectFile(selectedFile!.id, activeProjectUuid),
     enabled: Boolean(activeProjectUuid && selectedFile),
     staleTime: 60_000,
@@ -288,24 +310,23 @@ export function ViewerPage({
       apiClient.scenefileContentUrl(taskId, entry.rel_path, activeProjectUuid),
     );
     const ext = entry.extension.replace(/^\./, '').toLowerCase() || 'file';
-    const mediaKind =
-      entry.is_image
-        ? 'image2d'
-        : ['.mp4', '.mov', '.mkv', '.avi'].includes(entry.extension.toLowerCase())
-          ? 'video'
-          : ['.wav', '.flac', '.ogg', '.mp3'].includes(entry.extension.toLowerCase())
-            ? 'audio'
-            : ['.gltf', '.glb', '.obj', '.usda', '.usdc', '.usd'].includes(
-              entry.extension.toLowerCase(),
-            )
-              ? 'scene3d'
-              : entry.extension.toLowerCase() === '.pdf'
-                ? 'document'
-                : ['.csv', '.json', '.yaml', '.yml'].includes(entry.extension.toLowerCase())
-                  ? 'data'
-                  : entry.extension.toLowerCase() === '.edl'
-                    ? 'timeline'
-                    : 'unsupported';
+    const mediaKind = entry.is_image
+      ? 'image2d'
+      : ['.mp4', '.mov', '.mkv', '.avi'].includes(entry.extension.toLowerCase())
+        ? 'video'
+        : ['.wav', '.flac', '.ogg', '.mp3'].includes(entry.extension.toLowerCase())
+          ? 'audio'
+          : ['.gltf', '.glb', '.obj', '.usda', '.usdc', '.usd'].includes(
+                entry.extension.toLowerCase(),
+              )
+            ? 'scene3d'
+            : entry.extension.toLowerCase() === '.pdf'
+              ? 'document'
+              : ['.csv', '.json', '.yaml', '.yml'].includes(entry.extension.toLowerCase())
+                ? 'data'
+                : entry.extension.toLowerCase() === '.edl'
+                  ? 'timeline'
+                  : 'unsupported';
     const synth: FileSummaryOut = {
       id: previewId,
       filename: entry.name,
@@ -327,20 +348,6 @@ export function ViewerPage({
     });
     selectFile(previewId, null);
     setStatusMessage(`Previewing scenefile ${entry.name}`);
-  };
-
-  const applyOuterPreset = (preset: LayoutPreset) => {
-    if (!outerGroupRef.current) return;
-    const target =
-      preset === 'review'
-        ? { entities: 10, center: 60, inspector: 30 }
-        : { entities: 36, center: 44, inspector: 20 };
-    try {
-      outerGroupRef.current.setLayout(target);
-      setOuterLayout(target);
-    } catch {
-      // ignore if collapsed panes aren't mounted
-    }
   };
 
   // Global viewer hotkeys
@@ -373,7 +380,10 @@ export function ViewerPage({
       }
 
       const k = e.key.toLowerCase();
-      const is3DMode = selectedFile?.media_kind === 'scene3d' && !viewerState.frozen && viewerState.activeTextureIndex === null;
+      const is3DMode =
+        selectedFile?.media_kind === 'scene3d' &&
+        !viewerState.frozen &&
+        viewerState.activeTextureIndex === null;
       const fileTimeBased = Boolean(
         selectedFile &&
         (selectedFile.is_sequence ||
@@ -395,7 +405,8 @@ export function ViewerPage({
       } else if (k === 'a' && is3DMode) {
         window.dispatchEvent(new CustomEvent('organum:frame-all'));
       } else if (k === '1') {
-        if (is3DMode) window.dispatchEvent(new CustomEvent('organum:set-view-preset', { detail: 'front' }));
+        if (is3DMode)
+          window.dispatchEvent(new CustomEvent('organum:set-view-preset', { detail: 'front' }));
         else updateFileState(currentFileId, { zoom: 1, panX: 0, panY: 0 });
       } else if (k === '3' && is3DMode) {
         window.dispatchEvent(new CustomEvent('organum:set-view-preset', { detail: 'right' }));
@@ -453,7 +464,10 @@ export function ViewerPage({
           for (const task of dept.tasks ?? []) {
             for (const ver of task.product?.versions ?? []) {
               for (const f of ver.files ?? []) {
-                if (f.filename.toLowerCase() === target || target.includes(f.filename.toLowerCase())) {
+                if (
+                  f.filename.toLowerCase() === target ||
+                  target.includes(f.filename.toLowerCase())
+                ) {
                   handleSelectFile(f);
                   return;
                 }
@@ -468,76 +482,53 @@ export function ViewerPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tree]);
 
-  const menus: MenuBarMenu[] = useMemo(
+  const workspaceExtras: MenuEntry[] = useMemo(
     () => [
       {
-        id: 'file',
-        label: 'File',
-        items: [
-          {
-            id: 'rescan',
-            label: 'Reconcile Project Disk & DB',
-            shortcut: 'Ctrl+R',
-            onSelect: async () => {
-              if (!activeProjectUuid) return;
-              const res = await apiClient.reconcileProject(activeProjectUuid);
-              await queryClient.invalidateQueries({ queryKey: ['entities', activeProjectUuid] });
-              setStatusMessage(`Reconciled ${res.entities_scanned} entities (${res.files_scanned} files)`);
-            },
-          },
-          { id: 'sep-p', label: '', separator: true },
-          {
-            id: 'settings-proj',
-            label: 'Project & Preferences...',
-            onSelect: () => openSettings('project'),
-          },
-        ],
-      },
-      {
-        id: 'view',
-        label: 'View',
-        items: [
-          {
-            id: 'toggle-left',
-            label: `${leftCollapsed ? 'Show' : 'Hide'} Entities Panel`,
-            onSelect: () => {
-              const next = !leftCollapsed;
-              setLeftCollapsed(next);
-              localStorage.setItem('organum.leftCollapsed', String(next));
-            },
-          },
-          {
-            id: 'toggle-right',
-            label: `${rightCollapsed ? 'Show' : 'Hide'} Inspector Panel`,
-            onSelect: () => {
-              const next = !rightCollapsed;
-              setRightCollapsed(next);
-              localStorage.setItem('organum.rightCollapsed', String(next));
-            },
-          },
-          { id: 'sep', label: '', separator: true },
-          {
-            id: 'gallery',
-            label: 'Open Widget Gallery',
-            onSelect: () => navigate('/gallery'),
-          },
-          {
-            id: 'theme',
-            label: `Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Theme`,
-            onSelect: onToggleTheme,
-          },
-        ],
-      },
-      {
-        id: 'help',
-        label: 'Help',
-        items: [
-          { id: 'keys', label: 'Keyboard Shortcuts', shortcut: '?', onSelect: () => setHelpOpen(true) },
-        ],
+        id: 'rescan',
+        label: 'Reconcile Project Disk & DB',
+        shortcut: 'Ctrl+R',
+        onSelect: async () => {
+          if (!activeProjectUuid) return;
+          const res = await apiClient.reconcileProject(activeProjectUuid);
+          await queryClient.invalidateQueries({ queryKey: ['entities', activeProjectUuid] });
+          setStatusMessage(
+            `Reconciled ${res.entities_scanned} entities (${res.files_scanned} files)`,
+          );
+        },
       },
     ],
-    [leftCollapsed, rightCollapsed, theme, navigate, onToggleTheme, queryClient, setHelpOpen, activeProjectUuid, openSettings],
+    [activeProjectUuid, queryClient],
   );
+  const viewExtras: MenuEntry[] = useMemo(
+    () => [
+      {
+        id: 'toggle-left',
+        label: `${leftCollapsed ? 'Show' : 'Hide'} Entities Panel`,
+        onSelect: () => {
+          const next = !leftCollapsed;
+          setLeftCollapsed(next);
+          localStorage.setItem('organum.leftCollapsed', String(next));
+        },
+      },
+      {
+        id: 'toggle-right',
+        label: `${rightCollapsed ? 'Show' : 'Hide'} Inspector Panel`,
+        onSelect: () => {
+          const next = !rightCollapsed;
+          setRightCollapsed(next);
+          localStorage.setItem('organum.rightCollapsed', String(next));
+        },
+      },
+    ],
+    [leftCollapsed, rightCollapsed],
+  );
+  const showShortcuts = useCallback(() => setHelpOpen(true), [setHelpOpen]);
+  const menus = useStandardMenus(theme, onToggleTheme, {
+    workspace: workspaceExtras,
+    view: viewExtras,
+    onShowShortcuts: showShortcuts,
+  });
 
   const isUdimActive = Boolean(
     selectedFile?.is_sequence &&
@@ -555,19 +546,17 @@ export function ViewerPage({
   const udimInfo: UdimOverrideInfo | null =
     selectedFile && selectedFile.is_sequence
       ? {
-        sequenceKind: selectedFile.sequence_kind as UdimOverrideInfo['sequenceKind'],
-        isUserOverride: Boolean(selectedFile.sequence_kind_user_override),
-        canToggleUdim: Boolean(
-          inspection?.summary?.can_override_udim ||
-          selectedFile.sequence_kind === 'udim' ||
-          inspection?.capabilities?.udim,
-        ),
-        tileCount: Number(inspection?.summary?.udim_tile_count ?? 0),
-      }
+          sequenceKind: selectedFile.sequence_kind as UdimOverrideInfo['sequenceKind'],
+          isUserOverride: Boolean(selectedFile.sequence_kind_user_override),
+          canToggleUdim: Boolean(
+            inspection?.summary?.can_override_udim ||
+            selectedFile.sequence_kind === 'udim' ||
+            inspection?.capabilities?.udim,
+          ),
+          tileCount: Number(inspection?.summary?.udim_tile_count ?? 0),
+        }
       : null;
-  const detectedCs = inspection?.summary?.colorspace
-    ? String(inspection.summary.colorspace)
-    : null;
+  const detectedCs = inspection?.summary?.colorspace ? String(inspection.summary.colorspace) : null;
   const tlDoc = (inspection?.timeline ?? null) as Record<string, unknown> | null;
   const isTimeBased = Boolean(
     selectedFile &&
@@ -577,24 +566,13 @@ export function ViewerPage({
       selectedFile.media_kind === 'timeline' ||
       inspection?.capabilities?.time_based),
   );
-  const frameStart = Number(tlDoc?.start ?? (selectedFile?.frame_start ?? 0));
-  const frameEnd = Math.max(frameStart, Number(tlDoc?.end ?? (selectedFile?.frame_end ?? 100)));
+  const frameStart = Number(tlDoc?.start ?? selectedFile?.frame_start ?? 0);
+  const frameEnd = Math.max(frameStart, Number(tlDoc?.end ?? selectedFile?.frame_end ?? 100));
 
-  const panelItems = useMemo(
-    () =>
-      getVisiblePanels(auth?.permissions).map((p) => ({
-        id: p.id,
-        label: p.label,
-        active:
-          p.id === 'entities'
-            ? location.pathname === '/entities' || location.pathname === '/viewer'
-            : location.pathname.startsWith(p.route),
-        onClick: () => navigate(p.route),
-      })),
-    [auth?.permissions, location.pathname, navigate],
-  );
+  const panelItems = useWorkspacePanels();
 
-  const canAdmin = hasPerm(auth?.permissions, 'role.manage');
+  const canAdmin =
+    hasPerm(auth?.permissions, 'role.manage') || hasPerm(auth?.permissions, 'rules.manage');
   const isClientRole = auth?.user.role_name === 'client';
 
   const visibleEntityTaskId = useMemo(() => {
@@ -613,8 +591,7 @@ export function ViewerPage({
     <AppShell
       menus={menus}
       panels={panelItems}
-      projectName={activeProject?.name ?? null}
-      onOpenSettings={isClientRole ? undefined : () => openSettings()}
+      onOpenSettings={isClientRole ? undefined : () => navigate('/settings')}
       theme={theme}
       onToggleTheme={onToggleTheme}
       userName={auth?.user.username ?? 'user'}
@@ -627,7 +604,16 @@ export function ViewerPage({
       }
       canAdmin={canAdmin}
       onOpenMyUser={() => navigate('/me')}
-      onOpenAdmin={canAdmin ? () => navigate('/admin') : undefined}
+      onOpenAdmin={
+        canAdmin
+          ? () =>
+              navigate(
+                hasPerm(auth?.permissions, 'role.manage')
+                  ? '/users?section=roles'
+                  : '/users?section=rules',
+              )
+          : undefined
+      }
       onLogout={() => {
         void logout().then(() => navigate('/login', { replace: true }));
       }}
@@ -641,7 +627,8 @@ export function ViewerPage({
           </StatusBarSegment>
           {roiStats && (
             <StatusBarSegment mono>
-              ROI {roiStats.w}×{roiStats.h} mean[{roiStats.mean[0].toFixed(2)},{roiStats.mean[1].toFixed(2)},{roiStats.mean[2].toFixed(2)}]
+              ROI {roiStats.w}×{roiStats.h} mean[{roiStats.mean[0].toFixed(2)},
+              {roiStats.mean[1].toFixed(2)},{roiStats.mean[2].toFixed(2)}]
             </StatusBarSegment>
           )}
           <StatusBarSegment mono>
@@ -668,25 +655,14 @@ export function ViewerPage({
       >
         {!leftCollapsed && (
           <>
-            <SplitPane
-              id="entities"
-              defaultSize={layoutPreset === 'review' ? '10%' : '36%'}
-              minSize="180px"
-            >
+            <SplitPane id="entities" defaultSize="46%" minSize="180px">
               <div className="org-viewer-layout__entities-pane">
                 <EntitiesWorkspaceDock
                   selectedFileId={selectedFile?.id ?? null}
                   onSelectFile={handleSelectFile}
                   onOpenMediaScenefile={handleOpenMediaScenefile}
-                  onSelectedEntityChange={(ent) => {
-                    if (!ent || !activeProjectUuid) {
-                      setSelectedEntityState(null);
-                    } else {
-                      setSelectedEntityState({ projectUuid: activeProjectUuid, entity: ent });
-                    }
-                  }}
+                  onSelectedEntityChange={handleSelectedEntityChange}
                   onStatusMessage={setStatusMessage}
-                  onApplyOuterPreset={applyOuterPreset}
                 />
               </div>
             </SplitPane>
@@ -694,11 +670,7 @@ export function ViewerPage({
           </>
         )}
 
-        <SplitPane
-          id="center"
-          defaultSize={layoutPreset === 'review' ? '60%' : '44%'}
-          minSize="320px"
-        >
+        <SplitPane id="center" defaultSize="36%" minSize="320px">
           <div className="org-viewer-center">
             <ViewerTopbar
               mediaKind={effectiveMediaKind}
@@ -817,7 +789,9 @@ export function ViewerPage({
                     </Stack>
                   ) : (
                     <Stack padding="4" gap="2">
-                      <Text variant="muted">Select a file from Products or drop files to ingest.</Text>
+                      <Text variant="muted">
+                        Select a file from Products or drop files to ingest.
+                      </Text>
                     </Stack>
                   )}
                 </div>
@@ -840,11 +814,7 @@ export function ViewerPage({
         {!rightCollapsed && (
           <>
             <SplitHandle />
-            <SplitPane
-              id="inspector"
-              defaultSize={layoutPreset === 'review' ? '30%' : '20%'}
-              minSize="260px"
-            >
+            <SplitPane id="inspector" defaultSize="18%" minSize="260px">
               <InspectorPanel
                 file={selectedFile}
                 inspection={inspection ?? null}
@@ -871,7 +841,7 @@ export function ViewerPage({
         <Table columns={HOTKEY_COLS} rows={HOTKEY_ROWS} />
       </Dialog>
 
-      <SettingsDialog theme={theme} onToggleTheme={onToggleTheme} />
+      <InspectPopups />
     </AppShell>
   );
 }

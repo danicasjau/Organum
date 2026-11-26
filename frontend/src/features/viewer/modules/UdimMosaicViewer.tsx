@@ -7,7 +7,12 @@ import {
   type PointerEvent,
   type WheelEvent,
 } from 'react';
-import { Spinner, Text } from '../../../components/ui';
+import {
+  Spinner,
+  Text,
+  readCssToken,
+  readCssTokenRgb,
+} from '../../../components/ui';
 import {
   apiClient,
   type FileSummaryOut,
@@ -359,17 +364,24 @@ export function UdimMosaicViewer({
     ctx.clearRect(0, 0, hud.width, hud.height);
     const tileSet = new Map(visibleTiles.map((t) => [t.udim, t]));
 
-    ctx.font = '10px Consolas, monospace';
+    const monoFont = readCssToken('--font-mono', 'monospace');
+    ctx.font = `10px ${monoFont}`;
+    const cPresent = readCssTokenRgb('--zone-production', [91, 147, 199]);
+    const cEmpty = readCssTokenRgb('--st-idle', [107, 114, 128]);
+    const tPresent = readCssToken('--text', '#d4d4d4');
+    const tEmpty = readCssToken('--text-dim', '#9a9a9a');
     for (let v = 0; v < gridRows; v++) {
       for (let u = 0; u < gridCols; u++) {
         const udim = 1001 + u + 10 * v;
         const rx = gridLeft + u * cellPx;
         const ry = gridBottom - (v + 1) * cellPx;
         const present = tileSet.has(udim);
-        ctx.strokeStyle = present ? 'rgba(139, 92, 246, 0.72)' : 'rgba(100, 116, 139, 0.45)';
+        ctx.strokeStyle = present
+          ? `rgba(${cPresent.join(', ')}, 0.72)`
+          : `rgba(${cEmpty.join(', ')}, 0.45)`;
         ctx.lineWidth = 1;
         ctx.strokeRect(Math.round(rx) + 0.5, Math.round(ry) + 0.5, cellPx, cellPx);
-        ctx.fillStyle = present ? '#E2E8F0' : '#94A3B8';
+        ctx.fillStyle = present ? tPresent : tEmpty;
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
         ctx.fillText(present ? `${udim}` : `${udim} (empty)`, rx + 4, ry + 4);

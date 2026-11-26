@@ -149,8 +149,7 @@
   }
 
   .org-graph__dept-tag {
-    font-size: var(--font-size-2xs);
-    color: var(--text-muted);
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -223,7 +222,7 @@
     border: 1px solid var(--border-dark);
     background: var(--surface-panel);
     cursor: crosshair;
-    z-index: 3;
+    z-index: var(--z-local-3);
   }
 
   .org-graph__minimap-svg {

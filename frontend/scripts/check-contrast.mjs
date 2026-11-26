@@ -17,8 +17,9 @@ function extractVars(selectorRegex) {
   return vars;
 }
 
-const rootVars = extractVars(/:root,\s*\[data-theme="dark"\]\s*\{([\s\S]*?)\n\s*\}/);
-const lightOverrides = extractVars(/\[data-theme="light"\]\s*\{([\s\S]*?)\n\s*\}/);
+// Accept either quote style in the theme selectors (prettier normalises to single quotes).
+const rootVars = extractVars(/:root,\s*\[data-theme=["']dark["']\]\s*\{([\s\S]*?)\n\s*\}/);
+const lightOverrides = extractVars(/\[data-theme=["']light["']\]\s*\{([\s\S]*?)\n\s*\}/);
 
 function resolveVar(name, map, depth = 0) {
   if (depth > 8) return name;
@@ -75,6 +76,11 @@ const checks = [
   ['--btn-danger-fg', '--btn-danger-bg', 4.5, 'danger button'],
   ['--focus-ring', '--surface-panel', 3.0, 'focus ring on panel'],
   ['--focus-ring', '--surface-field', 3.0, 'focus ring on field'],
+  ['--highlight', '--surface-panel', 3.0, 'highlight border on panel'],
+  ['--highlight', '--surface-field', 3.0, 'highlight border on field'],
+  ['--highlight', '--surface-window', 3.0, 'highlight border on window'],
+  ['--milestone-text', '--milestone', 4.5, 'milestone label'],
+  ['--milestone', '--surface-field', 3.0, 'milestone diamond on field'],
   ['--border-control', '--surface-panel', 3.0, 'control border on panel'],
   ['--border-control', '--surface-field', 3.0, 'control border on field'],
   ['--capacity-do-text', '--capacity-do-bg', 4.5, 'capacity DO chip'],
@@ -94,6 +100,20 @@ const checks = [
   ['--avatar-fg', '--avatar-hue-2', 4.5, 'avatar hue 2'],
   ['--avatar-fg', '--avatar-hue-3', 4.5, 'avatar hue 3'],
   ['--avatar-fg', '--avatar-hue-4', 4.5, 'avatar hue 4'],
+  ['--avatar-fg', '--avatar-hue-5', 4.5, 'avatar hue 5'],
+  ['--avatar-fg', '--avatar-hue-6', 4.5, 'avatar hue 6'],
+  ['--avatar-fg', '--avatar-hue-7', 4.5, 'avatar hue 7'],
+  // v1 additions
+  ['--text', '--bg-raised-top', 4.5, 'text on raised face'],
+  ['--text', '--selected', 4.5, 'text on selected row'],
+  ['--text-dim', '--bg-input', 4.5, 'dim text in input well'],
+  ['--text-dim', '--bg-raised-bottom', 4.5, 'dim text on raised face'],
+  ['--text-production', '--bg-panel', 4.5, 'production text on panel'],
+  ['--text-wip', '--bg-panel', 4.5, 'WIP text on panel'],
+  ['--text-review', '--bg-panel', 4.5, 'review text on panel'],
+  ['--text-idle', '--bg-panel', 4.5, 'idle text on panel'],
+  ['--zone-focus', '--bg-input', 3.0, 'focus ring on input well'],
+  ['--zone-focus', '--bg-app', 3.0, 'focus ring on app'],
 ];
 
 let failed = false;

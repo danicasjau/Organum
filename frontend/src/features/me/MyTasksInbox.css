@@ -108,6 +108,13 @@
     background: var(--surface-field);
   }
 
+  /* Selected card: border style + weight change, not colour alone. */
+  .org-inbox__card[data-selected='true'] {
+    border: var(--border-w-strong) solid var(--highlight);
+    outline: var(--border-w) dashed var(--highlight);
+    outline-offset: calc(-1 * var(--space-1));
+  }
+
   .org-inbox__card-top {
     display: flex;
     align-items: center;
@@ -123,7 +130,14 @@
   .org-inbox__card-sub {
     display: flex;
     flex-direction: column;
-    gap: var(--space-0);
+    gap: var(--space-1);
+  }
+
+  .org-inbox__line {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
   }
 
   .org-inbox__bar {
@@ -146,4 +160,3 @@
     flex-wrap: wrap;
   }
 }
-

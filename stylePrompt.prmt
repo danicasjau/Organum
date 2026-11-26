@@ -1,0 +1,127 @@
+TASK: Restyle the UI component library in `../components/ui` (and every consumer that hard-codes styling) into a new visual language. Change appearance only. Do NOT change component names, props, behavior, exports, or file structure. Everything in the import list must keep working: AngleDial, Avatar, Badge, Banner, BarChart, BrandWordmark, Button, ButtonGroup, CapacityBadge, Checkbox, ColorField, ContextMenu, CurveRamp, DataGrid, Dialog, GaugeBar, Grid, Heatmap, Histogram, Icon, Inline, JobQueue, Kbd, Knob, LineChart, LogConsole, MenuBar, NodeGraph, NumberField, Panel, PasswordField, Popover, ProgressBar, PropertyEditor, RadioGroup, RadioItem, RangeSlider, ScatterPlot, ScrollArea, SearchField, SegmentedControl, Select, Separator, Slider, Sparkline, Spinner, Stack, StatusBar, StatusBarSegment, StatusDot, Stepper, Switch, Table, Tabs, Tag, Text, TextArea, TextField, Timebar, TokenTile, ToolStrip, Toolbar, ToolbarGroup, Tooltip, Topbar, TransportControls, UserPicker, VectorField, useToast.
+
+CONTEXT: This is the UI kit of a VFX/animation production-tracking tool. The functional reference is the density and seriousness of Houdini and Nuke. The visual reference is the attached concept images: soft neumorphic "foundations" sheet, minimal tactile controls, and the audio-editor mockup with detailed knobs and tick rulers.
+
+STYLE IN ONE SENTENCE: Matte paper-like surfaces that feel physically pressed in or popped out of the screen with very soft light/shadow, almost no corner rounding, and finely detailed controls (ticks, grooves, knurled knobs, LED dots) set in generous empty space. It should feel like a 2002 pro-software control panel, refined with modern restraint.
+
+1. DESIGN TOKENS (do this first)
+Centralize everything in one token file (CSS variables, or the existing theme system if there is one). Remove hard-coded colors from components afterwards.
+
+Base neutrals:
+  --bg-canvas: #1a1a1a   (viewers, timeline/calendar grid, deepest wells)
+  --bg-app: #232323      (main window, center area)
+  --bg-panel: #2b2b2b    (side panels, topbar)
+  --bg-raised: #333333   (cards, table headers, toolbars)
+  --bg-input: #1f1f1f    (fields, dropdowns, wells)
+  --border: #3f3f3f
+  --hover: #3a3a3a
+  --selected: #3d4a5c
+Text: --text #d4d4d4 (never pure white), --text-dim #9a9a9a, --text-off #5e5e5e.
+Zone accents (muted, used only as signal): management #d98a4e (hover #e39c66, tint #3a2e25); production #5b93c7 (hover #74a6d4, tint #24303c); settings #8a8f96 (tint #2e3033). Focus/active: #e8a33d.
+Status: WIP #e0b341, pending review #4fa3d9, approved #5fb36b, rejected #d95b5b, idle #6b7280. Show status as small chips, dots, or a 3px left bar with ~15% tinted background, never big solid fills.
+Department colors (calendar/charts, desaturated, similar luminance): modeling #7a9cc6, rigging #9b86c4, animation #6fb3a0, lookdev #c79b6a, lighting #c4c06a, FX #c77a7a, comp #8fb86a.
+
+Also create tokens for:
+  - Radius: --r-0: 0, --r-1: 1px, --r-2: 2px. Max is 3px, used only on popovers/dialogs. Default is 0-2px. No pills, no circles except knobs, radios, avatars, and status dots.
+  - Border widths: 1px thin (default), 2px regular (focus/active), 4px thick (rare emphasis).
+  - Spacing scale on a 4px grid (4, 8, 12, 16, 24, 32). Control height 26-28px, compact rows 24px.
+  - Elevation shadow recipes (below).
+  - Motion: 120ms ease-out for press/hover, 180ms for popovers; no bounces.
+
+2. SURFACE SYSTEM (the core idea, from the "Foundations" sheet)
+Four physical layers. Light comes from the top-left. On dark, "light" means a faint 1px highlight on top/left edges and "shadow" means a soft darker falloff to bottom/right. Keep all shadows very soft, low opacity, and tight; nothing should look glossy or heavy.
+
+  BASE (flat): background only, 1px --border, no shadow.
+  RAISED (buttons, cards, toolbars, switch knobs, slider thumbs):
+    box-shadow: inset 1px 1px 0 rgba(255,255,255,0.05), inset -1px -1px 0 rgba(0,0,0,0.25), 1px 2px 3px rgba(0,0,0,0.35), -1px -1px 2px rgba(255,255,255,0.025);
+  INSET (fields, wells, slider tracks, progress/gauge troughs, table body, log console):
+    box-shadow: inset 1px 2px 4px rgba(0,0,0,0.55), inset -1px -1px 1px rgba(255,255,255,0.04);
+    background: --bg-input
+  PRESSED (active button, toggled segment, selected tab):
+    same as inset but a little lighter, and translateY(1px) with no outer shadow, so the element visibly sinks.
+  POPOVER/MODAL: raised plus a larger, soft, very low-opacity drop (0 8px 24px rgba(0,0,0,0.45)), 1px border, radius up to 3px.
+
+Elevation levels: L1 flat, L2 hover (shadow slightly stronger), L3 raised, L4 modal, L5 popover. Hover should only deepen the shadow by a hair and lighten the background to --hover. No color jumps.
+
+Paper feel: add an extremely subtle noise/grain overlay (SVG feTurbulence or a tiny tiled PNG data-URI, opacity 2-4%) on --bg-app and --bg-panel so surfaces read as matte paper, not flat digital fills. No gradients except a barely visible vertical gradient (max 3% lightness difference) on raised controls to suggest a physical top face.
+
+3. SHAPE AND BORDER RULES
+  - Corners nearly square: 0-2px. Softness comes from shadows and tone, not from rounded corners.
+  - 1px hairline borders in --border, always combined with the inner highlight, so edges look bevelled rather than outlined.
+  - Replace thick outlines and heavy dividers with Separator as a 1px groove: a dark line (#1a1a1a) with a 1px light line (rgba(255,255,255,0.04)) directly beneath it.
+  - Focus ring: 2px --focus outline with 1px offset plus a faint glow (0 0 0 3px rgba(232,163,61,0.18)).
+
+4. TYPOGRAPHY
+  UI font: Inter (fallback Segoe UI, system-ui), 11-12px base, weights 400/500/600 only. Labels in small caps or uppercase with 0.06em tracking for section titles, etched and subtle (--text-dim).
+  Mono font: JetBrains Mono (fallback Roboto Mono) for versions, frame numbers, timecodes, paths, Kbd, NumberField, LogConsole, DataGrid numeric columns. Use tabular numerals everywhere numbers align.
+  Text hierarchy through tone (--text / --text-dim / --text-off), not through size jumps.
+
+5. DENSITY AND WHITESPACE (the 2002-meets-modern balance)
+Controls are detailed but never crowded. Give every control generous clear space around it (min 8px gap between adjacent controls, 12-16px between groups, 24px between sections). Panels use real padding (12-16px). A screen should feel calm and sparse, with intricate controls sitting in open space like instruments on a panel. Group related controls into recessed or raised "plates" (Panel, ToolbarGroup) instead of lining everything with borders.
+
+6. COMPONENT-LEVEL DIRECTION
+Buttons and button-like (Button, ButtonGroup, SegmentedControl, ToolStrip, Toolbar, ToolbarGroup, TransportControls, Stepper):
+  - Raised physical keys, 0-2px radius, subtle top highlight, soft bottom shadow. Pressed state sinks (inset + 1px down). Disabled: flat, no shadow, --text-off.
+  - Primary variant uses the zone accent as a muted face tint or a small LED/underline, never a loud solid block. Destructive uses #d95b5b the same way.
+  - ButtonGroup/SegmentedControl: one shared plate with hairline grooves between keys; the active segment is pressed in with a tiny accent indicator.
+  - TransportControls: square keycap buttons like a tape deck/audio editor (see reference); record key has a small red dot (#d95b5b).
+  - Add a micro-detail: a barely visible inner 1px border (rgba(255,255,255,0.03)) one pixel inside the edge for a machined look.
+
+Switch, Checkbox, RadioGroup/RadioItem:
+  - Switch: inset track (groove) with a raised rectangular or very softly rounded knob that slides; ON shows a small accent LED line or tinted track; OFF is neutral. Add tiny etched "I / O" or ON/OFF ticks if space allows.
+  - Checkbox: small inset square well; checked shows a crisp thin check in the accent plus a faint inner glow. Radio: inset circular well with a raised/glowing dot when selected.
+
+Sliders, Knobs, Dials (Slider, RangeSlider, Knob, AngleDial, CurveRamp, VectorField):
+  - Slider track: deep inset groove with fine tick marks and numeric labels below (0/25/50/75/100 style, mono, --text-dim). Filled portion is a muted accent. Thumb is a raised key with a center grip line.
+  - Knob/AngleDial: round raised dial with a knurled/ribbed edge (repeating-conic-gradient or SVG ticks), a soft cast shadow, a thin accent indicator line, and a tick ring around it with min/max labels, like the audio-editor reference. Pressed/dragging state darkens slightly.
+  - RangeSlider uses two thumbs on the same groove with the active range tinted.
+
+Fields (TextField, NumberField, PasswordField, SearchField, TextArea, Select, ColorField, UserPicker):
+  - Inset wells on --bg-input, 1px border, placeholder in --text-off, value in --text. NumberField shows a small stepper pair and a draggable scrub area, with mono digits. Focus uses the focus ring above. Error state: 1px #d95b5b border with a faint red inner glow and helper text beneath. Select has a thin chevron glyph and a raised popover list.
+
+Bars and meters (ProgressBar, GaugeBar, CapacityBadge, Sparkline, StatusBar, StatusBarSegment):
+  - Recessed trough with a slightly raised fill, subtle segment ticks (like a hardware level meter). Fill colors follow status tokens. StatusBar is a thin docked strip with etched dividers and mono text. StatusDot is a tiny LED: solid color, 1px darker rim, soft glow (0 0 4px of its own color at 40%).
+
+Navigation and structure (Topbar, MenuBar, Tabs, Panel, Separator, ScrollArea, ContextMenu, Popover, Tooltip, Dialog, Banner, useToast):
+  - Topbar/MenuBar on --bg-panel with a 1px groove underline in the active zone's accent. Tabs: inactive tabs are flat, the active tab is pressed or raised into the panel with a thin accent line; no pill shapes.
+  - Panel: raised plate with an etched small-caps header strip; optional collapsible state with a tiny chevron.
+  - ContextMenu/Popover/Dialog: raised popover surface, small radius (max 3px), soft large shadow, hairline border; menu items are 24px with hover tint and mono Kbd hints right-aligned.
+  - Tooltip: dark plate with tiny arrow, 11px text, short delay.
+  - Banner: flat tinted strip with a 3px left status bar. Toasts: small raised cards stacked bottom-right with a left status bar.
+  - ScrollArea: thin inset scrollbars with a raised square thumb, no rounded pills.
+
+Data display (Table, DataGrid, PropertyEditor, JobQueue, LogConsole, Tag, Badge, Kbd, TokenTile, Avatar, Text, Grid, Stack, Inline):
+  - Table/DataGrid: inset body on --bg-input or --bg-app, header as a raised strip with etched small-caps labels and sort glyphs, 24px rows, subtle zebra (1-2% lightness), selected row --selected, hover --hover, a 3px status bar at the row's left edge when a status applies. Column separators are groove lines.
+  - PropertyEditor: label column (--text-dim) and value column with inset fields; group headers are collapsible etched strips.
+  - Tag/Badge: tiny square-ish chips (0-2px radius), tinted background at ~15% with 1px matching border; CapacityBadge in mono.
+  - Kbd: small raised keycap with 1px bottom shadow, mono text.
+  - Avatar: square or very slightly rounded (2px) with a 1px bevel ring; no large circles.
+  - JobQueue and LogConsole: console-like inset wells, mono text, status dots, colored log levels from the status tokens.
+
+Charts and visualizations (BarChart, LineChart, Histogram, ScatterPlot, Heatmap, Sparkline, Timebar, NodeGraph, Gauge-style visuals):
+  - Chart canvas uses --bg-canvas as an inset well with fine 1px grid lines (rgba(255,255,255,0.05)) and ruler-style tick labels in mono --text-dim. Series use the department/status palette, desaturated, thin 1.5px strokes, no gradients or glows (a faint 10-15% fill under lines at most). Timebar is a ruler with major/minor ticks like the reference. NodeGraph: rectangular nodes as raised plates with small port pills, thin #6b7280 connector lines, selected node gets the focus color outline; connectors can have tiny rounded elbows only.
+
+Brand and icons (BrandWordmark, Icon, Spinner):
+  - Icons: 1.5px stroke line icons, 16/20/24px grid, --text-dim by default, accent only when active; keep optical sizes consistent across the kit. Spinner is a thin segmented ring or tick-dial, not a thick circular arc.
+  - BrandWordmark: keep the mark, restyle with the new text color and an etched/embossed treatment (1px dark shadow below, 1px light above).
+
+7. INTERACTION AND MOTION
+  Hover: background to --hover, shadow +1 level. Press: sink 1px, switch to inset recipe, 80-120ms. Selected/active: pressed look plus accent indicator. Disabled: flat, desaturated, no pointer. No springy animations; a physical, mechanical feel (quick ease-out, tiny travel). Respect prefers-reduced-motion.
+
+8. ACCESSIBILITY
+  Maintain WCAG AA contrast for text (--text on any surface, --text-dim only for secondary labels at 11px+ weight 500). Never rely on color alone for status: pair color with an icon, shape, or label. Keep visible focus states on every interactive component and keyboard operability unchanged.
+
+9. HOW TO WORK
+  a) Audit ../components/ui and list every hard-coded color, radius, shadow, and font; report before editing.
+  b) Create/replace the token layer, then build the shared surface mixins/utilities (raised, inset, pressed, groove, grain, focus-ring) so components don't duplicate shadow strings.
+  c) Restyle in this order: Button family -> fields -> switches/checkboxes/radios -> sliders/knobs -> bars/meters -> navigation/panels/overlays -> tables/data -> charts/graphs -> icons/wordmark.
+  d) Keep a light "paper" theme as an optional second token set with the same structure (cream-gray paper base ~#ece8e1 / #e6e2da, ink text #2b2f33, deep teal/ink accent, same shadow logic with white highlights top-left and soft warm-gray shadows bottom-right) so the system can switch themes by swapping tokens only. The dark theme above is the default.
+  e) If there is a storybook, demo, or gallery page, update it so every component and state (default, hover, pressed, focus, disabled, error, selected) is visible in one "Foundations/Controls/Navigation/Data/Feedback" layout like the first reference image.
+  f) Run typecheck, lint, and the existing tests; fix regressions. Do not change public APIs.
+
+10. ACCEPTANCE CRITERIA
+  - At first glance the UI reads as a calm, matte, dark paper-like control panel with tactile controls that look pressed in or popped out by very soft shadows.
+  - Corners are essentially square; no rounded "SaaS card" look.
+  - Buttons, switches, sliders, knobs, and bars are visibly detailed (ticks, grooves, knurling, LED dots) yet surrounded by ample empty space.
+  - All colors come from tokens; swapping to the light paper token set restyles the whole kit with no component edits.
+  - No functional or API changes; build, types, and tests pass.

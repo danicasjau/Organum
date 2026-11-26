@@ -50,6 +50,13 @@ function fromNorm(t: number, min: number, max: number, log: boolean): number {
   return min + clamped * (max - min);
 }
 
+/* Tick marks every 10% and labels at 0/25/50/75/100 under the trough. */
+const TICK_STEPS = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+const LABEL_STEPS = [0, 25, 50, 75, 100];
+function formatTick(v: number): string {
+  return Number.isInteger(v) ? String(v) : v.toFixed(Math.abs(v) < 10 ? 2 : 1);
+}
+
 export function Slider({
   value,
   onChange,
@@ -143,6 +150,7 @@ export function Slider({
       data-error={error ? 'true' : undefined}
       data-dirty={isDirty ? 'true' : undefined}
       data-force-state={forceState}
+      data-ticks={showTicks ? 'true' : undefined}
       className={cn('org-slider', className)}
     >
       <div
@@ -165,11 +173,18 @@ export function Slider({
         </div>
         {showTicks && (
           <div className="org-slider__ticks" aria-hidden="true">
-            <span className="org-slider__tick" />
-            <span className="org-slider__tick" />
-            <span className="org-slider__tick" />
-            <span className="org-slider__tick" />
-            <span className="org-slider__tick" />
+            {TICK_STEPS.map((t) => (
+              <span key={t} className="org-slider__tick" data-major={t % 25 === 0 ? 'true' : undefined} />
+            ))}
+          </div>
+        )}
+        {showTicks && (
+          <div className="org-slider__tick-labels" aria-hidden="true">
+            {LABEL_STEPS.map((p) => (
+              <span key={p} className="org-slider__tick-label" data-pos={p}>
+                {formatTick(min + ((max - min) * p) / 100)}
+              </span>
+            ))}
           </div>
         )}
         <div ref={thumbRef} className="org-slider__thumb" />

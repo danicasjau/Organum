@@ -5,12 +5,13 @@
     width: 100%;
     height: var(--ctl-h);
     min-height: var(--min-hit);
-    border: 1px solid var(--border-control);
-    border-radius: var(--radius-1);
-    background: var(--surface-field);
-    box-shadow: var(--bevel-inset-pressed);
+    border: 1px solid var(--groove-dark);
+    border-radius: var(--radius-well);
+    background: var(--bg-input);
+    box-shadow: var(--sh-inset);
     color: var(--text);
     overflow: hidden;
+    transition: filter var(--motion-fast);
   }
 
   .org-numfield[data-axis='x'] {
@@ -27,33 +28,37 @@
   }
 
   .org-numfield[data-dirty='true'] {
-    border-left: var(--dirty-bar-w) solid var(--accent);
+    border-left: var(--dirty-bar-w) solid var(--zone-accent);
   }
 
   .org-numfield:hover:not([data-disabled='true']),
   .org-numfield[data-force-state='hover']:not([data-disabled='true']) {
-    border-color: var(--accent);
+    filter: brightness(var(--hover-brightness));
   }
 
   .org-numfield[data-force-state='pressed']:not([data-disabled='true']) {
-    background: var(--surface-pressed);
+    box-shadow: var(--sh-pressed);
   }
 
   .org-numfield:focus-within:not([data-disabled='true']),
   .org-numfield[data-force-state='focus']:not([data-disabled='true']) {
     outline: var(--focus-w) solid var(--focus-ring);
-    outline-offset: var(--focus-w);
-    border-color: var(--accent);
+    outline-offset: var(--focus-offset);
+    filter: none;
   }
 
   .org-numfield[data-error='true'] {
-    border-color: var(--red-500);
+    border-color: var(--st-rejected);
+    box-shadow:
+      var(--sh-inset),
+      inset 0 0 var(--led-glow) color-mix(in srgb, var(--st-rejected) 35%, transparent);
   }
 
   .org-numfield[data-disabled='true'] {
-    background: var(--surface-panel);
-    color: var(--text-disabled);
-    border-color: var(--border-dark);
+    background: var(--bg-panel);
+    color: var(--text-off);
+    border-color: var(--border);
+    box-shadow: none;
     cursor: not-allowed;
   }
 
@@ -61,10 +66,13 @@
     display: inline-flex;
     align-items: center;
     padding: 0 var(--space-2);
-    border-right: 1px solid var(--border-dark);
-    background: var(--surface-raised);
-    color: var(--text-muted);
-    font-size: var(--font-size-sm);
+    border-right: 1px solid var(--groove-dark);
+    background: transparent;
+    color: var(--text-dim);
+    font-size: var(--font-size-label);
+    font-weight: 600;
+    letter-spacing: var(--label-tracking);
+    text-transform: uppercase;
     cursor: ew-resize;
     user-select: none;
   }
@@ -89,9 +97,10 @@
     position: absolute;
     inset: 0 auto 0 0;
     width: var(--numfield-pct, 0%);
-    background: var(--accent-soft);
+    background: var(--zone-accent-tint);
+    border-right: 1px solid color-mix(in srgb, var(--zone-accent) 60%, transparent);
     pointer-events: none;
-    z-index: 0;
+    z-index: var(--z-base);
   }
 
   .org-numfield[data-disabled='true'] .org-numfield__fill {
@@ -109,7 +118,7 @@
 
   .org-numfield__input {
     position: relative;
-    z-index: 1;
+    z-index: var(--z-local-1);
     width: 100%;
     min-width: 0;
     height: 100%;
@@ -126,23 +135,23 @@
 
   .org-numfield__unit {
     position: relative;
-    z-index: 1;
+    z-index: var(--z-local-1);
     font-family: var(--font-mono);
     font-size: var(--font-size-sm);
-    color: var(--text-muted);
+    color: var(--text-dim);
     user-select: none;
   }
 
   .org-numfield__err {
     position: relative;
-    z-index: 1;
+    z-index: var(--z-local-1);
     display: inline-flex;
     color: var(--danger-text);
   }
 
   .org-numfield__reset {
     position: relative;
-    z-index: 1;
+    z-index: var(--z-local-1);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -161,48 +170,63 @@
     opacity: 1;
   }
 
+  /* 16x12 RAISED stepper pair */
   .org-numfield__steppers {
     display: flex;
     flex-direction: column;
-    width: var(--stepper-w);
-    border-left: 1px solid var(--border-dark);
+    justify-content: center;
+    gap: 1px;
+    width: calc(var(--stepper-w) + var(--space-1));
+    padding: 0 var(--space-half);
   }
 
   .org-numfield__step-btn {
     display: flex;
-    flex: 1;
     align-items: center;
     justify-content: center;
+    width: var(--stepper-w);
+    height: var(--stepper-h);
     padding: 0;
-    border: 0;
-    background: var(--bevel-raised-bg);
-    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    background: var(--bg-raised);
+    box-shadow: var(--sh-raised);
+    color: var(--text-dim);
     cursor: pointer;
   }
 
-  .org-numfield__step-btn:first-child {
-    border-bottom: 1px solid var(--border-dark);
+  .org-numfield__step-btn svg {
+    width: var(--font-size-label);
+    height: var(--font-size-label);
   }
 
   .org-numfield__step-btn:hover:not(:disabled) {
-    background: var(--surface-hover);
+    filter: brightness(var(--hover-brightness));
     color: var(--text);
   }
 
+  .org-numfield__step-btn:active:not(:disabled) {
+    background: var(--bg-input);
+    box-shadow: var(--sh-pressed);
+    filter: none;
+  }
+
   .org-numfield__menu {
-    z-index: var(--z-dropdown);
+    z-index: var(--z-menu);
     min-width: var(--popover-min-w);
     padding: var(--space-1);
-    border: 1px solid var(--border-dark);
-    background: var(--surface-window);
-    box-shadow: var(--shadow-popup);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-raised);
+    box-shadow: var(--elev-5);
   }
 
   .org-numfield__menu-item {
     display: flex;
     align-items: center;
-    height: var(--menubar-h);
+    height: var(--menu-item-h);
     padding: 0 var(--space-3);
+    border-radius: var(--radius-xs);
     font-size: var(--font-size);
     color: var(--text);
     cursor: pointer;
@@ -210,7 +234,7 @@
   }
 
   .org-numfield__menu-item[data-highlighted] {
-    background: var(--accent-soft);
+    background: var(--hover);
   }
 
   .org-numfield__menu-item[data-disabled] {

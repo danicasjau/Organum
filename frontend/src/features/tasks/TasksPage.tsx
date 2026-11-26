@@ -26,12 +26,12 @@ import { useProjectStore } from '../project/projectStore';
 import { CreateTaskDialog } from './CreateTaskDialog';
 import { DepartmentMatrixView } from './DepartmentMatrixView';
 import { GanttView } from './GanttView';
-import { GraphView } from './GraphView';
 import { KanbanView } from './KanbanView';
 import { ReviewQueueView } from './ReviewQueueView';
 import { isFullTaskItem } from './taskHelpers';
 import { TaskDetail } from './TaskDetail';
 import { TaskFilterBar } from './TaskFilterBar';
+import { ConfoView } from '../confo/ConfoView';
 import { TaskGridView } from './TaskGridView';
 import { useTasksStore, type TasksWorkspaceView } from './tasksStore';
 import { WorkloadView } from './WorkloadView';
@@ -61,8 +61,6 @@ export function TasksPage({
   const setActiveView = useTasksStore((s) => s.setActiveView);
   const selectedTaskId = useTasksStore((s) => s.selectedTaskId);
   const setSelectedTaskId = useTasksStore((s) => s.setSelectedTaskId);
-  const dockOpen = useTasksStore((s) => s.dockOpen);
-  const setDockOpen = useTasksStore((s) => s.setDockOpen);
   const dockWidth = useTasksStore((s) => s.dockWidth);
   const setDockWidth = useTasksStore((s) => s.setDockWidth);
   const filters = useTasksStore((s) => s.filters);
@@ -78,7 +76,6 @@ export function TasksPage({
   const canGantt = !isClient && hasPerm(auth?.permissions, 'views.gantt');
   const canWorkload = !isClient && hasPerm(auth?.permissions, 'views.workload');
   const canKanban = !isClient && hasPerm(auth?.permissions, 'views.kanban');
-  const canGraph = !isClient && hasPerm(auth?.permissions, 'views.graph');
   const canReviewQueue =
     isClient ||
     hasPerm(auth?.permissions, 'task.approve.lead') ||
@@ -86,6 +83,10 @@ export function TasksPage({
     hasPerm(auth?.permissions, 'task.approve.client') ||
     hasPerm(auth?.permissions, 'views.kanban');
   const canCreate = !isClient && hasPerm(auth?.permissions, 'task.create');
+  const canConfo =
+    !isClient &&
+    (auth?.user.role_name === 'admin' ||
+      !['none', 'shared'].includes(auth?.permissions?.['task.view'] ?? 'none'));
 
   const viewItems: ViewSwitcherItem[] = useMemo(() => {
     const list: ViewSwitcherItem[] = [{ id: 'grid', label: 'Grid' }];
@@ -93,10 +94,11 @@ export function TasksPage({
     if (canGantt) list.push({ id: 'gantt', label: 'Gantt' });
     if (canWorkload) list.push({ id: 'workload', label: 'Workload' });
     if (canKanban) list.push({ id: 'kanban', label: 'Kanban' });
-    if (canGraph) list.push({ id: 'graph', label: 'Graph' });
     if (canReviewQueue) list.push({ id: 'review', label: 'Review Queue' });
+    // CR04 §3: Confo is internal production data (never shown to clients).
+    if (canConfo) list.push({ id: 'confo', label: 'Confo' });
     return list;
-  }, [isClient, canGantt, canWorkload, canKanban, canGraph, canReviewQueue]);
+  }, [isClient, canGantt, canWorkload, canKanban, canReviewQueue, canConfo]);
 
   useEffect(() => {
     if (!viewItems.some((v) => v.id === activeView)) {
@@ -158,7 +160,7 @@ export function TasksPage({
     [items],
   );
 
-  const nextCursor = extraCursor !== undefined ? extraCursor : tasksResp?.next_cursor ?? null;
+  const nextCursor = extraCursor !== undefined ? extraCursor : (tasksResp?.next_cursor ?? null);
 
   const handleLoadMore = async () => {
     if (!nextCursor || loadingMore) return;
@@ -210,29 +212,24 @@ export function TasksPage({
                 <Icon name="plus" size="sm" /> New Task
               </Button>
             )}
-            <Button
-              size="sm"
-              variant="toggle"
-              pressed={dockOpen}
-              disabled={!selectedTaskId}
-              onClick={() => setDockOpen(!dockOpen)}
-            >
-              Detail Dock
-            </Button>
           </div>
         </div>
 
-        <TaskFilterBar
-          departments={departments}
-          users={users}
-          companies={companies}
-          isClient={isClient}
-          activeView={activeView}
-        />
+        {activeView !== 'confo' && (
+          <TaskFilterBar
+            departments={departments}
+            users={users}
+            companies={companies}
+            isClient={isClient}
+            activeView={activeView}
+          />
+        )}
 
         <div className="org-tpage__body">
           <div className="org-tpage__main">
-            {tasksLoading ? (
+            {activeView === 'confo' && canConfo ? (
+              <ConfoView />
+            ) : tasksLoading ? (
               <div className="org-tpage__loading">
                 <Spinner label="Loading tasks" />
               </div>
@@ -263,6 +260,7 @@ export function TasksPage({
                 companies={companies}
                 selectedTaskId={selectedTaskId}
                 onSelectTask={(id) => setSelectedTaskId(id, true)}
+                onClearSelection={() => setSelectedTaskId(null)}
               />
             ) : activeView === 'workload' && canWorkload ? (
               <WorkloadView
@@ -276,13 +274,6 @@ export function TasksPage({
             ) : activeView === 'kanban' && canKanban ? (
               <KanbanView
                 tasks={fullItems}
-                selectedTaskId={selectedTaskId}
-                onSelectTask={(id) => setSelectedTaskId(id, true)}
-              />
-            ) : activeView === 'graph' && canGraph ? (
-              <GraphView
-                entities={entities}
-                departments={departments}
                 selectedTaskId={selectedTaskId}
                 onSelectTask={(id) => setSelectedTaskId(id, true)}
               />
@@ -300,7 +291,8 @@ export function TasksPage({
             )}
           </div>
 
-          {dockOpen && selectedTaskId && (
+          {/* The task panel always docks on the right for any selected task, in every view. */}
+          {selectedTaskId && (
             <div ref={dockRef} className="org-tpage__dock" data-ui="task-detail-dock">
               <div
                 role="separator"
@@ -312,7 +304,7 @@ export function TasksPage({
               <div className="org-tpage__dock-inner">
                 <TaskDetail
                   taskId={selectedTaskId}
-                  onClose={() => setDockOpen(false)}
+                  onClose={() => setSelectedTaskId(null)}
                   onSelectTask={(id) => setSelectedTaskId(id, true)}
                   onOpenInViewer={({ taskId, fileId, frame }) => {
                     const qs = new URLSearchParams({ task: taskId });

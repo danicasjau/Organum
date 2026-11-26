@@ -1,5 +1,11 @@
 @layer components {
+  /* v1 buttons: RAISED key, 28px, 0 14px, 12px/500. Hover only brightens a hair;
+     press sinks 1px into an INSET well. Accent variants add a 2px inset bottom
+     line; only the review "send" variant is a filled block. */
   .org-btn {
+    --btn-accent: transparent;
+    --btn-accent-line: inset 0 calc(-1 * var(--border-w-strong)) 0 var(--btn-accent);
+
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -7,18 +13,28 @@
     height: var(--ctl-h);
     min-height: var(--min-hit);
     min-width: var(--min-btn-w);
-    padding: 0 var(--space-4);
-    border: 1px solid var(--border-dark);
-    border-radius: var(--radius-1);
-    background: var(--bevel-raised-bg);
-    box-shadow: var(--bevel-inset);
+    padding: 0 var(--space-btn-x);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-raised);
+    box-shadow: var(--btn-accent-line), var(--sh-raised);
     color: var(--text);
     font-family: var(--font-ui);
     font-size: var(--font-size);
+    font-weight: 500;
     line-height: 1;
     white-space: nowrap;
     cursor: pointer;
     user-select: none;
+    transition:
+      filter var(--motion-fast),
+      box-shadow var(--motion-fast),
+      transform var(--motion-fast);
+  }
+
+  .org-btn > svg,
+  .org-btn > [data-ui='icon'] {
+    flex-shrink: 0;
   }
 
   .org-btn[data-size='sm'] {
@@ -31,12 +47,35 @@
     padding: 0 var(--space-5);
   }
 
+  /* Icon-only keys are exact square tiles: 32 default, 28 compact, 40 large. */
   .org-btn[data-variant='icon'],
   .org-btn[data-variant='toolbar'] {
-    min-width: var(--tool-btn-size);
-    width: var(--tool-btn-size);
-    height: var(--tool-btn-size);
+    min-width: var(--icon-tile);
+    width: var(--icon-tile);
+    height: var(--icon-tile);
     padding: 0;
+    border-radius: var(--radius-tile);
+    color: var(--text-dim);
+  }
+
+  .org-btn[data-variant='icon'][data-size='sm'],
+  .org-btn[data-variant='toolbar'][data-size='sm'] {
+    min-width: var(--icon-tile-sm);
+    width: var(--icon-tile-sm);
+    height: var(--icon-tile-sm);
+  }
+
+  .org-btn[data-variant='icon'][data-size='lg'],
+  .org-btn[data-variant='toolbar'][data-size='lg'] {
+    min-width: var(--icon-tile-lg);
+    width: var(--icon-tile-lg);
+    height: var(--icon-tile-lg);
+  }
+
+  .org-btn[data-variant='icon'] svg,
+  .org-btn[data-variant='toolbar'] svg {
+    width: var(--icon-lg);
+    height: var(--icon-lg);
   }
 
   .org-btn[data-variant='ghost'] {
@@ -44,93 +83,144 @@
     background: transparent;
     border-color: transparent;
     box-shadow: none;
+    color: var(--text-dim);
   }
 
-  .org-btn[data-variant='primary'] {
-    background: var(--btn-primary-bg);
-    color: var(--btn-primary-fg);
-    border-color: var(--purple-700);
+  /* Accent variants */
+  .org-btn[data-variant='primary'],
+  .org-btn[data-variant='production'] {
+    --btn-accent: var(--zone-accent);
   }
 
-  .org-btn[data-variant='success'] {
-    background: var(--btn-success-bg);
-    color: var(--btn-success-fg);
-    border-color: var(--green-900);
+  .org-btn[data-variant='production'] {
+    --btn-accent: var(--zone-production);
   }
 
-  .org-btn[data-variant='danger'] {
-    background: var(--btn-danger-bg);
-    color: var(--btn-danger-fg);
-    border-color: var(--red-700);
+  .org-btn[data-variant='management'] {
+    --btn-accent: var(--zone-management);
   }
 
+  .org-btn[data-variant='settings'] {
+    --btn-accent: var(--zone-settings);
+  }
+
+  .org-btn[data-variant='danger'],
+  .org-btn[data-variant='destructive'] {
+    --btn-accent: var(--st-rejected);
+  }
+
+  .org-btn[data-variant='success'],
+  .org-btn[data-variant='approve'] {
+    --btn-accent: var(--st-approved);
+  }
+
+  .org-btn[data-variant='changes'] {
+    --btn-accent: var(--st-wip);
+  }
+
+  .org-btn[data-variant='reject'] {
+    --btn-accent: var(--st-rejected);
+  }
+
+  .org-btn[data-variant='hold'] {
+    --btn-accent: var(--st-hold);
+  }
+
+  /* Review status keys tint their icon in the accent colour */
+  .org-btn[data-variant='approve'] > svg,
+  .org-btn[data-variant='changes'] > svg,
+  .org-btn[data-variant='reject'] > svg,
+  .org-btn[data-variant='hold'] > svg {
+    color: var(--btn-accent);
+  }
+
+  /* Hover: lighten by a hair, deepen shadow a hair; no colour jumps */
   .org-btn:hover:not(:disabled),
   .org-btn[data-force-state='hover']:not(:disabled) {
-    background: var(--bevel-hover-bg);
-    border-color: var(--accent);
+    filter: brightness(var(--hover-brightness));
+    box-shadow: var(--btn-accent-line), var(--sh-raised-hover);
   }
 
-  .org-btn[data-variant='primary']:hover:not(:disabled),
-  .org-btn[data-variant='primary'][data-force-state='hover']:not(:disabled) {
-    background: var(--btn-primary-hover);
+  .org-btn[data-variant='ghost']:hover:not(:disabled),
+  .org-btn[data-variant='ghost'][data-force-state='hover']:not(:disabled) {
+    background: var(--hover);
+    border-color: var(--border);
+    box-shadow: var(--elev-2);
+    color: var(--text);
+    filter: none;
   }
 
-  .org-btn[data-variant='success']:hover:not(:disabled),
-  .org-btn[data-variant='success'][data-force-state='hover']:not(:disabled) {
-    background: var(--btn-success-hover);
+  .org-btn[data-variant='icon']:hover:not(:disabled),
+  .org-btn[data-variant='toolbar']:hover:not(:disabled) {
+    color: var(--text);
   }
 
-  .org-btn[data-variant='danger']:hover:not(:disabled),
-  .org-btn[data-variant='danger'][data-force-state='hover']:not(:disabled) {
-    background: var(--btn-danger-hover);
-  }
-
+  /* Pressed: the key visibly sinks into an inset well */
   .org-btn:active:not(:disabled),
-  .org-btn[data-force-state='pressed']:not(:disabled) {
-    background: var(--bevel-pressed-bg);
-    box-shadow: var(--bevel-inset-pressed);
-  }
-
-  .org-btn[data-variant='primary']:active:not(:disabled),
-  .org-btn[data-variant='primary'][data-force-state='pressed']:not(:disabled) {
-    background: var(--purple-700);
-    box-shadow: var(--bevel-inset-pressed);
-  }
-
-  .org-btn[data-variant='success']:active:not(:disabled),
-  .org-btn[data-variant='success'][data-force-state='pressed']:not(:disabled) {
-    background: var(--green-800);
-    box-shadow: var(--bevel-inset-pressed);
-  }
-
-  .org-btn[data-variant='danger']:active:not(:disabled),
-  .org-btn[data-variant='danger'][data-force-state='pressed']:not(:disabled) {
-    background: var(--red-700);
-    box-shadow: var(--bevel-inset-pressed);
+  .org-btn[data-force-state='pressed']:not(:disabled),
+  .org-btn[data-selected='true']:not(:disabled),
+  .org-btn[data-variant='sunk']:not(:disabled) {
+    background: var(--bg-input);
+    border-color: var(--groove-dark);
+    box-shadow: var(--btn-accent-line), var(--sh-pressed);
+    transform: translateY(var(--press-y));
+    filter: none;
   }
 
   .org-btn[data-selected='true']:not(:disabled) {
-    background: var(--accent-soft);
-    border-color: var(--accent);
-    box-shadow: var(--bevel-inset-pressed);
     color: var(--text);
+  }
+
+  .org-btn[data-variant='icon'][data-selected='true']:not(:disabled),
+  .org-btn[data-variant='toolbar'][data-selected='true']:not(:disabled) {
+    color: var(--zone-accent);
+  }
+
+  /* Send: the one filled button */
+  .org-btn[data-variant='send'] {
+    background: var(--bg-send);
+    border-color: var(--send-border);
+    color: var(--text-on-fill);
+    text-shadow: 0 1px 0 var(--send-text-shadow);
+    box-shadow: var(--sh-send);
+  }
+
+  .org-btn[data-variant='send']:hover:not(:disabled),
+  .org-btn[data-variant='send'][data-force-state='hover']:not(:disabled) {
+    box-shadow: var(--sh-send);
+  }
+
+  .org-btn[data-variant='send']:active:not(:disabled),
+  .org-btn[data-variant='send'][data-force-state='pressed']:not(:disabled) {
+    background: var(--send-active);
+    border-color: var(--send-border);
+    box-shadow: var(--sh-send-active);
   }
 
   .org-btn[data-force-state='focus']:not(:disabled) {
     outline: var(--focus-w) solid var(--focus-ring);
-    outline-offset: var(--focus-w);
+    outline-offset: var(--focus-offset);
   }
 
   .org-btn[data-error='true'] {
-    border-color: var(--red-500);
+    border-color: var(--st-rejected);
   }
 
-  .org-btn:disabled {
-    background: var(--surface-panel);
-    color: var(--text-disabled);
-    border-color: var(--border-dark);
+  /* Disabled: flat, no shadow, no pointer, no transform, no filter */
+  .org-btn:disabled,
+  .org-btn[data-variant='send']:disabled {
+    background: var(--bg-panel);
+    color: var(--text-off);
+    border-color: var(--border);
     box-shadow: none;
+    text-shadow: none;
+    transform: none;
+    filter: none;
     cursor: not-allowed;
+  }
+
+  .org-btn:disabled > svg {
+    color: var(--text-off);
   }
 
   .org-btn__label {
@@ -138,4 +228,3 @@
     align-items: center;
   }
 }
-

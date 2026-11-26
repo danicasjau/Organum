@@ -1,0 +1,38 @@
+@layer components {
+  .org-layering {
+    position: relative;
+    height: 100vh;
+    overflow: hidden;
+    background: var(--surface-window);
+    color: var(--text);
+  }
+
+  .org-layering__main {
+    padding: var(--space-3);
+  }
+
+  /* A clipped, stacked dock: floating UI must escape it through the portal. */
+  .org-layering__dock {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: var(--z-dock);
+    width: var(--task-panel-w);
+    overflow: hidden;
+    padding: var(--space-2);
+    border-left: var(--border-w) solid var(--border-dark);
+    background: var(--surface-panel);
+  }
+
+  .org-layering__set {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .org-layering__ctx {
+    padding: var(--space-2);
+    border: var(--border-w) dashed var(--border-dark);
+  }
+}

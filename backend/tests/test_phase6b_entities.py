@@ -121,9 +121,61 @@ async def test_entity_folder_atomicity_tags_data_thumbnail_and_trash(
     ed_id = attached.json()["id"]
     lookdev_dir = proj_root / "01_Production" / "chars" / "Hero_Mech_Prime" / "Lookdev"
     assert lookdev_dir.is_dir()
+    renamed_dept = await client.patch(
+        f"{base}/departments/{lookdev_id}",
+        json={"name": "Look Development"},
+    )
+    assert renamed_dept.status_code == 200, renamed_dept.text
+    renamed_lookdev_dir = (
+        proj_root / "01_Production" / "chars" / "Hero_Mech_Prime" / "Look_Development"
+    )
+    assert not lookdev_dir.exists()
+    assert (renamed_lookdev_dir / "main" / "products").is_dir()
+
+    task_id = attached.json()["tasks"][0]["id"]
+    renamed_task = await client.patch(
+        f"{base}/tasks/{task_id}",
+        json={"name": "beauty pass"},
+    )
+    assert renamed_task.status_code == 200, renamed_task.text
+    assert renamed_task.json()["name"] == "beauty_pass"
+    assert renamed_task.json()["product"]["name"] == "Look_Development/beauty_pass"
+    assert not (renamed_lookdev_dir / "main").exists()
+    assert (renamed_lookdev_dir / "beauty_pass" / "products").is_dir()
+
+    custom_dept_response = await client.post(
+        f"{base}/departments",
+        json={"name": "Custom Department"},
+    )
+    assert custom_dept_response.status_code == 201, custom_dept_response.text
+    custom_dept = custom_dept_response.json()
+    other_entity_response = await client.post(
+        f"{base}/entities",
+        json={"name": "Other Asset", "parent_rel_path": "chars", "department_ids": []},
+    )
+    assert other_entity_response.status_code == 201, other_entity_response.text
+    other_entity = other_entity_response.json()
+    custom_task_response = await client.post(
+        f"{base}/tasks",
+        json={
+            "entity_id": ent["id"],
+            "department_id": custom_dept["id"],
+            "name": "custom work",
+            "priority": "normal",
+        },
+    )
+    assert custom_task_response.status_code == 201, custom_task_response.text
+    current_entities = (await client.get(f"{base}/entities")).json()["entities"]
+    entity_departments = {
+        row["id"]: {department["name"] for department in row["departments"]}
+        for row in current_entities
+    }
+    assert "Custom Department" in entity_departments[ent["id"]]
+    assert "Custom Department" not in entity_departments[other_entity["id"]]
+
     detached = await client.delete(f"{base}/entity-departments/{ed_id}")
     assert detached.status_code == 204
-    assert lookdev_dir.is_dir()
+    assert renamed_lookdev_dir.is_dir()
 
     # 6. Soft-delete entity moves folder to 00_Pipeline/trash/
     del_ent = await client.delete(f"{base}/entities/{ent['id']}")

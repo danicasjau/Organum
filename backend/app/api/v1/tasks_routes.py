@@ -78,6 +78,7 @@ from app.schemas.api import (
     WorkloadResponse,
     WorkloadRowSchema,
 )
+from app.services.availability import active_on, load_periods, load_schedules
 from app.services.entity_links_service import get_linked_entity_ids
 from app.services.entity_service import rename_task
 from app.services.permissions import (
@@ -247,6 +248,50 @@ async def _hydrate_task_list_items(
     up_counts = {tid: int(cnt) for tid, cnt in up_counts_rows}
     blocked_map = await compute_blocked_upstream_map(db, t_ids)
 
+    # Latest feedback left by other users (review decisions + comments), used by the UI
+    # to flag tasks with reviews the caller has not opened yet.
+    me = auth.user.id
+    feedback: dict[UUID, tuple[datetime, str | None, str]] = {}
+
+    def _keep_latest(tid: UUID, at: datetime | None, who_id: UUID | None, kind: str) -> None:
+        if at is None:
+            return
+        cur = feedback.get(tid)
+        if cur is None or _as_aware(at) > _as_aware(cur[0]):
+            who = users.get(who_id) if who_id else None
+            feedback[tid] = (at, who.full_name or who.username if who else None, kind)
+
+    for tid, at, rid, decision in (
+        await db.execute(
+            select(
+                TaskReview.task_id,
+                TaskReview.created_at,
+                TaskReview.reviewer_id,
+                TaskReview.decision,
+            ).where(
+                TaskReview.task_id.in_(t_ids),
+                TaskReview.decision != "pending",
+                or_(TaskReview.reviewer_id.is_(None), TaskReview.reviewer_id != me),
+            )
+        )
+    ).all():
+        _keep_latest(tid, at, rid, str(decision))
+
+    comment_q = select(
+        TaskComment.task_id,
+        TaskComment.created_at,
+        TaskComment.author_id,
+        TaskComment.kind,
+    ).where(
+        TaskComment.task_id.in_(t_ids),
+        TaskComment.deleted_at.is_(None),
+        or_(TaskComment.author_id.is_(None), TaskComment.author_id != me),
+    )
+    if auth.role.name == "client":
+        comment_q = comment_q.where(TaskComment.visibility == "client")
+    for tid, at, aid, kind in (await db.execute(comment_q)).all():
+        _keep_latest(tid, at, aid, str(kind))
+
     items: list[TaskListItemOut] = []
     for t in tasks:
         ent = ents.get(t.entity_id)
@@ -296,9 +341,17 @@ async def _hydrate_task_list_items(
                 tags=sorted(tags_by_task.get(t.id, [])),
                 shared_company_ids=shares_by_task.get(t.id, []),
                 updated_at=t.updated_at,
+                last_feedback_at=feedback[t.id][0] if t.id in feedback else None,
+                last_feedback_by=feedback[t.id][1] if t.id in feedback else None,
+                last_feedback_kind=feedback[t.id][2] if t.id in feedback else None,
             )
         )
     return items
+
+
+def _as_aware(dt: datetime) -> datetime:
+    """SQLite returns naive datetimes; normalise to UTC for comparisons."""
+    return dt if dt.tzinfo is not None else dt.replace(tzinfo=UTC)
 
 
 async def _build_task_detail_out(
@@ -1362,6 +1415,20 @@ async def workload_endpoint(
         if lg.user_id is not None
     ]
 
+    schedules = await load_schedules(db, [u.id for u in users])
+    user_periods = {
+        tid: rng for (kind, tid), rng in (await load_periods(db)).items() if kind == "user"
+    }
+    capacity_by_day: dict[tuple[UUID, date], float] = {}
+    span_day = d_from
+    while span_day <= d_to:
+        for u in users:
+            sched = schedules.get(u.id)
+            active = active_on(user_periods.get(u.id, []), span_day)
+            capacity_by_day[(u.id, span_day)] = (
+                sched.hours_on(span_day) if sched is not None and active else 0.0
+            )
+        span_day += timedelta(days=1)
     grid = compute_workload_grid(
         w_users,
         w_tasks,
@@ -1370,6 +1437,7 @@ async def workload_endpoint(
         date_to=d_to,
         working_days=working_days,
         today=today_utc,
+        capacity_by_day=capacity_by_day,
     )
     unsched_tasks = [t_by_id[tid] for tid in grid.unscheduled_task_ids if tid in t_by_id]
     unsched_items = await _hydrate_task_list_items(

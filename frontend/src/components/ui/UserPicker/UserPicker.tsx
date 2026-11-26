@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Avatar } from '../Avatar/Avatar';
-import { Button } from '../Button/Button';
+import { Icon } from '../Icon/Icon';
 import { Checkbox } from '../Checkbox/Checkbox';
 import { Popover } from '../Overlays/Overlays';
 import { SearchField } from '../TextField/TextField';
@@ -27,6 +27,8 @@ export interface UserPickerProps {
   placeholder?: string;
   disabled?: boolean;
   ariaLabel?: string;
+  /** Custom trigger element (defaults to a button listing the selected names). */
+  trigger?: ReactNode;
 }
 
 export function UserPicker({
@@ -39,6 +41,7 @@ export function UserPicker({
   placeholder = 'Select user...',
   disabled = false,
   ariaLabel = 'Pick users',
+  trigger,
 }: UserPickerProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -80,23 +83,50 @@ export function UserPicker({
   };
 
   const triggerLabel =
-    selectedUsers.length === 0
-      ? placeholder
-      : selectedUsers.map((u) => u.fullName).join(', ');
+    selectedUsers.length === 0 ? placeholder : selectedUsers.map((u) => u.fullName).join(', ');
+
+  const removeUser = (id: string) => onChange(selectedIds.filter((x) => x !== id));
 
   return (
     <Popover
       open={open}
       onOpenChange={setOpen}
       trigger={
-        <Button
-          size="sm"
-          disabled={disabled}
-          aria-label={ariaLabel}
-          className="org-userpicker__trigger"
-        >
-          <span className="org-userpicker__trigger-text">{triggerLabel}</span>
-        </Button>
+        trigger ?? (
+          <button
+            type="button"
+            data-ui="user-picker-field"
+            disabled={disabled}
+            aria-label={ariaLabel}
+            title={selectedUsers.length ? triggerLabel : undefined}
+            className="org-userpicker__trigger org-userpicker__field"
+          >
+            {selectedUsers.map((u) => (
+              <span key={u.id} className="org-userpicker__chip">
+                <Avatar username={u.username} fullName={u.fullName} avatarUrl={u.avatarUrl} size={18} />
+                <span className="org-userpicker__chip-name">{u.fullName}</span>
+                {!disabled && (
+                  <span
+                    className="org-userpicker__chip-x"
+                    aria-hidden="true"
+                    title={`Remove ${u.fullName}`}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      removeUser(u.id);
+                    }}
+                  >
+                    <Icon name="close" size="sm" />
+                  </span>
+                )}
+              </span>
+            ))}
+            <span className="org-userpicker__trigger-text org-userpicker__placeholder">
+              {selectedUsers.length === 0 ? placeholder : multi ? 'Add user...' : ''}
+            </span>
+          </button>
+        )
       }
     >
       <div className="org-userpicker" data-ui="user-picker">
@@ -108,11 +138,7 @@ export function UserPicker({
             ariaLabel="Search users"
           />
           {departmentId && canShowAll && (
-            <Checkbox
-              label="Show all depts"
-              checked={showAllDepts}
-              onChange={setShowAllDepts}
-            />
+            <Checkbox label="Show all depts" checked={showAllDepts} onChange={setShowAllDepts} />
           )}
         </div>
         <div className="org-userpicker__list" role="listbox" aria-multiselectable={multi}>
@@ -135,7 +161,7 @@ export function UserPicker({
                     username={u.username}
                     fullName={u.fullName}
                     avatarUrl={u.avatarUrl}
-                    size="sm"
+                    size={24}
                   />
                   <span className="org-userpicker__meta">
                     <span className="org-userpicker__name">{u.fullName}</span>

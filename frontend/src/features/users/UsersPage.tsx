@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useMemo, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { ThemeMode } from '../../app/App';
 import {
@@ -9,34 +9,72 @@ import {
   Banner,
   Button,
   Checkbox,
+  ColorPicker,
   Dialog,
   Panel,
   SearchField,
+  SideNav,
   Select,
   Stack,
-  Tabs,
   Text,
   TextField,
 } from '../../components/ui';
 import { useCssVarRef } from '../../components/ui/_internal/useCssVar';
-import {
-  apiClient,
-  type CompanyOut,
-  type DepartmentOut,
-  type UserOut,
-} from '../../lib/api/client';
+import { apiClient, type DepartmentOut, type UserOut } from '../../lib/api/client';
+import { AdminConsoleContent } from '../admin/AdminPage';
 import { AuthenticatedShell } from '../auth/AuthenticatedShell';
 import { hasPerm, useAuthStore } from '../auth/authStore';
+import { deptColorHex } from '../departments/deptColors';
+import { ActivationPeriodsEditor } from '../people/ActivationPeriodsEditor';
+import { CompaniesSection } from '../people/CompaniesSection';
+import { DepartmentMultiSelect } from '../people/DepartmentMultiSelect';
+import { WorkHoursEditor } from '../people/WorkHoursEditor';
+import { TimeCapacitySection } from './TimeCapacitySection';
 import './UsersPage.css';
 
-const SERIES_COLOR_OPTIONS = [
-  { value: '--series-1', label: 'Purple (--series-1)' },
-  { value: '--series-2', label: 'Green (--series-2)' },
-  { value: '--series-3', label: 'Sky (--series-3)' },
-  { value: '--series-4', label: 'Amber (--series-4)' },
-  { value: '--series-5', label: 'Red (--series-5)' },
-  { value: '--series-6', label: 'Violet (--series-6)' },
-  { value: '--series-7', label: 'Teal (--series-7)' },
+type UsersSection =
+  | 'users'
+  | 'companies'
+  | 'departments'
+  | 'time'
+  | 'roles'
+  | 'default_tasks'
+  | 'dep_templates'
+  | 'rules'
+  | 'project'
+  | 'database'
+  | 'audit';
+type AdminSectionId = Exclude<UsersSection, 'users' | 'companies' | 'departments' | 'time'>;
+
+/** Admin-console sections rendered through AdminConsoleContent, and the permission each needs. */
+type AdminGate = 'roles' | 'entities' | 'rules' | 'db';
+const ADMIN_SECTION_IDS: ReadonlyArray<UsersSection> = [
+  'roles',
+  'default_tasks',
+  'dep_templates',
+  'rules',
+  'project',
+  'database',
+  'audit',
+];
+
+const USERS_SECTIONS: ReadonlyArray<{
+  id: UsersSection;
+  label: string;
+  group: 'People' | 'Time' | 'Settings';
+  gate?: AdminGate;
+}> = [
+  { id: 'users', label: 'Users', group: 'People' },
+  { id: 'companies', label: 'Companies', group: 'People' },
+  { id: 'departments', label: 'Departments', group: 'People' },
+  { id: 'time', label: 'Time & Capacity', group: 'Time' },
+  { id: 'roles', label: 'Roles & Permissions', group: 'Settings', gate: 'roles' },
+  { id: 'default_tasks', label: 'Default Tasks', group: 'Settings', gate: 'entities' },
+  { id: 'dep_templates', label: 'Dependency Templates', group: 'Settings', gate: 'entities' },
+  { id: 'rules', label: 'Rules', group: 'Settings', gate: 'rules' },
+  { id: 'project', label: 'Project Settings', group: 'Settings', gate: 'roles' },
+  { id: 'database', label: 'Database', group: 'Settings', gate: 'db' },
+  { id: 'audit', label: 'Audit Log', group: 'Settings', gate: 'roles' },
 ];
 
 function VirtualUserRow({
@@ -114,21 +152,33 @@ export function UsersPage({
   onToggleTheme: () => void;
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialTab = searchParams.get('tab');
-  const [activeTab, setActiveTab] = useState(
-    initialTab === 'companies' || initialTab === 'departments' ? initialTab : 'users',
-  );
-
   const auth = useAuthStore((s) => s.auth);
+  const canAdmin = hasPerm(auth?.permissions, 'role.manage');
+  const canViewUsers = hasPerm(auth?.permissions, 'user.view');
+  const requested = (searchParams.get('section') ?? searchParams.get('tab') ?? '') as UsersSection;
+  const gates: Record<AdminGate, boolean> = {
+    roles: canAdmin,
+    entities: hasPerm(auth?.permissions, 'entity.manage'),
+    rules: hasPerm(auth?.permissions, 'rules.manage'),
+    db: auth?.user.role_name === 'admin' && hasPerm(auth?.permissions, 'admin.db'),
+  };
+  const navSections = USERS_SECTIONS.filter((sec) => (sec.gate ? gates[sec.gate] : canViewUsers));
+  const activeTab: UsersSection = navSections.some((sec) => sec.id === requested)
+    ? requested
+    : (navSections[0]?.id ?? 'users');
+  const setActiveTab = (next: UsersSection) =>
+    setSearchParams(next === 'users' ? {} : { section: next }, { replace: true });
+
   const projectUuid = auth?.project_uuid ?? null;
   const queryClient = useQueryClient();
   const canManageUsers = hasPerm(auth?.permissions, 'user.manage');
   const canManageDepts = hasPerm(auth?.permissions, 'entity.manage');
+  const canEditActivation = canManageUsers || hasPerm(auth?.permissions, 'task.edit_schedule');
+  const [deptPeriodsFor, setDeptPeriodsFor] = useState<DepartmentOut | null>(null);
 
   const [query, setQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -143,10 +193,6 @@ export function UsersPage({
 
   const [resetPwOpen, setResetPwOpen] = useState(false);
   const [resetPwValue, setResetPwValue] = useState('');
-
-  const [newCompanyName, setNewCompanyName] = useState('');
-  const [newCompanyCode, setNewCompanyCode] = useState('');
-  const [newCompanyKind, setNewCompanyKind] = useState<'internal' | 'external' | 'group'>('internal');
 
   const [newDeptName, setNewDeptName] = useState('');
   const [newDeptCode, setNewDeptCode] = useState('');
@@ -210,11 +256,6 @@ export function UsersPage({
     [filteredUsers, users, selectedUserId],
   );
 
-  const selectedCompany: CompanyOut | null = useMemo(
-    () => companies.find((c) => c.id === selectedCompanyId) ?? companies[0] ?? null,
-    [companies, selectedCompanyId],
-  );
-
   const invalidateUsers = async () => {
     await queryClient.invalidateQueries({ queryKey: ['users', projectUuid] });
   };
@@ -254,7 +295,10 @@ export function UsersPage({
     }
   };
 
-  const handlePatchUser = async (user: UserOut, patch: Parameters<typeof apiClient.updateUser>[1]) => {
+  const handlePatchUser = async (
+    user: UserOut,
+    patch: Parameters<typeof apiClient.updateUser>[1],
+  ) => {
     if (!projectUuid) return;
     setErrorMsg(null);
     setFeedback(null);
@@ -267,14 +311,11 @@ export function UsersPage({
     }
   };
 
-  const handleToggleUserDept = async (user: UserOut, deptId: string) => {
+  const handleSetUserDepts = async (user: UserOut, ids: string[]) => {
     if (!projectUuid || !canManageUsers) return;
-    const set = new Set(user.department_ids ?? []);
-    if (set.has(deptId)) set.delete(deptId);
-    else set.add(deptId);
     setErrorMsg(null);
     try {
-      await apiClient.setUserDepartments(user.id, Array.from(set), projectUuid);
+      await apiClient.setUserDepartments(user.id, ids, projectUuid);
       await invalidateUsers();
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Unable to update user departments');
@@ -314,50 +355,16 @@ export function UsersPage({
     }
   };
 
-  const handleCreateCompany = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!projectUuid) return;
-    setErrorMsg(null);
-    try {
-      const created = await apiClient.createCompany(
-        {
-          name: newCompanyName.trim(),
-          short_code: newCompanyCode.trim().toUpperCase(),
-          kind: newCompanyKind,
-          color: '--series-1',
-          notes: '',
-        },
-        projectUuid,
-      );
-      setNewCompanyName('');
-      setNewCompanyCode('');
-      setSelectedCompanyId(created.id);
-      await queryClient.invalidateQueries({ queryKey: ['companies', projectUuid] });
-      setFeedback(`Created company ${created.name}.`);
-    } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Unable to create company');
-    }
-  };
-
-  const handleToggleCompanyDept = async (comp: CompanyOut, deptId: string) => {
-    if (!projectUuid || !canManageUsers) return;
-    const set = new Set(comp.department_ids ?? []);
-    if (set.has(deptId)) set.delete(deptId);
-    else set.add(deptId);
-    try {
-      await apiClient.setCompanyDepartments(comp.id, Array.from(set), projectUuid);
-      await queryClient.invalidateQueries({ queryKey: ['companies', projectUuid] });
-    } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Unable to update company departments');
-    }
-  };
-
   const handleCreateDept = async (e: FormEvent) => {
     e.preventDefault();
     if (!projectUuid || !newDeptName.trim()) return;
     setErrorMsg(null);
     try {
-      await apiClient.createDepartment(newDeptName.trim(), projectUuid);
+      await apiClient.createDepartment(
+        newDeptName.trim(),
+        projectUuid,
+        newDeptCode.trim() || undefined,
+      );
       setNewDeptName('');
       setNewDeptCode('');
       await queryClient.invalidateQueries({ queryKey: ['departments', projectUuid] });
@@ -365,6 +372,16 @@ export function UsersPage({
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Unable to create department');
     }
+  };
+
+  const [deptColorDrafts, setDeptColorDrafts] = useState<Record<string, string>>({});
+  const deptColorTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const queueDeptColor = (dept: DepartmentOut, hex: string) => {
+    setDeptColorDrafts((prev) => ({ ...prev, [dept.id]: hex }));
+    clearTimeout(deptColorTimers.current[dept.id]);
+    deptColorTimers.current[dept.id] = setTimeout(() => {
+      void handlePatchDept(dept, { color: hex });
+    }, 300);
   };
 
   const handlePatchDept = async (
@@ -386,442 +403,459 @@ export function UsersPage({
     <AuthenticatedShell
       theme={theme}
       onToggleTheme={onToggleTheme}
-      statusText={`Users Directory — ${users.length} users`}
+      statusText={`Users & Admin — ${users.length} users`}
     >
-      <div className="org-users-page" data-ui="users-page">
-        {errorMsg && <Banner severity="danger">{errorMsg}</Banner>}
-        {feedback && <Banner severity="success">{feedback}</Banner>}
-
-        <Tabs
+      <div className="org-sidenav-shell">
+        <SideNav<UsersSection>
+          ariaLabel="Users & administration sections"
           activeId={activeTab}
-          onChange={(v) => {
-            setActiveTab(v);
-            setSearchParams(v === 'users' ? {} : { tab: v }, { replace: true });
-          }}
-          items={[
-            {
-              id: 'users',
-              label: `Users (${users.length})`,
-              content: (
-                <div className="org-users-split">
-                  <div className="org-users-left">
-                    <div className="org-users-toolbar">
-                      <SearchField
-                        value={query}
-                        onChange={setQuery}
-                        placeholder="Filter username, name, role, company..."
-                        ariaLabel="Filter users"
-                      />
-                      <Select
-                        ariaLabel="Role filter"
-                        value={roleFilter}
-                        onChange={setRoleFilter}
-                        options={[
-                          { value: 'all', label: 'All roles' },
-                          ...roles.map((r) => ({ value: r.name, label: r.label })),
-                        ]}
-                      />
-                      {canManageUsers && (
-                        <Button
-                          size="sm"
-                          variant="primary"
-                          onClick={() => setCreateUserOpen(true)}
-                        >
-                          + New User
-                        </Button>
-                      )}
-                    </div>
+          onSelect={setActiveTab}
+          groups={(['People', 'Time', 'Settings'] as const).map((group) => ({
+            title: group,
+            items: navSections
+              .filter((sec) => sec.group === group)
+              .map((sec) => ({
+                id: sec.id,
+                label: sec.label,
+                count:
+                  sec.id === 'users'
+                    ? users.length
+                    : sec.id === 'companies'
+                      ? companies.length
+                      : sec.id === 'departments'
+                        ? departments.length
+                        : undefined,
+              })),
+          }))}
+        />
+        <div className="org-users-page" data-ui="users-page">
+          {errorMsg && <Banner severity="danger">{errorMsg}</Banner>}
+          {feedback && <Banner severity="success">{feedback}</Banner>}
 
-                    <div
-                      ref={listParentRef}
-                      className="org-users-vlist"
-                      role="listbox"
-                      aria-label="Users directory"
-                    >
-                      <VirtualBodyContainer totalSize={virtualizer.getTotalSize()}>
-                        {virtualizer.getVirtualItems().map((vRow) => {
-                          const user = filteredUsers[vRow.index];
-                          if (!user || !projectUuid) return null;
-                          return (
-                            <VirtualUserRow
-                              key={user.id}
-                              user={user}
-                              selected={selectedUser?.id === user.id}
-                              start={vRow.start}
-                              size={vRow.size}
-                              projectUuid={projectUuid}
-                              onSelect={() => setSelectedUserId(user.id)}
-                            />
-                          );
-                        })}
-                      </VirtualBodyContainer>
-                    </div>
-                  </div>
-
-                  <div className="org-users-right">
-                    {selectedUser ? (
-                      <Panel
-                        key={selectedUser.id}
-                        title={`Profile — ${selectedUser.full_name} (@${selectedUser.username})`}
-                      >
-                        <Stack gap="2">
-                          <div className="org-users-profile-head">
-                            <Avatar
-                              username={selectedUser.username}
-                              fullName={selectedUser.full_name}
-                              avatarUrl={
-                                selectedUser.avatar_file && projectUuid
-                                  ? `${apiClient.userAvatarUrl(selectedUser.id, projectUuid)}?v=${encodeURIComponent(selectedUser.avatar_file)}`
-                                  : null
-                              }
-                              size="md"
-                            />
-                            <div>
-                              <strong>{selectedUser.full_name}</strong>
-                              <div className="org-users-badges">
-                                <Badge tone="accent">{selectedUser.role_label}</Badge>
-                                <Badge tone={selectedUser.is_active ? 'success' : 'danger'}>
-                                  {selectedUser.is_active ? 'Active' : 'Inactive'}
-                                </Badge>
-                                {selectedUser.must_change_password && (
-                                  <Badge tone="warning">Must change pw</Badge>
-                                )}
-                              </div>
-                            </div>
-                            {canManageUsers && (
-                              <div className="org-users-head-btns">
-                                <input
-                                  ref={avatarInputRef}
-                                  type="file"
-                                  accept="image/png,image/jpeg,image/webp"
-                                  className="org-users-hidden"
-                                  onChange={(ev) => void handleUploadAvatar(ev)}
-                                />
-                                <Button
-                                  size="sm"
-                                  onClick={() => avatarInputRef.current?.click()}
-                                >
-                                  Avatar
-                                </Button>
-                                <Button size="sm" onClick={() => setResetPwOpen(true)}>
-                                  Reset Password
-                                </Button>
-                                {selectedUser.id !== auth?.user.id && (
-                                  <Button
-                                    size="sm"
-                                    variant={selectedUser.is_active ? 'danger' : 'success'}
-                                    onClick={() =>
-                                      void handlePatchUser(selectedUser, {
-                                        is_active: !selectedUser.is_active,
-                                      })
-                                    }
-                                  >
-                                    {selectedUser.is_active ? 'Deactivate' : 'Activate'}
-                                  </Button>
-                                )}
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="org-users-form-grid">
-                            <label className="org-users-field">
-                              <Text size="sm" variant="muted">Full Name</Text>
-                              <TextField
-                                defaultValue={selectedUser.full_name}
-                                disabled={!canManageUsers}
-                                onBlur={(e) => {
-                                  const next = e.target.value.trim();
-                                  if (next && next !== selectedUser.full_name) {
-                                    void handlePatchUser(selectedUser, { full_name: next });
-                                  }
-                                }}
-                              />
-                            </label>
-                            <label className="org-users-field">
-                              <Text size="sm" variant="muted">Email</Text>
-                              <TextField
-                                defaultValue={selectedUser.email ?? ''}
-                                disabled={!canManageUsers}
-                                onBlur={(e) => {
-                                  const next = e.target.value.trim() || null;
-                                  if (next !== (selectedUser.email ?? null)) {
-                                    void handlePatchUser(selectedUser, { email: next });
-                                  }
-                                }}
-                              />
-                            </label>
-                            <label className="org-users-field">
-                              <Text size="sm" variant="muted">Role</Text>
-                              <Select
-                                ariaLabel="User role"
-                                disabled={
-                                  !canManageUsers ||
-                                  (selectedUser.role_name === 'admin' &&
-                                    auth?.user.role_name !== 'admin')
-                                }
-                                value={selectedUser.role_id}
-                                options={roles
-                                  .filter(
-                                    (r) =>
-                                      r.name !== 'admin' || auth?.user.role_name === 'admin',
-                                  )
-                                  .map((r) => ({ value: r.id, label: r.label }))}
-                                onChange={(v) =>
-                                  void handlePatchUser(selectedUser, { role_id: v })
-                                }
-                              />
-                            </label>
-                            <label className="org-users-field">
-                              <Text size="sm" variant="muted">Company</Text>
-                              <Select
-                                ariaLabel="User company"
-                                disabled={!canManageUsers}
-                                value={selectedUser.company_id ?? '__none__'}
-                                options={[
-                                  { value: '__none__', label: 'None' },
-                                  ...companies.map((c) => ({
-                                    value: c.id,
-                                    label: `${c.name} (${c.short_code})`,
-                                  })),
-                                ]}
-                                onChange={(v) =>
-                                  void handlePatchUser(selectedUser, {
-                                    company_id: v === '__none__' ? null : v,
-                                  })
-                                }
-                              />
-                            </label>
-                            <label className="org-users-field">
-                              <Text size="sm" variant="muted">Daily Capacity Hours</Text>
-                              <TextField
-                                type="number"
-                                disabled={!canManageUsers}
-                                defaultValue={String(selectedUser.daily_capacity_hours)}
-                                onBlur={(e) =>
-                                  void handlePatchUser(selectedUser, {
-                                    daily_capacity_hours: Number(e.target.value) || 8,
-                                  })
-                                }
-                              />
-                            </label>
-                            <label className="org-users-field">
-                              <Text size="sm" variant="muted">Timezone</Text>
-                              <TextField
-                                disabled={!canManageUsers}
-                                defaultValue={selectedUser.timezone}
-                                onBlur={(e) =>
-                                  void handlePatchUser(selectedUser, {
-                                    timezone: e.target.value || 'UTC',
-                                  })
-                                }
-                              />
-                            </label>
-                          </div>
-
-                          <div className="org-users-section">
-                            <Text size="sm"><strong>Departments</strong></Text>
-                            <div className="org-users-checks">
-                              {departments.map((d) => (
-                                <Checkbox
-                                  key={d.id}
-                                  label={`${d.short_code} · ${d.name}`}
-                                  disabled={!canManageUsers}
-                                  checked={(selectedUser.department_ids ?? []).includes(d.id)}
-                                  onChange={() =>
-                                    void handleToggleUserDept(selectedUser, d.id)
-                                  }
-                                />
-                              ))}
-                            </div>
-                          </div>
-
-                          <div className="org-users-section">
-                            <Text size="sm"><strong>Projects Working On</strong></Text>
-                            <div className="org-users-proj-list">
-                              {(selectedUser.projects_working_on ?? []).map((p) => (
-                                <Badge key={p.project_uuid} tone="neutral">
-                                  {p.project_name}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        </Stack>
-                      </Panel>
-                    ) : (
-                      <Panel title="No user selected">
-                        <Text size="sm" variant="muted">Select a user from the list.</Text>
-                      </Panel>
-                    )}
-                  </div>
-                </div>
-              ),
-            },
-            {
-              id: 'companies',
-              label: `Companies (${companies.length})`,
-              content: (
-                <div className="org-users-split">
-                  <div className="org-users-left">
-                    {canManageUsers && (
-                      <form onSubmit={handleCreateCompany} className="org-users-toolbar">
-                        <TextField
-                          value={newCompanyName}
-                          onChange={(e) => setNewCompanyName(e.target.value)}
-                          placeholder="Company name"
-                          required
-                        />
-                        <TextField
-                          value={newCompanyCode}
-                          onChange={(e) => setNewCompanyCode(e.target.value)}
-                          placeholder="CODE"
-                          required
+          {(() => {
+            const sections: Array<{ id: UsersSection; label: string; content: ReactNode }> = [
+              {
+                id: 'users',
+                label: `Users (${users.length})`,
+                content: (
+                  <div className="org-users-split">
+                    <div className="org-users-left">
+                      <div className="org-users-toolbar">
+                        <SearchField
+                          value={query}
+                          onChange={setQuery}
+                          placeholder="Filter username, name, role, company..."
+                          ariaLabel="Filter users"
                         />
                         <Select
-                          ariaLabel="New company kind"
-                          value={newCompanyKind}
-                          onChange={(v) =>
-                            setNewCompanyKind(v as 'internal' | 'external' | 'group')
-                          }
+                          ariaLabel="Role filter"
+                          value={roleFilter}
+                          onChange={setRoleFilter}
                           options={[
-                            { value: 'internal', label: 'internal' },
-                            { value: 'external', label: 'external' },
-                            { value: 'group', label: 'group' },
+                            { value: 'all', label: 'All roles' },
+                            ...roles.map((r) => ({ value: r.name, label: r.label })),
                           ]}
                         />
+                        {canManageUsers && (
+                          <Button
+                            size="sm"
+                            variant="primary"
+                            onClick={() => setCreateUserOpen(true)}
+                          >
+                            + New User
+                          </Button>
+                        )}
+                      </div>
+
+                      <div
+                        ref={listParentRef}
+                        className="org-users-vlist"
+                        role="listbox"
+                        aria-label="Users directory"
+                      >
+                        <VirtualBodyContainer totalSize={virtualizer.getTotalSize()}>
+                          {virtualizer.getVirtualItems().map((vRow) => {
+                            const user = filteredUsers[vRow.index];
+                            if (!user || !projectUuid) return null;
+                            return (
+                              <VirtualUserRow
+                                key={user.id}
+                                user={user}
+                                selected={selectedUser?.id === user.id}
+                                start={vRow.start}
+                                size={vRow.size}
+                                projectUuid={projectUuid}
+                                onSelect={() => setSelectedUserId(user.id)}
+                              />
+                            );
+                          })}
+                        </VirtualBodyContainer>
+                      </div>
+                    </div>
+
+                    <div className="org-users-right">
+                      {selectedUser ? (
+                        <Panel
+                          key={selectedUser.id}
+                          title={`Profile — ${selectedUser.full_name} (@${selectedUser.username})`}
+                        >
+                          <Stack gap="2">
+                            <div className="org-users-profile-head">
+                              <Avatar
+                                username={selectedUser.username}
+                                fullName={selectedUser.full_name}
+                                avatarUrl={
+                                  selectedUser.avatar_file && projectUuid
+                                    ? `${apiClient.userAvatarUrl(selectedUser.id, projectUuid)}?v=${encodeURIComponent(selectedUser.avatar_file)}`
+                                    : null
+                                }
+                                size="md"
+                              />
+                              <div>
+                                <strong>{selectedUser.full_name}</strong>
+                                <div className="org-users-badges">
+                                  <Badge tone="accent">{selectedUser.role_label}</Badge>
+                                  <Badge tone={selectedUser.is_active ? 'success' : 'danger'}>
+                                    {selectedUser.is_active ? 'Active' : 'Inactive'}
+                                  </Badge>
+                                  {selectedUser.must_change_password && (
+                                    <Badge tone="warning">Must change pw</Badge>
+                                  )}
+                                </div>
+                              </div>
+                              {canManageUsers && (
+                                <div className="org-users-head-btns">
+                                  <input
+                                    ref={avatarInputRef}
+                                    type="file"
+                                    accept="image/png,image/jpeg,image/webp"
+                                    className="org-users-hidden"
+                                    onChange={(ev) => void handleUploadAvatar(ev)}
+                                  />
+                                  <Button size="sm" onClick={() => avatarInputRef.current?.click()}>
+                                    Avatar
+                                  </Button>
+                                  <Button size="sm" onClick={() => setResetPwOpen(true)}>
+                                    Reset Password
+                                  </Button>
+                                  {selectedUser.id !== auth?.user.id && (
+                                    <Button
+                                      size="sm"
+                                      variant={selectedUser.is_active ? 'danger' : 'success'}
+                                      onClick={() =>
+                                        void handlePatchUser(selectedUser, {
+                                          is_active: !selectedUser.is_active,
+                                        })
+                                      }
+                                    >
+                                      {selectedUser.is_active ? 'Deactivate' : 'Activate'}
+                                    </Button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="org-users-form-grid">
+                              <label className="org-users-field">
+                                <Text size="sm" variant="muted">
+                                  Full Name
+                                </Text>
+                                <TextField
+                                  defaultValue={selectedUser.full_name}
+                                  disabled={!canManageUsers}
+                                  onBlur={(e) => {
+                                    const next = e.target.value.trim();
+                                    if (next && next !== selectedUser.full_name) {
+                                      void handlePatchUser(selectedUser, { full_name: next });
+                                    }
+                                  }}
+                                />
+                              </label>
+                              <label className="org-users-field">
+                                <Text size="sm" variant="muted">
+                                  Email
+                                </Text>
+                                <TextField
+                                  defaultValue={selectedUser.email ?? ''}
+                                  disabled={!canManageUsers}
+                                  onBlur={(e) => {
+                                    const next = e.target.value.trim() || null;
+                                    if (next !== (selectedUser.email ?? null)) {
+                                      void handlePatchUser(selectedUser, { email: next });
+                                    }
+                                  }}
+                                />
+                              </label>
+                              <label className="org-users-field">
+                                <Text size="sm" variant="muted">
+                                  Role
+                                </Text>
+                                <Select
+                                  ariaLabel="User role"
+                                  disabled={
+                                    !canManageUsers ||
+                                    (selectedUser.role_name === 'admin' &&
+                                      auth?.user.role_name !== 'admin')
+                                  }
+                                  value={selectedUser.role_id}
+                                  options={roles
+                                    .filter(
+                                      (r) => r.name !== 'admin' || auth?.user.role_name === 'admin',
+                                    )
+                                    .map((r) => ({ value: r.id, label: r.label }))}
+                                  onChange={(v) =>
+                                    void handlePatchUser(selectedUser, { role_id: v })
+                                  }
+                                />
+                              </label>
+                              <label className="org-users-field">
+                                <Text size="sm" variant="muted">
+                                  Company
+                                </Text>
+                                <Select
+                                  ariaLabel="User company"
+                                  disabled={!canManageUsers}
+                                  value={selectedUser.company_id ?? '__none__'}
+                                  options={[
+                                    { value: '__none__', label: 'None' },
+                                    ...companies.map((c) => ({
+                                      value: c.id,
+                                      label: `${c.name} (${c.short_code})`,
+                                    })),
+                                  ]}
+                                  onChange={(v) =>
+                                    void handlePatchUser(selectedUser, {
+                                      company_id: v === '__none__' ? null : v,
+                                    })
+                                  }
+                                />
+                              </label>
+                              <div className="org-users-field">
+                                <Text size="sm" variant="muted">
+                                  Daily Capacity (from working hours)
+                                </Text>
+                                <Badge tone="neutral">
+                                  {selectedUser.daily_capacity_hours}h / day
+                                </Badge>
+                              </div>
+                              <label className="org-users-field">
+                                <Text size="sm" variant="muted">
+                                  Timezone
+                                </Text>
+                                <TextField
+                                  disabled={!canManageUsers}
+                                  defaultValue={selectedUser.timezone}
+                                  onBlur={(e) =>
+                                    void handlePatchUser(selectedUser, {
+                                      timezone: e.target.value || 'UTC',
+                                    })
+                                  }
+                                />
+                              </label>
+                            </div>
+
+                            <div className="org-users-section">
+                              <Text size="sm">
+                                <strong>Departments</strong>
+                              </Text>
+                              <DepartmentMultiSelect
+                                ariaLabel="User departments"
+                                departments={departments}
+                                selectedIds={selectedUser.department_ids ?? []}
+                                disabled={!canManageUsers}
+                                onChange={(ids) => void handleSetUserDepts(selectedUser, ids)}
+                              />
+                            </div>
+
+                            <div className="org-users-section" data-ui="user-work-hours">
+                              <Text size="sm">
+                                <strong>Working Hours</strong>
+                              </Text>
+                              <WorkHoursEditor
+                                key={selectedUser.id}
+                                userId={selectedUser.id}
+                                projectUuid={projectUuid}
+                                editable={canManageUsers || selectedUser.id === auth?.user.id}
+                              />
+                            </div>
+
+                            <div className="org-users-section">
+                              <Text size="sm">
+                                <strong>Activation Periods</strong>
+                              </Text>
+                              <ActivationPeriodsEditor
+                                key={selectedUser.id}
+                                targetKind="user"
+                                targetId={selectedUser.id}
+                                projectUuid={projectUuid}
+                                editable={canEditActivation}
+                              />
+                            </div>
+
+                            <div className="org-users-section">
+                              <Text size="sm">
+                                <strong>Projects Working On</strong>
+                              </Text>
+                              <div className="org-users-proj-list">
+                                {(selectedUser.projects_working_on ?? []).map((p) => (
+                                  <Badge key={p.project_uuid} tone="neutral">
+                                    {p.project_name}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          </Stack>
+                        </Panel>
+                      ) : (
+                        <Panel title="No user selected">
+                          <Text size="sm" variant="muted">
+                            Select a user from the list.
+                          </Text>
+                        </Panel>
+                      )}
+                    </div>
+                  </div>
+                ),
+              },
+              {
+                id: 'companies',
+                label: `Companies (${companies.length})`,
+                content: (
+                  <CompaniesSection
+                    companies={companies}
+                    departments={departments}
+                    users={users}
+                    projectUuid={projectUuid}
+                    canManage={canManageUsers}
+                    canEditActivation={canEditActivation}
+                    currentUserId={auth?.user.id ?? null}
+                  />
+                ),
+              },
+              {
+                id: 'departments',
+                label: `Departments (${departments.length})`,
+                content: (
+                  <div className="org-users-depts">
+                    {canManageDepts && (
+                      <form onSubmit={handleCreateDept} className="org-users-toolbar">
+                        <TextField
+                          value={newDeptName}
+                          onChange={(e) => setNewDeptName(e.target.value)}
+                          placeholder="New department name"
+                          required
+                        />
+                        <TextField
+                          value={newDeptCode}
+                          onChange={(e) => setNewDeptCode(e.target.value)}
+                          placeholder="Short code (optional)"
+                        />
                         <Button type="submit" size="sm" variant="primary">
-                          Add
+                          Add Department
                         </Button>
                       </form>
                     )}
-                    <div className="org-users-simple-list">
-                      {companies.map((c) => (
-                        <button
-                          key={c.id}
-                          type="button"
-                          className="org-users-simple-row"
-                          data-selected={selectedCompany?.id === c.id ? 'true' : undefined}
-                          onClick={() => setSelectedCompanyId(c.id)}
-                        >
-                          <Badge tone="accent">{c.short_code}</Badge>
-                          <span className="org-users-vrow__name">{c.name}</span>
-                          <Badge tone="neutral">{c.kind}</Badge>
-                        </button>
-                      ))}
+                    <div className="org-users-table-wrap">
+                      <table className="org-users-table" aria-label="Departments catalog">
+                        <thead>
+                          <tr>
+                            <th>Name</th>
+                            <th>Short Code</th>
+                            <th>Color</th>
+                            <th>Status</th>
+                            <th>Activation</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {departments.map((d) => (
+                            <tr key={d.id}>
+                              <td>{d.name}</td>
+                              <td>
+                                <TextField
+                                  disabled={!canManageDepts}
+                                  defaultValue={d.short_code}
+                                  onBlur={(e) => {
+                                    const next = e.target.value.trim().toUpperCase();
+                                    if (next && next !== d.short_code) {
+                                      void handlePatchDept(d, { short_code: next });
+                                    }
+                                  }}
+                                />
+                              </td>
+                              <td>
+                                <ColorPicker
+                                  ariaLabel={`${d.name} color`}
+                                  disabled={!canManageDepts}
+                                  value={deptColorDrafts[d.id] ?? deptColorHex(d.color)}
+                                  onChange={(hex) => queueDeptColor(d, hex)}
+                                />
+                              </td>
+                              <td>
+                                <Checkbox
+                                  label={d.is_active ? 'Active' : 'Disabled'}
+                                  disabled={!canManageDepts}
+                                  checked={d.is_active}
+                                  onChange={(v) => void handlePatchDept(d, { is_active: v })}
+                                />
+                              </td>
+                              <td>
+                                <Button
+                                  size="sm"
+                                  aria-label={`Activation periods of ${d.name}`}
+                                  onClick={() => setDeptPeriodsFor(d)}
+                                >
+                                  Periods…
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
-                  <div className="org-users-right">
-                    {selectedCompany && (
-                      <Panel title={`Company — ${selectedCompany.name}`}>
-                        <Stack gap="2">
-                          <Text size="sm" variant="muted">
-                            Kind: {selectedCompany.kind} · Code: {selectedCompany.short_code}
-                          </Text>
-                          <Text size="sm"><strong>Responsible Departments</strong></Text>
-                          <div className="org-users-checks">
-                            {departments.map((d) => (
-                              <Checkbox
-                                key={d.id}
-                                label={`${d.short_code} · ${d.name}`}
-                                disabled={!canManageUsers}
-                                checked={(selectedCompany.department_ids ?? []).includes(d.id)}
-                                onChange={() =>
-                                  void handleToggleCompanyDept(selectedCompany, d.id)
-                                }
-                              />
-                            ))}
-                          </div>
-                        </Stack>
-                      </Panel>
-                    )}
-                  </div>
-                </div>
-              ),
-            },
-            {
-              id: 'departments',
-              label: `Departments (${departments.length})`,
-              content: (
-                <div className="org-users-depts">
-                  {canManageDepts && (
-                    <form onSubmit={handleCreateDept} className="org-users-toolbar">
-                      <TextField
-                        value={newDeptName}
-                        onChange={(e) => setNewDeptName(e.target.value)}
-                        placeholder="New department name"
-                        required
-                      />
-                      <TextField
-                        value={newDeptCode}
-                        onChange={(e) => setNewDeptCode(e.target.value)}
-                        placeholder="Short code (optional)"
-                      />
-                      <Button type="submit" size="sm" variant="primary">
-                        Add Department
-                      </Button>
-                    </form>
-                  )}
-                  <div className="org-users-table-wrap">
-                    <table className="org-users-table" aria-label="Departments catalog">
-                      <thead>
-                        <tr>
-                          <th>Name</th>
-                          <th>Short Code</th>
-                          <th>Color Token</th>
-                          <th>Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {departments.map((d) => (
-                          <tr key={d.id}>
-                            <td>{d.name}</td>
-                            <td>
-                              <TextField
-                                disabled={!canManageDepts}
-                                defaultValue={d.short_code}
-                                onBlur={(e) => {
-                                  const next = e.target.value.trim().toUpperCase();
-                                  if (next && next !== d.short_code) {
-                                    void handlePatchDept(d, { short_code: next });
-                                  }
-                                }}
-                              />
-                            </td>
-                            <td>
-                              <Select
-                                ariaLabel={`${d.name} color`}
-                                disabled={!canManageDepts}
-                                value={d.color}
-                                options={SERIES_COLOR_OPTIONS}
-                                onChange={(v) => void handlePatchDept(d, { color: v })}
-                              />
-                            </td>
-                            <td>
-                              <Checkbox
-                                label={d.is_active ? 'Active' : 'Disabled'}
-                                disabled={!canManageDepts}
-                                checked={d.is_active}
-                                onChange={(v) =>
-                                  void handlePatchDept(d, { is_active: v })
-                                }
-                              />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              ),
-            },
-          ]}
-        />
+                ),
+              },
+              {
+                id: 'time',
+                label: 'Time & Capacity',
+                content: (
+                  <TimeCapacitySection
+                    users={users}
+                    onOpenProjectSettings={canAdmin ? () => setActiveTab('project') : undefined}
+                  />
+                ),
+              },
+            ];
+            if (ADMIN_SECTION_IDS.includes(activeTab)) {
+              return <AdminConsoleContent section={activeTab as AdminSectionId} />;
+            }
+            return sections.find((sec) => sec.id === activeTab)?.content ?? null;
+          })()}
+        </div>
       </div>
+
+      <Dialog
+        open={Boolean(deptPeriodsFor)}
+        onOpenChange={(o) => !o && setDeptPeriodsFor(null)}
+        title={`Activation periods — ${deptPeriodsFor?.name ?? ''}`}
+      >
+        {deptPeriodsFor && (
+          <ActivationPeriodsEditor
+            targetKind="department"
+            targetId={deptPeriodsFor.id}
+            projectUuid={projectUuid}
+            editable={canEditActivation}
+          />
+        )}
+      </Dialog>
 
       <Dialog open={createUserOpen} onOpenChange={setCreateUserOpen} title="Create New User">
         <form onSubmit={handleCreateUser} className="org-users-modal">
           <Stack gap="2">
             <label className="org-users-field">
-              <Text size="sm" variant="muted">Username</Text>
+              <Text size="sm" variant="muted">
+                Username
+              </Text>
               <TextField
                 value={newUsername}
                 onChange={(e) => setNewUsername(e.target.value)}
@@ -829,7 +863,9 @@ export function UsersPage({
               />
             </label>
             <label className="org-users-field">
-              <Text size="sm" variant="muted">Full Name</Text>
+              <Text size="sm" variant="muted">
+                Full Name
+              </Text>
               <TextField
                 value={newFullName}
                 onChange={(e) => setNewFullName(e.target.value)}
@@ -837,11 +873,15 @@ export function UsersPage({
               />
             </label>
             <label className="org-users-field">
-              <Text size="sm" variant="muted">Email</Text>
+              <Text size="sm" variant="muted">
+                Email
+              </Text>
               <TextField value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
             </label>
             <label className="org-users-field">
-              <Text size="sm" variant="muted">Temporary Password (min 10 chars)</Text>
+              <Text size="sm" variant="muted">
+                Temporary Password (min 10 chars)
+              </Text>
               <TextField
                 type="password"
                 value={newPassword}
@@ -850,7 +890,9 @@ export function UsersPage({
               />
             </label>
             <label className="org-users-field">
-              <Text size="sm" variant="muted">Role</Text>
+              <Text size="sm" variant="muted">
+                Role
+              </Text>
               <Select
                 ariaLabel="New user role"
                 value={
@@ -863,7 +905,9 @@ export function UsersPage({
               />
             </label>
             <label className="org-users-field">
-              <Text size="sm" variant="muted">Company</Text>
+              <Text size="sm" variant="muted">
+                Company
+              </Text>
               <Select
                 ariaLabel="New user company"
                 value={newCompanyId || '__none__'}
@@ -875,7 +919,9 @@ export function UsersPage({
               />
             </label>
             <label className="org-users-field">
-              <Text size="sm" variant="muted">Daily Capacity (h)</Text>
+              <Text size="sm" variant="muted">
+                Daily Capacity (h)
+              </Text>
               <TextField
                 type="number"
                 value={newCapHours}
@@ -902,7 +948,9 @@ export function UsersPage({
               forced to change it on next sign-in.
             </Text>
             <label className="org-users-field">
-              <Text size="sm" variant="muted">Temporary Password (min 10 chars)</Text>
+              <Text size="sm" variant="muted">
+                Temporary Password (min 10 chars)
+              </Text>
               <TextField
                 type="password"
                 value={resetPwValue}

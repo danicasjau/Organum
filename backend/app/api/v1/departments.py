@@ -1,17 +1,22 @@
 from __future__ import annotations
 
+import asyncio
+import shutil
+import uuid
+from pathlib import Path
 from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Response
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.deps import get_db
+from app.core.deps import get_db, get_project_context
 from app.core.errors import ConflictError, NotFoundError
+from app.core.project_registry import ProjectContext
 from app.core.security import get_project_auth, require
-from app.models.project_db import Department, DepartmentDefaultTask, Task
+from app.models.project_db import Department, DepartmentDefaultTask, EntityDepartment, Task
 from app.schemas.api import (
     DefaultTaskCreate,
     DefaultTaskOut,
@@ -21,7 +26,12 @@ from app.schemas.api import (
     DepartmentUpdate,
     ReorderRequest,
 )
-from app.services.naming import sanitize_folder_name
+from app.services.entity_service import (
+    _rewrite_entity_rel_prefixes,
+    resolve_production_rel,
+    stop_watches_under,
+)
+from app.services.naming import check_case_insensitive_collision, sanitize_folder_name
 from app.services.permissions import AuthContext, visible_task_ids
 
 router = APIRouter(prefix="/departments", tags=["departments"])
@@ -136,6 +146,7 @@ async def update_department(
     dept_id: UUID,
     payload: DepartmentUpdate,
     _auth: Annotated[AuthContext, Depends(require("entity.manage", write=True))],
+    ctx: Annotated[ProjectContext, Depends(get_project_context)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> DepartmentOut:
     res = await db.execute(
@@ -146,20 +157,108 @@ async def update_department(
     dept = res.scalar_one_or_none()
     if dept is None:
         raise NotFoundError("department", str(dept_id))
-    if payload.name is not None:
-        display = payload.name.strip()
-        folder = sanitize_folder_name(display)
-        dept.name = display
-        dept.folder_name = folder
-    if payload.short_code is not None:
-        dept.short_code = payload.short_code.strip().upper()[:8] or dept.short_code
-    if payload.color is not None:
-        dept.color = payload.color.strip() or dept.color
-    if payload.is_active is not None:
-        dept.is_active = payload.is_active
-    if payload.sort_order is not None:
-        dept.sort_order = payload.sort_order
-    await db.commit()
+    moved_directories: list[tuple[Path, Path]] = []
+    try:
+        if payload.name is not None:
+            display = payload.name.strip()
+            folder = sanitize_folder_name(display)
+            duplicate = (
+                await db.execute(
+                    select(Department).where(
+                        Department.id != dept.id,
+                        or_(
+                            func.lower(Department.name) == display.lower(),
+                            func.lower(Department.folder_name) == folder.lower(),
+                        ),
+                    )
+                )
+            ).scalar_one_or_none()
+            if duplicate is not None:
+                raise ConflictError(f"Department '{display}' already exists")
+
+            old_folder = dept.folder_name
+            if folder != old_folder:
+                eds = list(
+                    (
+                        await db.execute(
+                            select(EntityDepartment)
+                            .where(EntityDepartment.department_id == dept.id)
+                            .options(
+                                selectinload(EntityDepartment.entity),
+                                selectinload(EntityDepartment.tasks).selectinload(Task.product),
+                            )
+                        )
+                    )
+                    .scalars()
+                    .all()
+                )
+                paths = [
+                    (
+                        resolve_production_rel(ctx.production_dir, ed.entity.rel_path) / old_folder,
+                        resolve_production_rel(ctx.production_dir, ed.entity.rel_path) / folder,
+                        ed,
+                    )
+                    for ed in eds
+                ]
+                for old_dir, new_dir, _ in paths:
+                    if old_folder.casefold() != folder.casefold() and await asyncio.to_thread(
+                        check_case_insensitive_collision,
+                        new_dir.parent,
+                        folder,
+                    ):
+                        raise ConflictError(
+                            f"Cannot rename department folder: '{folder}' already exists "
+                            f"for entity '{old_dir.parent.name}'"
+                        )
+
+                for old_dir, new_dir, ed in paths:
+                    if old_dir.exists():
+                        stop_watches_under(old_dir)
+                        await asyncio.sleep(0.05)
+
+                        def move_department_folder(old_dir: Path, new_dir: Path) -> None:
+                            if old_folder.casefold() == folder.casefold():
+                                temporary_dir = old_dir.with_name(
+                                    f".department-rename-{uuid.uuid4().hex}"
+                                )
+                                shutil.move(str(old_dir), str(temporary_dir))
+                                try:
+                                    shutil.move(str(temporary_dir), str(new_dir))
+                                except Exception:
+                                    shutil.move(str(temporary_dir), str(old_dir))
+                                    raise
+                            else:
+                                shutil.move(str(old_dir), str(new_dir))
+
+                        await asyncio.to_thread(move_department_folder, old_dir, new_dir)
+                        moved_directories.append((old_dir, new_dir))
+                    await _rewrite_entity_rel_prefixes(
+                        db,
+                        ed.entity_id,
+                        f"{ed.entity.rel_path}/{old_folder}",
+                        f"{ed.entity.rel_path}/{folder}",
+                    )
+                    for task in ed.tasks:
+                        if task.product is not None:
+                            task.product.name = f"{folder}/{task.folder_name}"
+
+            dept.name = display
+            dept.folder_name = folder
+        if payload.short_code is not None:
+            dept.short_code = payload.short_code.strip().upper()[:8] or dept.short_code
+        if payload.color is not None:
+            dept.color = payload.color.strip() or dept.color
+        if payload.is_active is not None:
+            dept.is_active = payload.is_active
+        if payload.sort_order is not None:
+            dept.sort_order = payload.sort_order
+        await db.commit()
+    except Exception:
+        await db.rollback()
+        for old_dir, new_dir in reversed(moved_directories):
+            if new_dir.exists() and not old_dir.exists():
+                await asyncio.to_thread(shutil.move, str(new_dir), str(old_dir))
+        raise
     await db.refresh(dept)
     return _to_out(dept)
 

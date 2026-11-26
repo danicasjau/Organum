@@ -137,24 +137,42 @@
     background: var(--surface-raised);
   }
 
-  .org-gantt__tree-task.is-selected,
-  .org-gantt__tl-task-row.is-selected {
-    background: var(--selection-soft);
+  /* CR04 §9: selection never fills rows or dims others; see the highlight rules below. */
+
+
+  .org-gantt__tree-name {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    line-height: 1.2;
   }
 
-  .org-gantt__tree-task.is-dimmed,
-  .org-gantt__tl-task-row.is-dimmed {
-    opacity: 0.35;
+  .org-gantt__tree-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--font-size);
+    font-weight: 700;
+    color: var(--text);
   }
 
   .org-gantt__tree-code {
-    flex: 1;
-    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     font-family: var(--font-mono);
     font-size: var(--font-size-2xs);
+    color: var(--text-muted);
+  }
+
+  .org-gantt__tree-dept {
+    flex: 0 0 var(--gantt-tree-dept-w);
+    width: var(--gantt-tree-dept-w);
+    display: flex;
+    min-width: 0;
+    overflow: hidden;
   }
 
   .org-gantt__viol-tag {
@@ -182,7 +200,7 @@
   .org-gantt__tl-header {
     position: sticky;
     top: 0;
-    z-index: 4;
+    z-index: var(--z-local-4);
     width: var(--gantt-tl-w, 100%);
     height: var(--gantt-header-h);
     background: var(--surface-raised);
@@ -246,7 +264,7 @@
     left: var(--gantt-today-x, 0px);
     width: 0;
     border-left: 1px solid var(--accent);
-    z-index: 2;
+    z-index: var(--z-local-2);
     pointer-events: none;
   }
 
@@ -281,7 +299,7 @@
     overflow: hidden;
     white-space: nowrap;
     cursor: pointer;
-    z-index: 3;
+    z-index: var(--z-local-3);
     box-sizing: border-box;
   }
 
@@ -316,9 +334,6 @@
     border-color: var(--danger);
   }
 
-  .org-gantt__bar.is-selected {
-    outline: 1px solid var(--focus-ring);
-  }
 
   .org-gantt__bar-fill {
     position: absolute;
@@ -333,7 +348,7 @@
 
   .org-gantt__bar-label {
     position: relative;
-    z-index: 1;
+    z-index: var(--z-local-1);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -344,9 +359,9 @@
     position: absolute;
     top: 0;
     bottom: 0;
-    width: var(--space-1);
+    width: var(--space-2);
     cursor: ew-resize;
-    z-index: 2;
+    z-index: var(--z-local-2);
   }
 
   .org-gantt__handle--left {
@@ -366,7 +381,7 @@
     background: var(--text-primary);
     opacity: 0.7;
     pointer-events: none;
-    z-index: 2;
+    z-index: var(--z-local-2);
   }
 
   .org-gantt__unscheduled-pill {
@@ -385,7 +400,7 @@
     left: 0;
     top: 0;
     pointer-events: none;
-    z-index: 2;
+    z-index: var(--z-local-2);
   }
 
   .org-gantt__arrow-grp path {
@@ -403,9 +418,6 @@
     stroke-width: 2;
   }
 
-  .org-gantt__arrow-grp.is-dimmed {
-    opacity: 0.25;
-  }
 
   .org-gantt__marker-ok {
     fill: var(--text-muted);
@@ -425,5 +437,187 @@
     display: flex;
     justify-content: flex-end;
     gap: var(--space-2);
+  }
+
+  /* ---- Header columns of the task list ---- */
+  .org-gantt__tree-hdr {
+    gap: var(--space-2);
+    padding: 0 var(--space-2) 0 var(--space-6);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--text-muted);
+  }
+
+  .org-gantt__tree-hcol {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .org-gantt__tree-hcol--dept {
+    flex: 0 0 var(--gantt-tree-dept-w);
+  }
+
+  .org-gantt__tree-hcol--meta {
+    flex: 0 0 auto;
+  }
+
+  .org-gantt__tree-task {
+    gap: var(--space-2);
+  }
+
+  /* ---- Zoom controls ---- */
+  .org-gantt__zoom {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 0 var(--space-1);
+    border: 1px solid var(--border-dark);
+    border-radius: var(--radius-1);
+    background: var(--surface-sunken);
+  }
+
+  .org-gantt__zoom-val {
+    min-width: var(--space-6);
+    padding: 0 var(--space-1);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  /* ---- Selection: whole row (both panes) + bar ---- */
+  .org-gantt__tree-task.is-selected {
+    border-left: var(--dirty-bar-w) solid var(--highlight);
+  }
+
+  /* Selected bar: solid yellow border; linked (upstream/downstream) bars: dashed yellow.
+     Status colours stay untouched and nothing else is dimmed. */
+  .org-gantt__bar.is-selected {
+    outline: var(--border-w-strong) solid var(--highlight);
+    outline-offset: var(--border-w);
+    z-index: var(--z-local-4);
+  }
+
+  .org-gantt__bar.is-linked {
+    outline: var(--border-w-strong) dashed var(--highlight);
+    outline-offset: var(--border-w);
+    z-index: var(--z-local-3);
+  }
+
+  /* Draft or pushed-by-drag bars: dashed border + pencil in the label. */
+  .org-gantt__bar.is-draft,
+  .org-gantt__bar.is-pushed {
+    border-style: dashed;
+    border-width: var(--border-w-strong);
+  }
+
+  .org-gantt__arrow-grp.is-linked path {
+    stroke: var(--highlight);
+    stroke-width: 2.5;
+  }
+
+  .org-gantt__body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .org-gantt__body > .org-gantt__split {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .org-gantt__tl-task-row {
+    cursor: default;
+  }
+
+  .org-gantt__tl-task-row.is-link-target {
+    opacity: 1;
+    background: var(--accent-soft);
+    outline: 1px dashed var(--accent);
+  }
+
+  .org-gantt__bar-label {
+    font-family: var(--font-ui);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+  }
+
+  /* Name + department beside the bar, outside the time span. */
+  .org-gantt__bar-side {
+    position: absolute;
+    left: var(--gantt-bar-x, 0px);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding-left: var(--space-6);
+    font-size: var(--font-size-sm);
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: var(--z-local-2);
+  }
+
+  .org-gantt__bar-side-name {
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  /* ---- Drag a dependency from the bar's end ---- */
+  .org-gantt__link-handle {
+    position: absolute;
+    right: calc(var(--gantt-link-dot) * -1.6);
+    top: 50%;
+    width: var(--gantt-link-dot);
+    height: var(--gantt-link-dot);
+    margin-top: calc(var(--gantt-link-dot) / -2);
+    border: var(--gantt-sel-w) solid var(--accent);
+    border-radius: 50%;
+    background: var(--surface-window);
+    cursor: crosshair;
+    opacity: 0;
+    z-index: var(--z-local-5);
+  }
+
+  .org-gantt__bar {
+    overflow: visible;
+  }
+
+  .org-gantt__bar:hover .org-gantt__link-handle,
+  .org-gantt__bar.is-selected .org-gantt__link-handle,
+  .org-gantt__timeline-scroll[data-linking='true'] .org-gantt__link-handle {
+    opacity: 1;
+  }
+
+  .org-gantt__link-preview path {
+    fill: none;
+    stroke: var(--text-muted);
+    stroke-width: 2;
+    stroke-dasharray: 5 4;
+  }
+
+  .org-gantt__link-preview path.is-valid {
+    stroke: var(--accent);
+  }
+
+  .org-gantt__link-preview circle {
+    fill: var(--accent);
+  }
+
+  /* ---- Pan ---- */
+  .org-gantt__timeline-scroll {
+    cursor: grab;
+  }
+
+  .org-gantt__timeline-scroll[data-panning='true'],
+  .org-gantt__timeline-scroll[data-panning='true'] * {
+    cursor: grabbing;
+    user-select: none;
+  }
+
+  .org-gantt__timeline-scroll[data-linking='true'],
+  .org-gantt__timeline-scroll[data-linking='true'] * {
+    cursor: crosshair;
+    user-select: none;
   }
 }

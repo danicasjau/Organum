@@ -1,0 +1,12 @@
+@layer components {
+  .org-inspect-popup {
+    display: flex;
+    flex-direction: column;
+    width: min(var(--settings-dialog-w), 90vw);
+    height: min(var(--settings-dialog-h), 78vh);
+    min-height: 0;
+    overflow: auto;
+    padding: var(--space-2) var(--space-3);
+    box-sizing: border-box;
+  }
+}

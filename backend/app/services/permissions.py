@@ -59,8 +59,12 @@ ALL_PERMISSION_KEYS: tuple[str, ...] = (
     "views.kanban",
     "views.workload",
     "views.graph",
+    "views.calendar",
     "admin.db",
     "project.status",
+    "confo.edit",
+    "schedule.version",
+    "milestone.edit",
 )
 
 WRITE_PERMISSION_KEYS: frozenset[str] = frozenset(
@@ -89,6 +93,9 @@ WRITE_PERMISSION_KEYS: frozenset[str] = frozenset(
         "role.manage",
         "rules.manage",
         "project.status",
+        "confo.edit",
+        "schedule.version",
+        "milestone.edit",
     }
 )
 
@@ -132,6 +139,8 @@ def _build_default_role_matrix() -> dict[str, dict[str, str]]:
         director_perms[k] = "all"
 
     supervisor_perms = {k: "none" for k in ALL_PERMISSION_KEYS}
+    # CR04 §5: supervisors save schedule versions by default (configurable in Roles).
+    supervisor_perms["schedule.version"] = "all"
     for k in (
         "task.view",
         "task.comment",
@@ -172,6 +181,10 @@ def _build_default_role_matrix() -> dict[str, dict[str, str]]:
     client_perms = {k: "none" for k in ALL_PERMISSION_KEYS}
     for k in ("task.view", "task.comment", "media.view", "product.view", "task.approve.client"):
         client_perms[k] = "shared"
+
+    # CR04 §4: Calendar for every internal role; data stays scoped by task.view. Never clients.
+    for perms in (director_perms, supervisor_perms, lead_perms, artist_perms, external_perms):
+        perms["views.calendar"] = "all"
 
     return {
         "admin": admin_perms,
@@ -294,10 +307,11 @@ async def seed_project_auth(
     }
     for role_name, perm_map in DEFAULT_ROLE_PERMISSIONS.items():
         role_obj = existing_roles[role_name]
-        # Seed role_permissions only if this role has zero rows yet (preserves admin edits!)
-        has_any_for_role = any(rid == role_obj.id for rid, _ in existing_rp)
-        if not has_any_for_role:
-            for perm_key, scope in perm_map.items():
+        # Add only keys this role has no row for yet: a fresh role gets the full default map,
+        # and permission keys introduced later (e.g. confo.edit) reach existing projects,
+        # while scopes an administrator already edited are never touched.
+        for perm_key, scope in perm_map.items():
+            if (role_obj.id, perm_key) not in existing_rp:
                 db.add(RolePermission(role_id=role_obj.id, permission_key=perm_key, scope=scope))
 
     existing_cap = (await db.execute(select(CapacityPermission))).scalars().all()

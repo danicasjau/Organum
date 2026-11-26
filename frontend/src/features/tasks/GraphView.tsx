@@ -33,12 +33,11 @@ import {
 } from '../../lib/api/client';
 import { hasPerm, useAuthStore } from '../auth/authStore';
 import { useProjectStore } from '../project/projectStore';
-import {
-  computeIndirectEntityEdges,
-  computeLayeredDagLayout,
-} from './planningHelpers';
+import { computeIndirectEntityEdges, computeLayeredDagLayout } from './planningHelpers';
 import { useTasksStore, type GraphMode, type GraphScope } from './tasksStore';
 import './GraphView.css';
+import { DepartmentTag } from '../departments/DepartmentTag';
+import { TaskUnreadDot } from '../reviews/TaskUnreadDot';
 
 const NODE_W = 160;
 const NODE_H = 54;
@@ -157,8 +156,7 @@ export function GraphView({
   const entityEdges = entityGraph?.edges ?? EMPTY_ENT_EDGES;
 
   const indirectEntityEdges = useMemo(
-    () =>
-      graphMode === 'entity' ? computeIndirectEntityEdges(entityNodes, entityEdges) : [],
+    () => (graphMode === 'entity' ? computeIndirectEntityEdges(entityNodes, entityEdges) : []),
     [graphMode, entityNodes, entityEdges],
   );
 
@@ -230,9 +228,7 @@ export function GraphView({
         const maxY = Math.max(latest.startY, latest.curY);
         const ids = new Set<string>();
         const nodeIds =
-          graphMode === 'task'
-            ? taskNodes.map((n) => n.id)
-            : entityNodes.map((n) => n.id);
+          graphMode === 'task' ? taskNodes.map((n) => n.id) : entityNodes.map((n) => n.id);
         for (const id of nodeIds) {
           const p = posOf(id);
           if (p.x + NODE_W >= minX && p.x <= maxX && p.y + NODE_H >= minY && p.y <= maxY) {
@@ -690,11 +686,7 @@ export function GraphView({
           </div>
         ) : (
           <div ref={stageRef} className="org-graph__stage">
-            <svg
-              className="org-graph__svg"
-              width={dagLayout.width}
-              height={dagLayout.height}
-            >
+            <svg className="org-graph__svg" width={dagLayout.width} height={dagLayout.height}>
               <defs>
                 <marker
                   id="gv-arrow"
@@ -737,7 +729,7 @@ export function GraphView({
                     selectedEdge.kind === edge.kind;
                   const label = edge.from_entity_link
                     ? `${edge.threshold ?? 'APP'} · link`
-                    : edge.threshold ?? edge.kind;
+                    : (edge.threshold ?? edge.kind);
                   return (
                     <g
                       key={`${edge.kind}:${edge.source_task_id}->${edge.target_task_id}`}
@@ -755,10 +747,7 @@ export function GraphView({
                         });
                       }}
                     >
-                      <path
-                        d={d}
-                        className="org-graph__edge-hit"
-                      />
+                      <path d={d} className="org-graph__edge-hit" />
                       <path
                         d={d}
                         className="org-graph__edge-line"
@@ -972,7 +961,8 @@ function TaskGraphCard({
     >
       <div className="org-graph__port org-graph__port--in" aria-hidden="true" />
       <div className="org-graph__node-hdr">
-        <span className="org-graph__dept-tag">{node.department_name}</span>
+        <DepartmentTag name={node.department_name} className="org-graph__dept-tag" />
+        <TaskUnreadDot taskId={node.id} />
         <StatusChip status={node.status} compact />
       </div>
       <div className="org-graph__node-body">

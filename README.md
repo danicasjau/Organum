@@ -17,6 +17,12 @@ ORGANUM is a dense, 2002-era professional DCC-styled product review application 
 ### Windows One-Click Launcher (`launch.bat`)
 Double-click `launch.bat` at the repository root (or run `launch.bat` in Command Prompt / PowerShell) to install missing dependencies, seed the demo project if absent, and start both the backend (`127.0.0.1:8000`) and frontend (`127.0.0.1:5173`).
 
+### First Run (empty checkout)
+With no `data/` folder and no known projects, the app opens on **Create Project** (folder picker, name,
+starter departments) before any sign-in, then asks you to sign in as the seeded `admin` and change its
+password. If a known project folder was moved, the same screen offers **Locate…**. Once a project
+exists, creating or opening projects needs an administrator. See `docs/CR04.md`.
+
 ### Local Development
 
 ```powershell
@@ -98,6 +104,7 @@ npm run typecheck
 npm run test
 npm run build
 npm run test:e2e
+npm run test:e2e:bootstrap   # first-run flow against a fresh, empty data root
 ```
 
 ---
@@ -108,6 +115,12 @@ npm run test:e2e
 - **60% Dominant:** `--surface-panel` (`#1E293B` dark / `#E2E8F0` light), `--surface-window` (`#172033` / `#CBD5E1`)
 - **30% Secondary Recessed:** `--surface-field` (`#0F172A` / `#F8FAFC`)
 - **10% Accents:** `--accent` (`#8B5CF6` / `#7C3AED`), `--btn-primary-bg` (`#7C3AED`), `--success` (`#10B981` / `#059669`)
+
+### Z-index Scale (CR04)
+Floating UI is portaled to `<body>`; stacking comes only from tokens (lint rule `organum/z-index-token`):
+`--z-base` 0 · `--z-local-1..5` (inside a widget) · `--z-dock` 50 · `--z-dialog` 100 · `--z-popover` 200 ·
+`--z-menu` 300 · `--z-tooltip` 400 · `--z-toast` 500. `--highlight` is the yellow selection/linked
+state colour (borders only, always paired with a shape or text cue).
 
 ### Spacing & Sizing (§10)
 

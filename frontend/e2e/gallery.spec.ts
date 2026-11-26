@@ -5,8 +5,8 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SCREENSHOTS_DIR = path.resolve(__dirname, '../../docs/screenshots');
 
-test.describe('Phase 1 Widget Gallery', () => {
-  test('renders dark, light, and redline modes with zero errors and interactive numeric ops', async ({
+test.describe('v1 Widget Gallery', () => {
+  test('renders dark, paper, and redline modes with zero errors and interactive numeric ops', async ({
     page,
   }) => {
     const errors: string[] = [];
@@ -17,8 +17,9 @@ test.describe('Phase 1 Widget Gallery', () => {
 
     await page.goto('/gallery');
     await expect(page.getByText('ORGANUM', { exact: true })).toBeVisible();
-    await expect(page.getByText('1. Design Tokens — 60-30-10 Palette & Surfaces')).toBeVisible();
-    await expect(page.getByText('2. Complete Component State Matrix (7 States)')).toBeVisible();
+    await expect(page.getByText('Foundations — Tokens')).toBeVisible();
+    await expect(page.getByText('Controls — State Matrix (7 States)')).toBeVisible();
+    await expect(page.getByText('Review', { exact: true })).toBeVisible();
 
     // Verify dark theme default
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');

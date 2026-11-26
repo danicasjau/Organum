@@ -8,6 +8,9 @@ import {
   Button,
   CapacityBadgeList,
   Checkbox,
+  ContextMenu,
+  DatePicker,
+  formatDisplayDate,
   Icon,
   Inline,
   NumberField,
@@ -20,8 +23,13 @@ import {
   Text,
   TextArea,
   TextField,
+  ReviewCard,
+  ReviewPanel,
+  toPriorityLevel,
   UserPicker,
   useToast,
+  type PriorityLevel,
+  type ReviewThreadItem,
   type UserPickerOption,
 } from '../../components/ui';
 import {
@@ -33,7 +41,10 @@ import {
   type UserOut,
 } from '../../lib/api/client';
 import { hasPerm, useAuthStore } from '../auth/authStore';
+import { DepartmentTag } from '../departments/DepartmentTag';
 import { useProjectStore } from '../project/projectStore';
+import { buildReviewFeed } from '../reviews/reviewFeed';
+import { useReviewSeenStore } from '../reviews/reviewSeenStore';
 import { ShareWithClientDialog } from './ShareWithClientDialog';
 import {
   canPerformOnTask,
@@ -48,6 +59,26 @@ import './TaskDetail.css';
 
 const EMPTY_USERS: UserOut[] = [];
 const EMPTY_COMPANIES: CompanyOut[] = [];
+
+const PEOPLE_ROLES = [
+  { role: 'artist', label: 'Artists', placeholder: 'Assign artist...' },
+  { role: 'lead', label: 'Leads', placeholder: 'Assign lead...' },
+  { role: 'supervisor', label: 'Supervisors', placeholder: 'Assign supervisor...' },
+] as const;
+
+/** Admin overrides for these workflow steps are hidden from the panel (they are artist actions). */
+function isHiddenAdminTransition(opt: TransitionOptionOut): boolean {
+  if (opt.acted_as !== 'role:admin') return false;
+  const action = opt.action.toLowerCase();
+  return action.startsWith('start') || action.startsWith('hold');
+}
+
+function formatFeedTime(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
 
 function SectionBlock({
   title,
@@ -99,7 +130,11 @@ export interface TaskDetailProps {
   taskId: string;
   compact?: boolean;
   onClose?: () => void;
-  onOpenInViewer?: (opts: { taskId: string; fileId?: string | null; frame?: number | null }) => void;
+  onOpenInViewer?: (opts: {
+    taskId: string;
+    fileId?: string | null;
+    frame?: number | null;
+  }) => void;
   onSelectTask?: (taskId: string) => void;
 }
 
@@ -147,6 +182,14 @@ export function TaskDetail({
   });
   const companies = companiesData ?? EMPTY_COMPANIES;
 
+  // CR04 §6: scheduled outside an assignee's / department's / studio's activation period.
+  const { data: scheduleWarnings } = useQuery({
+    queryKey: ['schedule-warnings', activeProjectUuid, taskId],
+    queryFn: () => apiClient.listScheduleWarnings(taskId, activeProjectUuid),
+    enabled: Boolean(activeProjectUuid && taskId && !isClientRole),
+    retry: false,
+  });
+
   const [depPickerOpen, setDepPickerOpen] = useState(false);
   const { data: depCandidateResp } = useQuery({
     queryKey: ['tasks-dep-candidates', activeProjectUuid],
@@ -166,10 +209,29 @@ export function TaskDetail({
   const [depThreshold, setDepThreshold] = useState<'APP' | 'PUBLISHED' | 'ANY_STATUS'>('APP');
   const [commentDraft, setCommentDraft] = useState('');
   const [commentClientVis, setCommentClientVis] = useState(false);
+  const [reviewBusy, setReviewBusy] = useState(false);
   const [savedNotice, setSavedNotice] = useState(false);
   const [conflictMsg, setConflictMsg] = useState<string | null>(null);
   const [pendingTransition, setPendingTransition] = useState<TransitionOptionOut | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
+  const [panel, setPanel] = useState<'overview' | 'activity'>('overview');
+  const markSeen = useReviewSeenStore((st) => st.markSeen);
+  const [seenBaseline, setSeenBaseline] = useState<{ taskId: string; at: string } | null>(null);
+
+  // Opening a task marks its latest review as seen (clears the red dot everywhere),
+  // while remembering the previous baseline to highlight what is new in this view.
+  const detailFeedbackAt =
+    detail && 'last_feedback_at' in detail ? (detail.last_feedback_at ?? null) : null;
+  useEffect(() => {
+    if (!detail) return;
+    if (seenBaseline?.taskId !== detail.id) {
+      setSeenBaseline({
+        taskId: detail.id,
+        at: useReviewSeenStore.getState().seen[detail.id] ?? '',
+      });
+    }
+    if (detailFeedbackAt) markSeen(detail.id, detailFeedbackAt);
+  }, [detail, detailFeedbackAt, seenBaseline?.taskId, markSeen]);
 
   useEffect(() => {
     if (!detail) return;
@@ -222,11 +284,9 @@ export function TaskDetail({
         username: u.username,
         fullName: u.full_name,
         roleLabel: u.role_label,
-        companyName: u.company_id ? companyById.get(u.company_id)?.name ?? null : null,
+        companyName: u.company_id ? (companyById.get(u.company_id)?.name ?? null) : null,
         departmentIds: u.department_ids ?? [],
-        avatarUrl: u.avatar_file
-          ? apiClient.userAvatarUrl(u.id, activeProjectUuid)
-          : null,
+        avatarUrl: u.avatar_file ? apiClient.userAvatarUrl(u.id, activeProjectUuid) : null,
         isActive: u.is_active,
       })),
     [users, companyById, activeProjectUuid],
@@ -280,16 +340,12 @@ export function TaskDetail({
     }
   };
 
-  const handlePostComment = async () => {
+  const handlePostComment = async (kind: 'note' | 'review' = 'note') => {
     const body = commentDraft.trim();
     if (!body) return;
     try {
       const visibility = isClientRole || commentClientVis ? 'client' : 'internal';
-      await apiClient.createTaskComment(
-        taskId,
-        { body, kind: 'note', visibility },
-        activeProjectUuid,
-      );
+      await apiClient.createTaskComment(taskId, { body, kind, visibility }, activeProjectUuid);
       setCommentDraft('');
       await invalidateTask();
       flashSaved();
@@ -303,14 +359,17 @@ export function TaskDetail({
     const cDetail: ClientTaskDetailOut = detail;
     const clientVersions = cDetail.product?.versions ?? [];
     const canClientComment = hasPerm(auth?.permissions, 'task.comment');
+    const clientFeed = buildReviewFeed({
+      reviews: cDetail.reviews ?? [],
+      comments: (cDetail.comments ?? []).map((c) => ({ ...c, author_username: null })),
+      versionLabels: new Map(clientVersions.map((v) => [v.id, v.label])),
+    });
 
     return (
       <div className="org-tdet" data-ui="task-detail" data-client-mode="true">
         <div className="org-tdet__hdr">
           <div className="org-tdet__hdr-top">
-            <Text size="sm" variant="mono">
-              {cDetail.task_code}
-            </Text>
+            <span className="org-tdet__code">{cDetail.task_code}</span>
             <StatusChip status={cDetail.status} />
             {onClose && (
               <Button size="sm" variant="icon" aria-label="Close task detail" onClick={onClose}>
@@ -318,13 +377,23 @@ export function TaskDetail({
               </Button>
             )}
           </div>
-          <Text size="lg" variant="accent">
+          <h2 className="org-tdet__title" title={cDetail.task_name}>
             {cDetail.task_name}
-          </Text>
-          <Text size="sm" variant="muted">
-            {cDetail.entity_name} · {cDetail.department_name}
-            {cDetail.ideal_finish_date ? ` · Due ${cDetail.ideal_finish_date}` : ''}
-          </Text>
+          </h2>
+          <div className="org-tdet__context">
+            <DepartmentTag name={cDetail.department_name} className="org-tdet__dept" />
+            <span className="org-tdet__entity">{cDetail.entity_name}</span>
+          </div>
+          {cDetail.ideal_finish_date && (
+            <div className="org-tdet__keyfacts">
+              <span className="org-tdet__fact">
+                <span className="org-tdet__fact-label">Due</span>
+                <span className="org-tdet__fact-value">
+                  {formatDisplayDate(cDetail.ideal_finish_date)}
+                </span>
+              </span>
+            </div>
+          )}
           {(cDetail.allowed_transitions ?? []).length > 0 && (
             <div className="org-tdet__actions">
               {(cDetail.allowed_transitions ?? []).map((opt) => (
@@ -358,10 +427,7 @@ export function TaskDetail({
                     <span>
                       <strong>{ver.label}</strong> ({ver.files?.length ?? 0} files)
                     </span>
-                    <Button
-                      size="sm"
-                      onClick={() => handleOpenViewer(ver.files?.[0]?.id ?? null)}
-                    >
+                    <Button size="sm" onClick={() => handleOpenViewer(ver.files?.[0]?.id ?? null)}>
                       Open in viewer
                     </Button>
                   </div>
@@ -370,33 +436,32 @@ export function TaskDetail({
             )}
           </SectionBlock>
 
-          <SectionBlock title="Reviews & Comments" badge={String((cDetail.comments ?? []).length)}>
+          <SectionBlock title="Reviews" badge={String(clientFeed.length)}>
             <Stack gap="2">
-              {(cDetail.reviews ?? []).map((rev) => (
-                <div key={rev.id} className="org-tdet__row-box">
-                  <Badge tone={rev.decision === 'approved' ? 'success' : rev.decision === 'retake' ? 'danger' : 'neutral'}>
-                    Round {rev.round_no} · {rev.stage.toUpperCase()} · {rev.decision}
-                  </Badge>
-                </div>
-              ))}
-              {(cDetail.comments ?? []).map((cmt) => (
-                <div key={cmt.id} className="org-tdet__cmt">
-                  <div className="org-tdet__cmt-meta">
-                    <Text size="sm" variant="accent">
-                      {cmt.author_full_name ?? 'Reviewer'}
-                    </Text>
-                    <Badge tone="info">client</Badge>
-                    {cmt.file_id && (
-                      <Button
-                        size="sm"
-                        onClick={() => handleOpenViewer(cmt.file_id, cmt.frame ?? null)}
-                      >
-                        View frame {cmt.frame ?? 0}
-                      </Button>
-                    )}
-                  </div>
-                  <CommentBody body={cmt.body} />
-                </div>
+              {clientFeed.length === 0 && (
+                <Text size="sm" variant="muted">
+                  No reviews yet.
+                </Text>
+              )}
+              {clientFeed.map((item) => (
+                <ReviewCard
+                  key={item.key}
+                  title={item.title}
+                  tone={item.tone}
+                  tag={item.tag}
+                  author={item.author}
+                  authorLabel={item.authorLabel}
+                  at={item.at}
+                  taskLabel={cDetail.task_code}
+                  chips={item.chips}
+                  imageUrl={
+                    item.fileId ? apiClient.fileThumbnailUrl(item.fileId, activeProjectUuid) : null
+                  }
+                  onImageClick={
+                    item.fileId ? () => handleOpenViewer(item.fileId, item.frame) : undefined
+                  }
+                  body={item.body ? <CommentBody body={item.body} /> : undefined}
+                />
               ))}
               {canClientComment && (
                 <Stack gap="1">
@@ -411,7 +476,7 @@ export function TaskDetail({
                     size="sm"
                     variant="primary"
                     disabled={!commentDraft.trim()}
-                    onClick={() => void handlePostComment()}
+                    onClick={() => void handlePostComment('note')}
                   >
                     Post Client Comment
                   </Button>
@@ -457,7 +522,8 @@ export function TaskDetail({
   const canLogTime = canPerformOnTask(auth, 'task.log_time', myCaps);
   const canComment = canPerformOnTask(auth, 'task.comment', myCaps);
   const canShareClient = canPerformOnTask(auth, 'task.share_client', myCaps);
-  const canShowAllDepts = auth?.user.role_name === 'admin' || auth?.permissions['task.assign'] === 'all';
+  const canShowAllDepts =
+    auth?.user.role_name === 'admin' || auth?.permissions['task.assign'] === 'all';
 
   const patchWithConflict = async (payload: Record<string, unknown>) => {
     setConflictMsg(null);
@@ -501,6 +567,115 @@ export function TaskDetail({
 
   const versions = full.product?.versions ?? [];
   const overdue = isOverdueDate(full.ideal_finish_date, full.status);
+  const visibleTransitions = (full.allowed_transitions ?? []).filter(
+    (opt) => !isHiddenAdminTransition(opt),
+  );
+  const userById = new Map(users.map((u) => [u.id, u]));
+  const feed = buildReviewFeed({
+    reviews: full.reviews ?? [],
+    comments: full.comments ?? [],
+    versionLabels: new Map(versions.map((v) => [v.id, v.label])),
+    avatarUrlFor: (uid) =>
+      uid && userById.get(uid)?.avatar_file
+        ? apiClient.userAvatarUrl(uid, activeProjectUuid)
+        : null,
+    currentUserId: auth?.user.id ?? null,
+    unreadAfter: seenBaseline?.taskId === full.id ? seenBaseline.at : undefined,
+  });
+
+  // ---- v1 review panel wiring (real task actions) ----
+  const latestVersionLabel = versions.length > 0 ? (versions[versions.length - 1]?.label ?? null) : null;
+  const artistId = assignForRole('artist')[0];
+  const artistUser = artistId ? userById.get(artistId) : undefined;
+  const submitter = artistUser
+    ? {
+        username: artistUser.username,
+        fullName: artistUser.full_name,
+        avatarUrl: artistUser.avatar_file
+          ? apiClient.userAvatarUrl(artistUser.id, activeProjectUuid)
+          : null,
+      }
+    : null;
+  const findTransition = (pred: (o: TransitionOptionOut) => boolean) =>
+    visibleTransitions.find(pred) ?? null;
+  const isRejectAction = (o: TransitionOptionOut) => /reject/i.test(o.action);
+  const approveOpt = findTransition((o) => o.to === 'APP');
+  const rejectOpt = findTransition((o) => isRejectAction(o));
+  const changesOpt = findTransition((o) => o.to === 'RTK' && !isRejectAction(o));
+  const holdOpt = findTransition((o) => o.to === 'HLD');
+  const reviewAction = (opt: TransitionOptionOut | null) =>
+    opt
+      ? {
+          title: opt.action,
+          onClick: () => {
+            const note = commentDraft.trim();
+            // A note in the panel satisfies a required comment; versions still go through the dialog.
+            if (opt.requires_comment && !opt.requires_version && note) {
+              void executeTransition(opt, { comment: note }).then(() => setCommentDraft(''));
+            } else {
+              handleTransitionClick(opt);
+            }
+          },
+        }
+      : { disabled: true, title: 'Not available for this task right now' };
+  const handleMarkViewed = () => {
+    const latest = feed.length > 0 ? feed[feed.length - 1]!.at : new Date().toISOString();
+    markSeen(full.id, latest);
+    setSeenBaseline({ taskId: full.id, at: latest });
+    toast.push('success', 'Marked as viewed');
+  };
+  const handleAttach = async (files: File[]) => {
+    setReviewBusy(true);
+    try {
+      const ver = await apiClient.publishUploads(
+        taskId,
+        files,
+        commentDraft.trim(),
+        null,
+        activeProjectUuid,
+      );
+      toast.push('success', `Attached as ${ver.label}`);
+      setCommentDraft('');
+      await invalidateTask();
+    } catch (err) {
+      toast.push('danger', err instanceof Error ? err.message : 'Attach failed');
+    } finally {
+      setReviewBusy(false);
+    }
+  };
+  const reviewThread: ReviewThreadItem[] = feed.map((item) => {
+    const isReview = item.key.startsWith('rev:') || item.title.startsWith('Review');
+    const tag: ReviewThreadItem['tag'] = isReview
+      ? item.tone === 'danger' || item.tone === 'warning'
+        ? 'changes'
+        : 'sent'
+      : 'comment';
+    return {
+      key: item.key,
+      author: item.author,
+      role: item.authorLabel,
+      time: formatFeedTime(item.at),
+      tag,
+      unread: item.unread,
+      body: item.body ? <CommentBody body={item.body} /> : undefined,
+      extra:
+        item.chips.length > 0 || item.fileId ? (
+          <div className="org-tdet__thread-extra">
+            {item.chips.map((c) => (
+              <Badge key={c.label} tone={c.tone ?? 'neutral'}>
+                {c.label}
+              </Badge>
+            ))}
+            {item.fileId && (
+              <Button size="sm" onClick={() => handleOpenViewer(item.fileId, item.frame)}>
+                Open in viewer
+                {item.frame !== null && item.frame !== undefined ? ` · F${item.frame}` : ''}
+              </Button>
+            )}
+          </div>
+        ) : undefined,
+    };
+  });
 
   return (
     <div
@@ -508,11 +683,18 @@ export function TaskDetail({
       data-ui="task-detail"
       data-task-id={full.id}
     >
+      {(scheduleWarnings ?? []).length > 0 && (
+        <Banner severity="warning" title="Outside activation period">
+          <ul className="org-tdet__warn-list" data-ui="task-activation-warnings">
+            {(scheduleWarnings ?? []).map((w) => (
+              <li key={`${w.kind}:${w.target_id}`}>{w.message}</li>
+            ))}
+          </ul>
+        </Banner>
+      )}
       <div className="org-tdet__hdr">
         <div className="org-tdet__hdr-top">
-          <Text size="sm" variant="mono">
-            {full.task_code}
-          </Text>
+          <span className="org-tdet__code">{full.task_code}</span>
           <StatusChip status={full.status} />
           <PriorityMarker priority={full.priority ?? 'normal'} />
           {full.blocked_upstream && (
@@ -528,19 +710,47 @@ export function TaskDetail({
           )}
         </div>
 
-        <Text size="lg" variant="accent">
+        <h2 className="org-tdet__title" title={full.task_name}>
           {full.task_name}
-        </Text>
+        </h2>
 
-        <div className="org-tdet__sub">
-          <Text size="sm" variant="muted">
-            {full.entity_name} · {full.department_name}
-          </Text>
+        <div className="org-tdet__context">
+          <DepartmentTag
+            id={full.department_id}
+            name={full.department_name}
+            color={full.department_color}
+            className="org-tdet__dept"
+          />
+          <button
+            type="button"
+            className="org-tdet__entity"
+            title="Open entity in the Entities browser"
+            onClick={() => navigate(`/entities?task=${full.id}`)}
+          >
+            {full.entity_name}
+          </button>
+          {full.parent_entity_type && <Badge tone="accent">{full.parent_entity_type}</Badge>}
+        </div>
+
+        <div className="org-tdet__keyfacts">
+          <span className="org-tdet__fact">
+            <span className="org-tdet__fact-label">Planned</span>
+            <span
+              className={`org-tdet__fact-value${overdue ? ' org-tdet__fact-value--danger' : ''}`}
+            >
+              {formatDisplayDate(full.ideal_start_date) || '—'} →{' '}
+              {formatDisplayDate(full.ideal_finish_date) || '—'}
+            </span>
+          </span>
+          <span className="org-tdet__fact">
+            <span className="org-tdet__fact-label">Time</span>
+            <span className="org-tdet__fact-value">
+              {full.logged_hours ?? 0}h / {full.bid_hours ?? 0}h
+            </span>
+          </span>
           {myCaps.length > 0 && (
-            <span className="org-tdet__you-are">
-              <Text size="sm" variant="muted">
-                You are:
-              </Text>
+            <span className="org-tdet__fact">
+              <span className="org-tdet__fact-label">You are</span>
               <CapacityBadgeList capacities={myCaps} />
             </span>
           )}
@@ -555,9 +765,9 @@ export function TaskDetail({
           </Banner>
         )}
 
-        {(full.allowed_transitions ?? []).length > 0 && (
+        {visibleTransitions.length > 0 && (
           <div className="org-tdet__actions" aria-label="Workflow actions">
-            {(full.allowed_transitions ?? []).map((opt) => {
+            {visibleTransitions.map((opt) => {
               const actedLabel = formatActedAsLabel(opt.acted_as, opt.on_behalf);
               const btnLabel = actedLabel ? `${opt.action} ${actedLabel}` : opt.action;
               return (
@@ -581,703 +791,694 @@ export function TaskDetail({
             })}
           </div>
         )}
+
+        <div className="org-tdet__switch" role="tablist" aria-label="Task detail panels">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={panel === 'overview'}
+            data-active={panel === 'overview' ? 'true' : undefined}
+            className="org-tdet__switch-btn"
+            onClick={() => setPanel('overview')}
+          >
+            Summary · People · Schedule
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={panel === 'activity'}
+            data-active={panel === 'activity' ? 'true' : undefined}
+            className="org-tdet__switch-btn"
+            onClick={() => setPanel('activity')}
+          >
+            Dependencies · Versions · Reviews · History
+            {feed.length > 0 && <Badge tone="neutral">{feed.length}</Badge>}
+          </button>
+        </div>
       </div>
 
       <ScrollArea className="org-tdet__scroll">
-        <SectionBlock title="Summary">
-          <Stack gap="2">
-            <Inline gap="2">
-              <Button size="sm" onClick={() => navigate('/entities')}>
-                Entity: {full.entity_name}
-              </Button>
-              <Badge tone="neutral">{full.department_name}</Badge>
-              {full.parent_entity_type && <Badge tone="accent">{full.parent_entity_type}</Badge>}
-            </Inline>
+        {panel === 'overview' ? (
+          <div className="org-tdet__overview">
+            <section className="org-tdet__block">
+              <h3 className="org-tdet__block-title">People</h3>
+              <div className="org-tdet__people">
+                {PEOPLE_ROLES.map(({ role, label, placeholder }) => {
+                  const assigned = (full.assignments ?? []).filter(
+                    (a) => a.assignment_role === role,
+                  );
+                  return (
+                    <div key={role} className="org-tdet__people-row" data-role={role}>
+                      <span className="org-tdet__role-label">{label}</span>
+                      <div className="org-tdet__people-list">
+                        {assigned.length === 0 ? (
+                          <span className="org-tdet__unassigned">Unassigned</span>
+                        ) : (
+                          assigned.map((a) => (
+                            <span key={a.user_id} className="org-tdet__person">
+                              <Avatar
+                                username={a.username}
+                                fullName={a.full_name}
+                                avatarUrl={
+                                  a.avatar_file
+                                    ? apiClient.userAvatarUrl(a.user_id, activeProjectUuid)
+                                    : null
+                                }
+                                size="lg"
+                              />
+                              <span className="org-tdet__person-text">
+                                <span className="org-tdet__person-name">{a.full_name}</span>
+                                <span className="org-tdet__person-user">@{a.username}</span>
+                              </span>
+                            </span>
+                          ))
+                        )}
+                        {canViewUsers && canAssign && (
+                          <UserPicker
+                            ariaLabel={`Assign ${label.toLowerCase()}`}
+                            users={userOptions}
+                            selectedIds={assignForRole(role)}
+                            departmentId={full.department_id}
+                            canShowAll={canShowAllDepts}
+                            placeholder={placeholder}
+                            onChange={(ids) => void updateAssignmentsRole(role, ids)}
+                            trigger={
+                              <Button size="sm" aria-label={`Edit ${label.toLowerCase()}`}>
+                                <Icon name={assigned.length === 0 ? 'plus' : 'pencil'} size="sm" />
+                                {assigned.length === 0 ? 'Assign' : 'Edit'}
+                              </Button>
+                            }
+                          />
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
 
-            <div className="org-tdet__grid2">
-              <Stack gap="1">
-                <Text size="sm" variant="muted">
-                  Priority
-                </Text>
-                {canEditFields ? (
-                  <Select
-                    ariaLabel="Task priority"
-                    value={full.priority ?? 'normal'}
-                    onChange={(val) => void patchWithConflict({ priority: val })}
-                    options={[...PRIORITY_OPTIONS]}
-                  />
-                ) : (
-                  <Text size="sm" className="org-tdet__readonly">
-                    {full.priority ?? 'normal'}
-                  </Text>
-                )}
-              </Stack>
-
-              <Stack gap="1">
-                <Text size="sm" variant="muted">
-                  Complexity (1–5)
-                </Text>
-                {canEditFields ? (
-                  <Select
-                    ariaLabel="Task complexity"
-                    value={full.complexity_rating ? String(full.complexity_rating) : 'none'}
-                    onChange={(val) =>
-                      void patchWithConflict({
-                        complexity_rating: val === 'none' ? null : Number(val),
-                      })
-                    }
-                    options={[
-                      { value: 'none', label: 'Unset' },
-                      { value: '1', label: '1 - Simple' },
-                      { value: '2', label: '2 - Easy' },
-                      { value: '3', label: '3 - Medium' },
-                      { value: '4', label: '4 - Hard' },
-                      { value: '5', label: '5 - Hero' },
-                    ]}
-                  />
-                ) : (
-                  <Text size="sm" className="org-tdet__readonly">
-                    {full.complexity_rating ?? '—'}
-                  </Text>
-                )}
-              </Stack>
-            </div>
-
-            <div className="org-tdet__checks">
-              <Checkbox
-                label="Lead review"
-                checked={Boolean(full.needs_lead_review)}
-                disabled={!canEditFields}
-                onChange={(checked) => void patchWithConflict({ needs_lead_review: checked })}
-              />
-              <Checkbox
-                label="Sup review"
-                checked={Boolean(full.needs_sup_review)}
-                disabled={!canEditFields}
-                onChange={(checked) => void patchWithConflict({ needs_sup_review: checked })}
-              />
-              <Checkbox
-                label="Client review"
-                checked={Boolean(full.needs_client_review)}
-                disabled={!canEditFields}
-                onChange={(checked) => void patchWithConflict({ needs_client_review: checked })}
-              />
-            </div>
-
-            <Stack gap="1">
-              <Text size="sm" variant="muted">
-                Description
-              </Text>
-              {canEditFields ? (
-                <Stack gap="1">
-                  <TextArea
-                    aria-label="Task description"
-                    rows={2}
-                    value={descDraft}
-                    onChange={(e) => setDescDraft(e.target.value)}
-                  />
-                  {descDraft !== (full.description ?? '') && (
-                    <Button
-                      size="sm"
-                      variant="primary"
-                      onClick={() => void patchWithConflict({ description: descDraft })}
-                    >
-                      Save Description
-                    </Button>
-                  )}
-                </Stack>
-              ) : (
-                <Text size="sm" className="org-tdet__readonly">
-                  {full.description || '—'}
-                </Text>
-              )}
-            </Stack>
-
-            <Stack gap="1">
-              <Text size="sm" variant="muted">
-                Tags ({full.tags?.length ?? 0})
-              </Text>
-              <Inline gap="1" wrap>
-                {(full.tags ?? []).map((t) => (
-                  <Badge key={t} tone="neutral">
-                    {t}{' '}
-                    {canEditFields && (
-                      <button
-                        type="button"
-                        className="org-tdet__xbtn"
-                        aria-label={`Remove tag ${t}`}
-                        onClick={async () => {
-                          await apiClient.putTaskTags(
-                            taskId,
-                            (full.tags ?? []).filter((x) => x !== t),
-                            activeProjectUuid,
-                          );
-                          await invalidateTask();
+            <section className="org-tdet__block">
+              <h3 className="org-tdet__block-title">Schedule &amp; Time</h3>
+              <Stack gap="2">
+                <div className="org-tdet__grid2">
+                  <label className="org-tdet__field">
+                    <Text size="sm" variant="muted">
+                      Planned Start
+                    </Text>
+                    {canEditSchedule ? (
+                      <DatePicker
+                        ariaLabel="Planned start date"
+                        placeholder="Set planned start"
+                        value={idealStartDraft}
+                        max={idealFinishDraft || null}
+                        onChange={(v) => {
+                          setIdealStartDraft(v ?? '');
+                          void patchWithConflict({ ideal_start_date: v });
                         }}
-                      >
-                        ×
-                      </button>
+                      />
+                    ) : (
+                      <Text size="sm" className="org-tdet__readonly">
+                        {full.ideal_start_date ?? '—'}
+                      </Text>
                     )}
-                  </Badge>
-                ))}
-              </Inline>
-              {canEditFields && (
-                <Inline gap="1">
-                  <TextField
-                    aria-label="Add task tag"
-                    placeholder="Add tag..."
-                    value={tagDraft}
-                    onChange={(e) => setTagDraft(e.target.value)}
-                  />
-                  <Button
-                    size="sm"
-                    onClick={async () => {
-                      const clean = tagDraft.trim();
-                      if (!clean) return;
-                      await apiClient.putTaskTags(
-                        taskId,
-                        Array.from(new Set([...(full.tags ?? []), clean])),
-                        activeProjectUuid,
-                      );
-                      setTagDraft('');
-                      await invalidateTask();
-                    }}
-                  >
-                    Add
-                  </Button>
-                </Inline>
-              )}
-            </Stack>
-          </Stack>
-        </SectionBlock>
+                  </label>
 
-        <SectionBlock title="People" badge={String(full.assignments?.length ?? 0)}>
-          <Stack gap="2">
-            {canViewUsers ? (
-              <>
-                <div className="org-tdet__pick-row">
-                  <Text size="sm">Artists (DO)</Text>
-                  <UserPicker
-                    ariaLabel="Assign artists"
-                    users={userOptions}
-                    selectedIds={assignForRole('artist')}
-                    departmentId={full.department_id}
-                    canShowAll={canShowAllDepts}
-                    disabled={!canAssign}
-                    placeholder="Assign artist..."
-                    onChange={(ids) => void updateAssignmentsRole('artist', ids)}
-                  />
-                </div>
-                <div className="org-tdet__pick-row">
-                  <Text size="sm">Leads (LEAD)</Text>
-                  <UserPicker
-                    ariaLabel="Assign leads"
-                    users={userOptions}
-                    selectedIds={assignForRole('lead')}
-                    departmentId={full.department_id}
-                    canShowAll={canShowAllDepts}
-                    disabled={!canAssign}
-                    placeholder="Assign lead..."
-                    onChange={(ids) => void updateAssignmentsRole('lead', ids)}
-                  />
-                </div>
-                <div className="org-tdet__pick-row">
-                  <Text size="sm">Supervisors (SUP)</Text>
-                  <UserPicker
-                    ariaLabel="Assign supervisors"
-                    users={userOptions}
-                    selectedIds={assignForRole('supervisor')}
-                    departmentId={full.department_id}
-                    canShowAll={canShowAllDepts}
-                    disabled={!canAssign}
-                    placeholder="Assign supervisor..."
-                    onChange={(ids) => void updateAssignmentsRole('supervisor', ids)}
-                  />
-                </div>
-              </>
-            ) : (
-              <Stack gap="1">
-                {(full.assignments ?? []).map((a) => (
-                  <div key={`${a.user_id}-${a.assignment_role}`} className="org-tdet__row-box">
-                    <Inline gap="1">
-                      <Avatar username={a.username} fullName={a.full_name} size="sm" />
-                      <Text size="sm">{a.full_name}</Text>
-                    </Inline>
-                    <CapacityBadgeList capacities={[a.assignment_role]} />
-                  </div>
-                ))}
-              </Stack>
-            )}
-          </Stack>
-        </SectionBlock>
-
-        <SectionBlock title="Schedule & Time" badge={`${full.logged_hours ?? 0}h`}>
-          <Stack gap="2">
-            <div className="org-tdet__grid2">
-              <label className="org-tdet__field">
-                <Text size="sm" variant="muted">
-                  Ideal Start
-                </Text>
-                {canEditSchedule ? (
-                  <input
-                    type="date"
-                    className="org-tdet__date"
-                    aria-label="Ideal start date"
-                    value={idealStartDraft}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setIdealStartDraft(v);
-                      void patchWithConflict({ ideal_start_date: v || null });
-                    }}
-                  />
-                ) : (
-                  <Text size="sm" className="org-tdet__readonly">
-                    {full.ideal_start_date ?? '—'}
-                  </Text>
-                )}
-              </label>
-
-              <label className="org-tdet__field">
-                <Text size="sm" variant="muted">
-                  Ideal Finish
-                </Text>
-                {canEditSchedule ? (
-                  <input
-                    type="date"
-                    className={`org-tdet__date${overdue ? ' org-tdet__date--overdue' : ''}`}
-                    aria-label="Ideal finish date"
-                    value={idealFinishDraft}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setIdealFinishDraft(v);
-                      void patchWithConflict({ ideal_finish_date: v || null });
-                    }}
-                  />
-                ) : (
-                  <Text
-                    size="sm"
-                    variant={overdue ? 'danger' : 'mono'}
-                    className="org-tdet__readonly"
-                  >
-                    {full.ideal_finish_date ?? '—'}
-                  </Text>
-                )}
-              </label>
-            </div>
-
-            <div className="org-tdet__grid2">
-              <Text size="sm" variant="muted">
-                Actual Start: <span className="org-tdet__mono">{full.actual_start_date ?? '—'}</span>
-              </Text>
-              <Text size="sm" variant="muted">
-                Actual Finish: <span className="org-tdet__mono">{full.actual_finish_date ?? '—'}</span>
-              </Text>
-            </div>
-
-            <div className="org-tdet__grid2">
-              <Stack gap="1">
-                <Text size="sm" variant="muted">
-                  Bid Hours {full.bid_days !== null && full.bid_days !== undefined ? `(${full.bid_days}d)` : ''}
-                </Text>
-                {canEditFields ? (
-                  <Inline gap="1">
-                    <NumberField
-                      ariaLabel="Bid hours"
-                      value={bidDraft}
-                      min={0}
-                      max={10000}
-                      step={1}
-                      precision={1}
-                      onChange={setBidDraft}
-                    />
-                    {bidDraft !== (full.bid_hours ?? 0) && (
-                      <Button
+                  <label className="org-tdet__field">
+                    <Text size="sm" variant="muted">
+                      Planned Finish
+                    </Text>
+                    {canEditSchedule ? (
+                      <DatePicker
+                        ariaLabel="Planned finish date"
+                        placeholder="Set planned finish"
+                        value={idealFinishDraft}
+                        min={idealStartDraft || null}
+                        error={overdue}
+                        onChange={(v) => {
+                          setIdealFinishDraft(v ?? '');
+                          void patchWithConflict({ ideal_finish_date: v });
+                        }}
+                      />
+                    ) : (
+                      <Text
                         size="sm"
-                        onClick={() => void patchWithConflict({ bid_hours: bidDraft })}
+                        variant={overdue ? 'danger' : 'mono'}
+                        className="org-tdet__readonly"
                       >
-                        Set
-                      </Button>
+                        {full.ideal_finish_date ?? '—'}
+                      </Text>
                     )}
-                  </Inline>
-                ) : (
-                  <Text size="sm" variant="mono" className="org-tdet__readonly">
-                    {full.bid_hours ?? 0}h
-                  </Text>
-                )}
-              </Stack>
-
-              <Stack gap="1">
-                <Text size="sm" variant="muted">
-                  Logged / Retakes
-                </Text>
-                <Text size="sm" variant="mono">
-                  {full.logged_hours ?? 0}h logged · {full.retake_count ?? 0} retakes
-                </Text>
-              </Stack>
-            </div>
-
-            {canLogTime && (
-              <div className="org-tdet__timelog-form">
-                <NumberField
-                  ariaLabel="Log hours"
-                  value={logHours}
-                  min={0.25}
-                  max={24}
-                  step={0.5}
-                  precision={2}
-                  onChange={setLogHours}
-                />
-                <input
-                  type="date"
-                  className="org-tdet__date"
-                  aria-label="Work date"
-                  value={logDate}
-                  onChange={(e) => setLogDate(e.target.value)}
-                />
-                <TextField
-                  aria-label="Time log note"
-                  placeholder="Work note..."
-                  value={logNote}
-                  onChange={(e) => setLogNote(e.target.value)}
-                />
-                <Button
-                  size="sm"
-                  variant="primary"
-                  onClick={async () => {
-                    try {
-                      await apiClient.createTimeLog(
-                        taskId,
-                        { hours: logHours, work_date: logDate, note: logNote.trim() },
-                        activeProjectUuid,
-                      );
-                      setLogNote('');
-                      await invalidateTask();
-                      flashSaved();
-                    } catch (err) {
-                      toast.push('danger', err instanceof Error ? err.message : 'Time log failed');
-                    }
-                  }}
-                >
-                  Log Time
-                </Button>
-              </div>
-            )}
-
-            {(full.time_logs ?? []).slice(0, 6).map((lg) => (
-              <div key={lg.id} className="org-tdet__row-box">
-                <span className="org-tdet__mono">
-                  {lg.work_date} · {lg.hours}h · {lg.full_name ?? lg.username ?? 'User'}
-                  {lg.note ? ` — ${lg.note}` : ''}
-                </span>
-                {(lg.user_id === auth?.user.id || canEditFields) && (
-                  <Button
-                    size="sm"
-                    variant="icon"
-                    aria-label="Delete time log"
-                    onClick={async () => {
-                      await apiClient.deleteTimeLog(taskId, lg.id, activeProjectUuid);
-                      await invalidateTask();
-                    }}
-                  >
-                    <Icon name="trash" size="sm" />
-                  </Button>
-                )}
-              </div>
-            ))}
-          </Stack>
-        </SectionBlock>
-
-        <SectionBlock
-          title="Dependencies"
-          badge={`${(full.dependencies ?? []).length}↑ / ${(full.downstream ?? []).length}↓`}
-        >
-          <Stack gap="2">
-            {(full.dependencies ?? []).length === 0 ? (
-              <Text size="sm" variant="muted">
-                No upstream dependencies.
-              </Text>
-            ) : (
-              (full.dependencies ?? []).map((d) => (
-                <div key={d.upstream_task_id} className="org-tdet__row-box">
-                  <button
-                    type="button"
-                    className="org-tdet__linkbtn"
-                    onClick={() => onSelectTask?.(d.upstream_task_id)}
-                  >
-                    <span className="org-tdet__mono">{d.upstream_task_code}</span>
-                    <StatusChip status={d.upstream_status ?? 'WTG'} compact />
-                    <Badge tone={d.satisfied ? 'success' : 'warning'}>{d.threshold}</Badge>
-                    {d.from_entity_link && (
-                      <span title="Generated from entity link">
-                        <Badge tone="info">via link</Badge>
-                      </span>
-                    )}
-                  </button>
-                  {canEditDeps && (
-                    <Button
-                      size="sm"
-                      variant="icon"
-                      aria-label={`Remove dependency ${d.upstream_task_code}`}
-                      onClick={async () => {
-                        const next = (full.dependencies ?? [])
-                          .filter((x) => x.upstream_task_id !== d.upstream_task_id)
-                          .map((x) => ({
-                            upstream_task_id: x.upstream_task_id,
-                            threshold: (x.threshold ?? 'APP') as 'APP' | 'PUBLISHED' | 'ANY_STATUS',
-                            from_entity_link: Boolean(x.from_entity_link),
-                          }));
-                        await apiClient.putTaskDependencies(taskId, next, activeProjectUuid);
-                        await invalidateTask();
-                      }}
-                    >
-                      <Icon name="close" size="sm" />
-                    </Button>
-                  )}
+                  </label>
                 </div>
-              ))
-            )}
 
-            {canEditDeps && (
-              <Stack gap="1">
-                {!depPickerOpen ? (
-                  <Button size="sm" onClick={() => setDepPickerOpen(true)}>
-                    + Add Upstream Dependency
-                  </Button>
-                ) : (
-                  <div className="org-tdet__dep-add">
-                    <Select
-                      ariaLabel="Upstream task"
-                      value={depTargetId}
-                      onChange={setDepTargetId}
-                      options={[
-                        { value: '', label: 'Select upstream task...' },
-                        ...(depCandidateResp?.items ?? [])
-                          .filter((cand) => cand.id !== taskId)
-                          .map((cand) => ({
-                            value: cand.id,
-                            label: `${cand.task_code} (${cand.status})`,
-                          })),
-                      ]}
+                <div className="org-tdet__grid2">
+                  <Text size="sm" variant="muted">
+                    Actual Start:{' '}
+                    <span className="org-tdet__mono">{full.actual_start_date ?? '—'}</span>
+                  </Text>
+                  <Text size="sm" variant="muted">
+                    Actual Finish:{' '}
+                    <span className="org-tdet__mono">{full.actual_finish_date ?? '—'}</span>
+                  </Text>
+                </div>
+
+                <div className="org-tdet__grid2">
+                  <Stack gap="1">
+                    <Text size="sm" variant="muted">
+                      Bid Hours{' '}
+                      {full.bid_days !== null && full.bid_days !== undefined
+                        ? `(${full.bid_days}d)`
+                        : ''}
+                    </Text>
+                    {canEditFields ? (
+                      <Inline gap="1">
+                        <NumberField
+                          ariaLabel="Bid hours"
+                          value={bidDraft}
+                          min={0}
+                          max={10000}
+                          step={1}
+                          precision={1}
+                          onChange={setBidDraft}
+                        />
+                        {bidDraft !== (full.bid_hours ?? 0) && (
+                          <Button
+                            size="sm"
+                            onClick={() => void patchWithConflict({ bid_hours: bidDraft })}
+                          >
+                            Set
+                          </Button>
+                        )}
+                      </Inline>
+                    ) : (
+                      <Text size="sm" variant="mono" className="org-tdet__readonly">
+                        {full.bid_hours ?? 0}h
+                      </Text>
+                    )}
+                  </Stack>
+
+                  <Stack gap="1">
+                    <Text size="sm" variant="muted">
+                      Logged / Retakes
+                    </Text>
+                    <Text size="sm" variant="mono">
+                      {full.logged_hours ?? 0}h logged · {full.retake_count ?? 0} retakes
+                    </Text>
+                  </Stack>
+                </div>
+
+                {canLogTime && (
+                  <div className="org-tdet__timelog-form">
+                    <NumberField
+                      ariaLabel="Log hours"
+                      value={logHours}
+                      min={0.25}
+                      max={24}
+                      step={0.5}
+                      precision={2}
+                      onChange={setLogHours}
                     />
-                    <Select
-                      ariaLabel="Dependency threshold"
-                      value={depThreshold}
-                      onChange={(v) =>
-                        setDepThreshold(v as 'APP' | 'PUBLISHED' | 'ANY_STATUS')
-                      }
-                      options={[
-                        { value: 'APP', label: 'APP' },
-                        { value: 'PUBLISHED', label: 'PUBLISHED' },
-                        { value: 'ANY_STATUS', label: 'ANY_STATUS' },
-                      ]}
+                    <DatePicker
+                      ariaLabel="Work date"
+                      clearable={false}
+                      value={logDate}
+                      onChange={(v) => {
+                        if (v) setLogDate(v);
+                      }}
+                    />
+                    <TextField
+                      aria-label="Time log note"
+                      placeholder="Work note..."
+                      value={logNote}
+                      onChange={(e) => setLogNote(e.target.value)}
                     />
                     <Button
                       size="sm"
                       variant="primary"
-                      disabled={!depTargetId}
                       onClick={async () => {
                         try {
-                          const existing = (full.dependencies ?? []).map((x) => ({
-                            upstream_task_id: x.upstream_task_id,
-                            threshold: (x.threshold ?? 'APP') as 'APP' | 'PUBLISHED' | 'ANY_STATUS',
-                            from_entity_link: Boolean(x.from_entity_link),
-                          }));
-                          await apiClient.putTaskDependencies(
+                          await apiClient.createTimeLog(
                             taskId,
-                            [
-                              ...existing.filter((x) => x.upstream_task_id !== depTargetId),
-                              {
-                                upstream_task_id: depTargetId,
-                                threshold: depThreshold,
-                                from_entity_link: false,
-                              },
-                            ],
+                            { hours: logHours, work_date: logDate, note: logNote.trim() },
                             activeProjectUuid,
                           );
-                          setDepTargetId('');
+                          setLogNote('');
                           await invalidateTask();
                           flashSaved();
                         } catch (err) {
                           toast.push(
                             'danger',
-                            err instanceof Error ? err.message : 'Dependency rejected',
+                            err instanceof Error ? err.message : 'Time log failed',
                           );
                         }
                       }}
                     >
-                      Add
+                      Log Time
                     </Button>
                   </div>
                 )}
-              </Stack>
-            )}
 
-            {(full.downstream ?? []).length > 0 && (
-              <Stack gap="1">
-                <Text size="sm" variant="muted">
-                  Downstream Dependents
-                </Text>
-                {(full.downstream ?? []).map((d) => (
-                  <div key={d.task_id} className="org-tdet__row-box">
-                    <button
-                      type="button"
-                      className="org-tdet__linkbtn"
-                      onClick={() => onSelectTask?.(d.task_id)}
-                    >
-                      <span className="org-tdet__mono">{d.upstream_task_code}</span>
-                      <StatusChip status={d.upstream_status ?? 'WTG'} compact />
-                    </button>
-                  </div>
-                ))}
-              </Stack>
-            )}
-          </Stack>
-        </SectionBlock>
-
-        <SectionBlock title="Versions & Sharing" badge={String(versions.length)}>
-          <Stack gap="2">
-            {canShareClient && (
-              <Inline gap="2">
-                <Button size="sm" onClick={() => setShareOpen(true)}>
-                  Share with client…
-                </Button>
-                {(full.shared_company_ids?.length ?? 0) > 0 && (
-                  <Badge tone="info">
-                    Shared ({full.shared_company_ids?.length})
-                  </Badge>
-                )}
-              </Inline>
-            )}
-            {versions.length === 0 ? (
-              <Text size="sm" variant="muted">
-                No product versions published yet.
-              </Text>
-            ) : (
-              versions.map((ver) => (
-                <div key={ver.id} className="org-tdet__row-box">
-                  <Inline gap="1">
-                    <strong>{ver.label}</strong>
-                    {full.latest_version_id === ver.id && <Badge tone="neutral">latest</Badge>}
-                    {full.approved_version_id === ver.id && <Badge tone="success">approved</Badge>}
-                  </Inline>
-                  <Button
-                    size="sm"
-                    onClick={() => handleOpenViewer(ver.files?.[0]?.id ?? null)}
-                  >
-                    Open in viewer
-                  </Button>
-                </div>
-              ))
-            )}
-          </Stack>
-        </SectionBlock>
-
-        <SectionBlock title="Reviews & Comments" badge={String((full.comments ?? []).length)}>
-          <Stack gap="2">
-            {(full.reviews ?? []).map((rev) => (
-              <div key={rev.id} className="org-tdet__row-box">
-                <span>
-                  <Badge
-                    tone={
-                      rev.decision === 'approved'
-                        ? 'success'
-                        : rev.decision === 'retake'
-                          ? 'danger'
-                          : 'neutral'
+                {(full.time_logs ?? []).slice(0, 6).map((lg) => (
+                  <ContextMenu
+                    key={lg.id}
+                    items={
+                      lg.user_id === auth?.user.id || canEditFields
+                        ? [
+                            {
+                              id: 'delete-log',
+                              label: 'Delete Time Log',
+                              onSelect: async () => {
+                                await apiClient.deleteTimeLog(taskId, lg.id, activeProjectUuid);
+                                await invalidateTask();
+                              },
+                            },
+                          ]
+                        : []
                     }
                   >
-                    R{rev.round_no} {rev.stage.toUpperCase()} {rev.decision}
-                  </Badge>{' '}
-                  <Text size="sm" variant="muted">
-                    {rev.on_behalf_of
-                      ? `approved by ${rev.reviewer_name ?? 'Producer'} on behalf of ${rev.on_behalf_of}`
-                      : `${rev.reviewer_name ?? ''} (${rev.acted_as})`}
-                  </Text>
-                </span>
-              </div>
-            ))}
+                    <div className="org-tdet__row-box">
+                      <span className="org-tdet__mono">
+                        {lg.work_date} · {lg.hours}h · {lg.full_name ?? lg.username ?? 'User'}
+                        {lg.note ? ` — ${lg.note}` : ''}
+                      </span>
+                    </div>
+                  </ContextMenu>
+                ))}
+              </Stack>
+            </section>
 
-            {(full.comments ?? []).map((cmt) => (
-              <div key={cmt.id} className="org-tdet__cmt">
-                <div className="org-tdet__cmt-meta">
-                  <Text size="sm" variant="accent">
-                    {cmt.author_full_name ?? cmt.author_username ?? 'User'}
-                  </Text>
-                  <Badge tone={cmt.visibility === 'client' ? 'info' : 'neutral'}>
-                    {cmt.visibility}
-                  </Badge>
-                  {cmt.kind === 'media' && <Badge tone="accent">media</Badge>}
-                  {cmt.file_id && (
-                    <Button
-                      size="sm"
-                      onClick={() => handleOpenViewer(cmt.file_id, cmt.frame ?? null)}
-                    >
-                      Open {cmt.frame !== null && cmt.frame !== undefined ? `F${cmt.frame}` : 'file'}
-                    </Button>
-                  )}
+            <section className="org-tdet__block">
+              <h3 className="org-tdet__block-title">Summary</h3>
+              <Stack gap="2">
+                <div className="org-tdet__grid2">
+                  <Stack gap="1">
+                    <Text size="sm" variant="muted">
+                      Priority
+                    </Text>
+                    {canEditFields ? (
+                      <Select
+                        ariaLabel="Task priority"
+                        value={full.priority ?? 'normal'}
+                        onChange={(val) => void patchWithConflict({ priority: val })}
+                        options={[...PRIORITY_OPTIONS]}
+                      />
+                    ) : (
+                      <Text size="sm" className="org-tdet__readonly">
+                        {full.priority ?? 'normal'}
+                      </Text>
+                    )}
+                  </Stack>
+
+                  <Stack gap="1">
+                    <Text size="sm" variant="muted">
+                      Complexity (1–5)
+                    </Text>
+                    {canEditFields ? (
+                      <Select
+                        ariaLabel="Task complexity"
+                        value={full.complexity_rating ? String(full.complexity_rating) : 'none'}
+                        onChange={(val) =>
+                          void patchWithConflict({
+                            complexity_rating: val === 'none' ? null : Number(val),
+                          })
+                        }
+                        options={[
+                          { value: 'none', label: 'Unset' },
+                          { value: '1', label: '1 - Simple' },
+                          { value: '2', label: '2 - Easy' },
+                          { value: '3', label: '3 - Medium' },
+                          { value: '4', label: '4 - Hard' },
+                          { value: '5', label: '5 - Hero' },
+                        ]}
+                      />
+                    ) : (
+                      <Text size="sm" className="org-tdet__readonly">
+                        {full.complexity_rating ?? '—'}
+                      </Text>
+                    )}
+                  </Stack>
                 </div>
-                {cmt.file_id && (
-                  <img
-                    src={apiClient.fileThumbnailUrl(cmt.file_id, activeProjectUuid)}
-                    alt="Media annotation thumbnail"
-                    className="org-tdet__media-thumb"
-                    onClick={() => handleOpenViewer(cmt.file_id, cmt.frame ?? null)}
-                  />
-                )}
-                <CommentBody body={cmt.body} />
-              </div>
-            ))}
 
-            {canComment && (
-              <Stack gap="1">
-                <TextArea
-                  aria-label="New task comment"
-                  rows={2}
-                  placeholder="Write comment (use @username to reference)..."
-                  value={commentDraft}
-                  onChange={(e) => setCommentDraft(e.target.value)}
-                />
-                <div className="org-tdet__cmt-foot">
-                  {canShareClient ? (
+                <div className="org-tdet__checks">
+                  <Checkbox
+                    label="Lead review"
+                    checked={Boolean(full.needs_lead_review)}
+                    disabled={!canEditFields}
+                    onChange={(checked) => void patchWithConflict({ needs_lead_review: checked })}
+                  />
+                  <Checkbox
+                    label="Sup review"
+                    checked={Boolean(full.needs_sup_review)}
+                    disabled={!canEditFields}
+                    onChange={(checked) => void patchWithConflict({ needs_sup_review: checked })}
+                  />
+                  <Checkbox
+                    label="Client review"
+                    checked={Boolean(full.needs_client_review)}
+                    disabled={!canEditFields}
+                    onChange={(checked) => void patchWithConflict({ needs_client_review: checked })}
+                  />
+                </div>
+
+                <Stack gap="1">
+                  <Text size="sm" variant="muted">
+                    Description
+                  </Text>
+                  {canEditFields ? (
+                    <Stack gap="1">
+                      <TextArea
+                        aria-label="Task description"
+                        rows={2}
+                        value={descDraft}
+                        onChange={(e) => setDescDraft(e.target.value)}
+                      />
+                      {descDraft !== (full.description ?? '') && (
+                        <Button
+                          size="sm"
+                          variant="primary"
+                          onClick={() => void patchWithConflict({ description: descDraft })}
+                        >
+                          Save Description
+                        </Button>
+                      )}
+                    </Stack>
+                  ) : (
+                    <Text size="sm" className="org-tdet__readonly">
+                      {full.description || '—'}
+                    </Text>
+                  )}
+                </Stack>
+
+                <Stack gap="1">
+                  <Text size="sm" variant="muted">
+                    Tags ({full.tags?.length ?? 0})
+                  </Text>
+                  <Inline gap="1" wrap>
+                    {(full.tags ?? []).map((t) => (
+                      <Badge key={t} tone="neutral">
+                        {t}{' '}
+                        {canEditFields && (
+                          <button
+                            type="button"
+                            className="org-tdet__xbtn"
+                            aria-label={`Remove tag ${t}`}
+                            onClick={async () => {
+                              await apiClient.putTaskTags(
+                                taskId,
+                                (full.tags ?? []).filter((x) => x !== t),
+                                activeProjectUuid,
+                              );
+                              await invalidateTask();
+                            }}
+                          >
+                            ×
+                          </button>
+                        )}
+                      </Badge>
+                    ))}
+                  </Inline>
+                  {canEditFields && (
+                    <Inline gap="1">
+                      <TextField
+                        aria-label="Add task tag"
+                        placeholder="Add tag..."
+                        value={tagDraft}
+                        onChange={(e) => setTagDraft(e.target.value)}
+                      />
+                      <Button
+                        size="sm"
+                        onClick={async () => {
+                          const clean = tagDraft.trim();
+                          if (!clean) return;
+                          await apiClient.putTaskTags(
+                            taskId,
+                            Array.from(new Set([...(full.tags ?? []), clean])),
+                            activeProjectUuid,
+                          );
+                          setTagDraft('');
+                          await invalidateTask();
+                        }}
+                      >
+                        Add
+                      </Button>
+                    </Inline>
+                  )}
+                </Stack>
+              </Stack>
+            </section>
+          </div>
+        ) : (
+          <>
+            <SectionBlock
+              title="Dependencies"
+              badge={`${(full.dependencies ?? []).length}↑ / ${(full.downstream ?? []).length}↓`}
+            >
+              <Stack gap="2">
+                {(full.dependencies ?? []).length === 0 ? (
+                  <Text size="sm" variant="muted">
+                    No upstream dependencies.
+                  </Text>
+                ) : (
+                  (full.dependencies ?? []).map((d) => (
+                    <div key={d.upstream_task_id} className="org-tdet__row-box">
+                      <button
+                        type="button"
+                        className="org-tdet__linkbtn"
+                        onClick={() => onSelectTask?.(d.upstream_task_id)}
+                      >
+                        <span className="org-tdet__mono">{d.upstream_task_code}</span>
+                        <StatusChip status={d.upstream_status ?? 'WTG'} compact />
+                        <Badge tone={d.satisfied ? 'success' : 'warning'}>{d.threshold}</Badge>
+                        {d.from_entity_link && (
+                          <span title="Generated from entity link">
+                            <Badge tone="info">via link</Badge>
+                          </span>
+                        )}
+                      </button>
+                      {canEditDeps && (
+                        <Button
+                          size="sm"
+                          variant="icon"
+                          aria-label={`Remove dependency ${d.upstream_task_code}`}
+                          onClick={async () => {
+                            const next = (full.dependencies ?? [])
+                              .filter((x) => x.upstream_task_id !== d.upstream_task_id)
+                              .map((x) => ({
+                                upstream_task_id: x.upstream_task_id,
+                                threshold: (x.threshold ?? 'APP') as
+                                  'APP' | 'PUBLISHED' | 'ANY_STATUS',
+                                from_entity_link: Boolean(x.from_entity_link),
+                              }));
+                            await apiClient.putTaskDependencies(taskId, next, activeProjectUuid);
+                            await invalidateTask();
+                          }}
+                        >
+                          <Icon name="close" size="sm" />
+                        </Button>
+                      )}
+                    </div>
+                  ))
+                )}
+
+                {canEditDeps && (
+                  <Stack gap="1">
+                    {!depPickerOpen ? (
+                      <Button size="sm" onClick={() => setDepPickerOpen(true)}>
+                        + Add Upstream Dependency
+                      </Button>
+                    ) : (
+                      <div className="org-tdet__dep-add">
+                        <Select
+                          ariaLabel="Upstream task"
+                          value={depTargetId}
+                          onChange={setDepTargetId}
+                          options={[
+                            { value: '', label: 'Select upstream task...' },
+                            ...(depCandidateResp?.items ?? [])
+                              .filter((cand) => cand.id !== taskId)
+                              .map((cand) => ({
+                                value: cand.id,
+                                label: `${cand.task_code} (${cand.status})`,
+                              })),
+                          ]}
+                        />
+                        <Select
+                          ariaLabel="Dependency threshold"
+                          value={depThreshold}
+                          onChange={(v) => setDepThreshold(v as 'APP' | 'PUBLISHED' | 'ANY_STATUS')}
+                          options={[
+                            { value: 'APP', label: 'APP' },
+                            { value: 'PUBLISHED', label: 'PUBLISHED' },
+                            { value: 'ANY_STATUS', label: 'ANY_STATUS' },
+                          ]}
+                        />
+                        <Button
+                          size="sm"
+                          variant="primary"
+                          disabled={!depTargetId}
+                          onClick={async () => {
+                            try {
+                              const existing = (full.dependencies ?? []).map((x) => ({
+                                upstream_task_id: x.upstream_task_id,
+                                threshold: (x.threshold ?? 'APP') as
+                                  'APP' | 'PUBLISHED' | 'ANY_STATUS',
+                                from_entity_link: Boolean(x.from_entity_link),
+                              }));
+                              await apiClient.putTaskDependencies(
+                                taskId,
+                                [
+                                  ...existing.filter((x) => x.upstream_task_id !== depTargetId),
+                                  {
+                                    upstream_task_id: depTargetId,
+                                    threshold: depThreshold,
+                                    from_entity_link: false,
+                                  },
+                                ],
+                                activeProjectUuid,
+                              );
+                              setDepTargetId('');
+                              await invalidateTask();
+                              flashSaved();
+                            } catch (err) {
+                              toast.push(
+                                'danger',
+                                err instanceof Error ? err.message : 'Dependency rejected',
+                              );
+                            }
+                          }}
+                        >
+                          Add
+                        </Button>
+                      </div>
+                    )}
+                  </Stack>
+                )}
+
+                {(full.downstream ?? []).length > 0 && (
+                  <Stack gap="1">
+                    <Text size="sm" variant="muted">
+                      Downstream Dependents
+                    </Text>
+                    {(full.downstream ?? []).map((d) => (
+                      <div key={d.task_id} className="org-tdet__row-box">
+                        <button
+                          type="button"
+                          className="org-tdet__linkbtn"
+                          onClick={() => onSelectTask?.(d.task_id)}
+                        >
+                          <span className="org-tdet__mono">{d.upstream_task_code}</span>
+                          <StatusChip status={d.upstream_status ?? 'WTG'} compact />
+                        </button>
+                      </div>
+                    ))}
+                  </Stack>
+                )}
+              </Stack>
+            </SectionBlock>
+
+            <SectionBlock title="Versions & Sharing" badge={String(versions.length)}>
+              <Stack gap="2">
+                {canShareClient && (
+                  <Inline gap="2">
+                    <Button size="sm" onClick={() => setShareOpen(true)}>
+                      Share with client…
+                    </Button>
+                    {(full.shared_company_ids?.length ?? 0) > 0 && (
+                      <Badge tone="info">Shared ({full.shared_company_ids?.length})</Badge>
+                    )}
+                  </Inline>
+                )}
+                {versions.length === 0 ? (
+                  <Text size="sm" variant="muted">
+                    No product versions published yet.
+                  </Text>
+                ) : (
+                  versions.map((ver) => (
+                    <div key={ver.id} className="org-tdet__row-box">
+                      <Inline gap="1">
+                        <strong>{ver.label}</strong>
+                        {full.latest_version_id === ver.id && <Badge tone="neutral">latest</Badge>}
+                        {full.approved_version_id === ver.id && (
+                          <Badge tone="success">approved</Badge>
+                        )}
+                      </Inline>
+                      <Button
+                        size="sm"
+                        onClick={() => handleOpenViewer(ver.files?.[0]?.id ?? null)}
+                      >
+                        Open in viewer
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </Stack>
+            </SectionBlock>
+
+            <SectionBlock title="Reviews" badge={String(feed.length)}>
+              <ReviewPanel
+                title={full.task_code}
+                subtitle={full.task_name}
+                status={full.status}
+                priority={toPriorityLevel(full.priority)}
+                dueDate={formatDisplayDate(full.ideal_finish_date) || null}
+                version={latestVersionLabel}
+                submitter={submitter}
+                onPriorityChange={
+                  canEditFields
+                    ? (p: PriorityLevel) =>
+                        void patchWithConflict({ priority: p === 'critical' ? 'stopper' : p })
+                    : undefined
+                }
+                priorityLevels={['normal', 'high', 'critical']}
+                thread={reviewThread}
+                emptyThreadText="No reviews or comments yet."
+                notes={commentDraft}
+                onNotesChange={setCommentDraft}
+                notesPlaceholder="Write a note for the artist... (use @username to reference)"
+                notesAriaLabel="New task comment"
+                notesExtra={
+                  canShareClient ? (
                     <Checkbox
                       label="Visible to client"
                       checked={commentClientVis}
                       onChange={setCommentClientVis}
                     />
-                  ) : (
-                    <span />
-                  )}
-                  <Button
-                    size="sm"
-                    variant="primary"
-                    disabled={!commentDraft.trim()}
-                    onClick={() => void handlePostComment()}
-                  >
-                    Post Comment
-                  </Button>
-                </div>
-              </Stack>
-            )}
-          </Stack>
-        </SectionBlock>
+                  ) : undefined
+                }
+                readOnly={!canComment}
+                busy={reviewBusy}
+                onSend={() => void handlePostComment('review')}
+                onComment={() => void handlePostComment('note')}
+                onAttach={(files) => void handleAttach(files)}
+                onMarkViewed={handleMarkViewed}
+                approve={reviewAction(approveOpt)}
+                requestChanges={reviewAction(changesOpt)}
+                reject={reviewAction(rejectOpt)}
+                hold={reviewAction(holdOpt)}
+              />
+            </SectionBlock>
 
-        <SectionBlock title="History" badge={String((full.events ?? []).length)} defaultOpen={false}>
-          <Stack gap="1">
-            {(full.events ?? []).slice(0, 40).map((ev) => (
-              <div key={ev.id} className="org-tdet__ev-row">
-                <span className="org-tdet__mono">
-                  {ev.at.slice(0, 19).replace('T', ' ')}
-                </span>
-                <span>
-                  <strong>{ev.field}</strong>: {ev.old_value ?? '—'} → {ev.new_value ?? '—'}
-                </span>
-                <Text size="sm" variant="muted">
-                  {ev.username ?? ev.source} ({ev.acted_as})
-                </Text>
-              </div>
-            ))}
-          </Stack>
-        </SectionBlock>
+            <SectionBlock
+              title="History"
+              badge={String((full.events ?? []).length)}
+              defaultOpen={false}
+            >
+              <Stack gap="1">
+                {(full.events ?? []).slice(0, 40).map((ev) => (
+                  <div key={ev.id} className="org-tdet__ev-row">
+                    <span className="org-tdet__mono">{ev.at.slice(0, 19).replace('T', ' ')}</span>
+                    <span>
+                      <strong>{ev.field}</strong>: {ev.old_value ?? '—'} → {ev.new_value ?? '—'}
+                    </span>
+                    <Text size="sm" variant="muted">
+                      {ev.username ?? ev.source} ({ev.acted_as})
+                    </Text>
+                  </div>
+                ))}
+              </Stack>
+            </SectionBlock>
+          </>
+        )}
       </ScrollArea>
 
       <TaskTransitionDialog
@@ -1289,10 +1490,7 @@ export function TaskDetail({
         taskName={full.task_name}
         targetStatus={pendingTransition?.to ?? ''}
         actionLabel={pendingTransition?.action ?? ''}
-        actedAsLabel={formatActedAsLabel(
-          pendingTransition?.acted_as,
-          pendingTransition?.on_behalf,
-        )}
+        actedAsLabel={formatActedAsLabel(pendingTransition?.acted_as, pendingTransition?.on_behalf)}
         requiresComment={Boolean(pendingTransition?.requires_comment)}
         requiresVersion={Boolean(pendingTransition?.requires_version)}
         versions={versions}

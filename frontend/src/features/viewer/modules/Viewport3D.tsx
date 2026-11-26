@@ -2,7 +2,16 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { Badge, Button, Icon, Spinner, Text, Timebar, TransportControls } from '../../../components/ui';
+import {
+  Badge,
+  Button,
+  Icon,
+  readCssToken,
+  Spinner,
+  Text,
+  Timebar,
+  TransportControls,
+} from '../../../components/ui';
 import {
   apiClient,
   isScenefilePreviewId,
@@ -100,9 +109,9 @@ export function Viewport3D({
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState({ tris: 0, verts: 0, fps: 60 });
   const [gizmoAxes, setGizmoAxes] = useState<Array<{ label: string; x: number; y: number; color: string }>>([
-    { label: 'X', x: 34, y: 20, color: '#E06C75' },
-    { label: 'Y', x: 20, y: 6, color: '#98C379' },
-    { label: 'Z', x: 12, y: 28, color: '#61AFEF' },
+    { label: 'X', x: 34, y: 20, color: readCssToken('--axis-x', '#c77a7a') },
+    { label: 'Y', x: 20, y: 6, color: readCssToken('--axis-y', '#8fb86a') },
+    { label: 'Z', x: 12, y: 28, color: readCssToken('--axis-z', '#7a9cc6') },
   ]);
 
   const [frozenBuffer, setFrozenBuffer] = useState<DirectImageBuffer | null>(null);
@@ -237,7 +246,10 @@ export function Viewport3D({
             })();
         obj.material = cloned;
       } else if (mode === 'wireframe') {
-        obj.material = new THREE.MeshBasicMaterial({ color: '#A78BFA', wireframe: true });
+        obj.material = new THREE.MeshBasicMaterial({
+          color: readCssToken('--vp-wire', '#74a6d4'),
+          wireframe: true,
+        });
       } else if (mode === 'shaded_wire') {
         obj.material = orig;
       } else if (mode === 'normals') {
@@ -315,6 +327,12 @@ export function Viewport3D({
     });
     ro.observe(container);
 
+    let vpThemeSeen: string | null | undefined;
+    let vpBgDefault = '#1a1a1a';
+    let vpBgGray = '#4b4b4b';
+    let axisX = readCssToken('--axis-x', '#c77a7a');
+    let axisY = readCssToken('--axis-y', '#8fb86a');
+    let axisZ = readCssToken('--axis-z', '#7a9cc6');
     let gradTexDark: THREE.CanvasTexture | null = null;
     let gradTexLight: THREE.CanvasTexture | null = null;
     const getGradTex = (dark: boolean): THREE.CanvasTexture => {
@@ -326,11 +344,11 @@ export function Viewport3D({
       const ctx = cv.getContext('2d')!;
       const g = ctx.createLinearGradient(0, 0, 0, 256);
       if (dark) {
-        g.addColorStop(0, '#263449');
-        g.addColorStop(1, '#090D16');
+        g.addColorStop(0, readCssToken('--vp-grad-top', '#2e2e2e'));
+        g.addColorStop(1, readCssToken('--vp-grad-bottom', '#121212'));
       } else {
-        g.addColorStop(0, '#E2E8F0');
-        g.addColorStop(1, '#94A3B8');
+        g.addColorStop(0, readCssToken('--vp-grad-top', '#ece8e1'));
+        g.addColorStop(1, readCssToken('--vp-grad-bottom', '#c9c4b9'));
       }
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, 2, 256);
@@ -347,13 +365,24 @@ export function Viewport3D({
 
     const animate = () => {
       rafId = requestAnimationFrame(animate);
-      const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+      const themeAttr = document.documentElement.getAttribute('data-theme');
+      const isDark = themeAttr !== 'light' && themeAttr !== 'paper';
+      if (themeAttr !== vpThemeSeen) {
+        vpThemeSeen = themeAttr;
+        vpBgDefault = readCssToken('--vp-bg-default', isDark ? '#1a1a1a' : '#dedad2');
+        vpBgGray = readCssToken('--vp-bg-gray', '#4b4b4b');
+        axisX = readCssToken('--axis-x', axisX);
+        axisY = readCssToken('--axis-y', axisY);
+        axisZ = readCssToken('--axis-z', axisZ);
+        gradTexDark = null;
+        gradTexLight = null;
+      }
       const bgMode = useViewerStore.getState().viewportBg;
       if (bgMode === 'black') scene.background = new THREE.Color('#000000');
       else if (bgMode === 'white') scene.background = new THREE.Color('#FFFFFF');
-      else if (bgMode === 'gray') scene.background = new THREE.Color('#4B5563');
+      else if (bgMode === 'gray') scene.background = new THREE.Color(vpBgGray);
       else if (bgMode === 'gradient') scene.background = getGradTex(isDark);
-      else scene.background = new THREE.Color(isDark ? '#0F172A' : '#CBD5E1');
+      else scene.background = new THREE.Color(vpBgDefault);
       const cam =
         useViewerStore.getState().byFile[file.id]?.cameraMode === 'ortho' ? ortho : persp;
       grid.update(cam, isDark && bgMode !== 'white');
@@ -393,9 +422,9 @@ export function Viewport3D({
         // Project world axes into 40x40 gizmo
         const invQ = cam.quaternion.clone().invert();
         const axes = [
-          { label: 'X', vec: new THREE.Vector3(1, 0, 0), color: '#E06C75' },
-          { label: 'Y', vec: new THREE.Vector3(0, 1, 0), color: '#98C379' },
-          { label: 'Z', vec: new THREE.Vector3(0, 0, 1), color: '#61AFEF' },
+          { label: 'X', vec: new THREE.Vector3(1, 0, 0), color: axisX },
+          { label: 'Y', vec: new THREE.Vector3(0, 1, 0), color: axisY },
+          { label: 'Z', vec: new THREE.Vector3(0, 0, 1), color: axisZ },
         ].map((a) => {
           const v = a.vec.applyQuaternion(invQ);
           return { label: a.label, x: 20 + v.x * 14, y: 20 - v.y * 14, color: a.color };
@@ -453,7 +482,7 @@ export function Viewport3D({
           const wireOverlay = new THREE.Mesh(
             g,
             new THREE.MeshBasicMaterial({
-              color: '#A78BFA',
+              color: readCssToken('--vp-wire', '#74a6d4'),
               wireframe: true,
               transparent: true,
               opacity: 0.45,
@@ -598,7 +627,10 @@ export function Viewport3D({
     if (!plane || !mountRef.current) return;
     const aspect = mountRef.current.clientWidth / Math.max(1, mountRef.current.clientHeight);
     const geom = buildPlanePreviewOutline(plane, aspect);
-    const mat = new THREE.LineBasicMaterial({ color: '#8B5CF6', depthTest: false });
+    const mat = new THREE.LineBasicMaterial({
+      color: readCssToken('--vp-gizmo', '#5b93c7'),
+      depthTest: false,
+    });
     pg.add(new THREE.LineLoop(geom, mat));
   }, []);
 
@@ -1108,7 +1140,7 @@ export function Viewport3D({
         const base = origMaterialsRef.current.get(hitMesh);
         if (base && !Array.isArray(base) && 'emissive' in base) {
           const hl = (base as THREE.MeshStandardMaterial).clone();
-          hl.emissive = new THREE.Color('#8B5CF6');
+          hl.emissive = new THREE.Color(readCssToken('--zone-focus', '#e8a33d'));
           hl.emissiveIntensity = 0.35;
           hitMesh.material = hl;
         }

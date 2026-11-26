@@ -1,46 +1,8 @@
 @layer components {
   .org-settings {
-    display: grid;
-    grid-template-columns: var(--settings-nav-w) 1fr;
-    width: min(calc(var(--settings-dialog-w) - var(--space-6)), 90vw);
-    height: min(var(--settings-dialog-h), 78vh);
-    border: 1px solid var(--border-dark);
-    background: var(--surface-panel);
-  }
-
-  .org-settings__nav {
-    display: flex;
-    flex-direction: column;
-    border-right: 1px solid var(--border-dark);
-    background: var(--surface-window);
-    padding: var(--space-1);
-    gap: 1px;
-  }
-
-  .org-settings__nav-btn {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    height: var(--row-h);
-    padding: 0 var(--space-2);
-    border: 0;
-    border-left: var(--dirty-bar-w) solid transparent;
-    background: transparent;
-    color: var(--text);
-    font-family: var(--font-ui);
-    font-size: var(--font-size);
-    text-align: left;
-    cursor: pointer;
-  }
-
-  .org-settings__nav-btn:hover {
-    background: var(--surface-hover);
-  }
-
-  .org-settings__nav-btn[data-active='true'] {
-    background: var(--accent-soft);
-    border-left-color: var(--accent);
-    font-weight: 700;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
   }
 
   .org-settings__content {
@@ -48,10 +10,11 @@
     flex-direction: column;
     min-width: 0;
     min-height: 0;
+    flex: 1;
     overflow-y: auto;
-    padding: var(--space-3);
-    gap: var(--space-3);
-    background: var(--surface-panel);
+    padding: var(--space-4) var(--space-6);
+    gap: var(--space-4);
+    background: var(--surface-window);
   }
 
   .org-settings__section {
@@ -96,9 +59,9 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--space-1);
+    gap: var(--space-2);
     min-height: var(--ctl-h-lg);
-    padding: 0 var(--space-2);
+    padding: var(--space-1) var(--space-3);
     border-bottom: 1px solid var(--border-dark);
     border-left: var(--dirty-bar-w) solid transparent;
     cursor: pointer;
@@ -106,6 +69,17 @@
 
   .org-settings__list-row:last-child {
     border-bottom: 0;
+  }
+
+  .org-settings__dept-name {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
+  .org-settings__dept-color {
+    display: inline-flex;
   }
 
   .org-settings__list-row[data-selected='true'] {

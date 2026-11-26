@@ -22,7 +22,7 @@ export const ALL_WORKFLOW_STATUSES = [
 export const PRIORITY_OPTIONS = [
   { value: 'normal', label: 'Normal' },
   { value: 'high', label: 'High' },
-  { value: 'stopper', label: 'Stopper' },
+  { value: 'stopper', label: 'Critical' },
 ] as const;
 
 export function isFullTaskItem(

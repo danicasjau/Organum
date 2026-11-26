@@ -27,6 +27,7 @@ export function Tooltip({
         <TooltipPrimitive.Content sideOffset={4} className="org-tooltip">
           <span>{content}</span>
           {shortcut && <Kbd>{shortcut}</Kbd>}
+          <TooltipPrimitive.Arrow className="org-tooltip__arrow" width={8} height={4} />
         </TooltipPrimitive.Content>
       </TooltipPrimitive.Portal>
     </TooltipPrimitive.Root>
@@ -98,3 +99,46 @@ export function Dialog({
   );
 }
 
+
+/** Small confirmation dialog for destructive actions. */
+export function ConfirmDialog({
+  open,
+  onOpenChange,
+  title,
+  children,
+  confirmLabel = 'Delete',
+  danger = true,
+  onConfirm,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  children: ReactNode;
+  confirmLabel?: string;
+  danger?: boolean;
+  onConfirm: () => void | Promise<void>;
+}) {
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={title}
+      footer={
+        <>
+          <Button onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button
+            variant={danger ? 'danger' : 'primary'}
+            onClick={async () => {
+              await onConfirm();
+              onOpenChange(false);
+            }}
+          >
+            {confirmLabel}
+          </Button>
+        </>
+      }
+    >
+      {children}
+    </Dialog>
+  );
+}

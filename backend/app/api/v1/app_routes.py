@@ -82,16 +82,7 @@ async def create_new_project(
     auth: Annotated[AuthContext | None, Depends(get_optional_auth)] = None,
 ) -> KnownProjectOut:
     check_origin(request, settings)
-    has_existing = await _has_valid_projects(app_db)
-    if has_existing:
-        if auth is None:
-            raise AppError(
-                "unauthorized", "Authentication required to create projects", status_code=401
-            )
-        if auth.role.name != "admin":
-            raise AppError(
-                "forbidden", "Only administrators can create new projects", status_code=403
-            )
+    await _require_admin_unless_bootstrapping(app_db, auth, "create projects")
     ctx = await registry.create_project(
         app_db,
         path=Path(payload.path),
@@ -103,13 +94,30 @@ async def create_new_project(
     return _to_known_out(known)
 
 
+async def _require_admin_unless_bootstrapping(
+    app_db: AsyncSession, auth: AuthContext | None, action: str
+) -> None:
+    """Allow anonymous access only while no usable project exists (first run)."""
+    if not await _has_valid_projects(app_db):
+        return
+    if auth is None:
+        raise AppError("unauthorized", f"Authentication required to {action}", status_code=401)
+    if auth.role.name != "admin":
+        raise AppError("forbidden", f"Only administrators can {action}", status_code=403)
+
+
 @router.post("/projects/open", response_model=KnownProjectOut)
 async def open_existing_project(
     payload: ProjectOpenRequest,
-    _auth: Annotated[AuthContext, Depends(require_admin_global())],
+    request: Request,
     app_db: Annotated[AsyncSession, Depends(get_app_db)],
     registry: Annotated[ProjectRegistry, Depends(get_project_registry)],
+    settings: Annotated[Settings, Depends(get_settings_dep)],
+    auth: Annotated[AuthContext | None, Depends(get_optional_auth)] = None,
 ) -> KnownProjectOut:
+    check_origin(request, settings)
+    # First run with only stale entries: "locate" an existing project folder anonymously.
+    await _require_admin_unless_bootstrapping(app_db, auth, "open projects")
     ctx, _ = await registry.open_project(app_db, Path(payload.path))
     known = await app_db.get(KnownProject, ctx.uuid)
     assert known is not None

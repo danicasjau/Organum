@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from sqlalchemy import event
@@ -9,6 +10,16 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+
+
+def ensure_sqlite_parent_dir(database_url: str) -> None:
+    """Create the parent folder of a file-based SQLite URL so a fresh checkout can start."""
+    if not database_url.startswith("sqlite"):
+        return
+    _, _, raw_path = database_url.partition(":///")
+    if not raw_path or raw_path.startswith(":memory:"):
+        return
+    Path(raw_path.split("?", 1)[0]).parent.mkdir(parents=True, exist_ok=True)
 
 
 def create_engine_and_sessionmaker(

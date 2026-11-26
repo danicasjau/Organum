@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import {
   Badge,
   Button,
+  ContextMenu,
   Icon,
   Inline,
   PropertyEditor,
@@ -16,6 +17,7 @@ import {
 } from '../../components/ui';
 import { apiClient, type EntityDataItem, type EntityOut } from '../../lib/api/client';
 import { useAuthStore, hasPerm } from '../auth/authStore';
+import { DepartmentTag } from '../departments/DepartmentTag';
 import { useProjectStore } from '../project/projectStore';
 import { EntityLinkPickerDialog, SuggestDependenciesDialog } from './EntityLinkDialogs';
 import './EntityInspectorTab.css';
@@ -101,7 +103,7 @@ export function EntityInspectorTab({
     const clean = tagDraft.trim();
     if (!clean) return;
     const next = entity.tags?.some((t) => t.toLowerCase() === clean.toLowerCase())
-      ? entity.tags ?? []
+      ? (entity.tags ?? [])
       : [...(entity.tags ?? []), clean];
     await apiClient.putEntityTags(entity.id, next, activeProjectUuid);
     setTagDraft('');
@@ -114,6 +116,14 @@ export function EntityInspectorTab({
     await apiClient.putEntityTags(entity.id, next, activeProjectUuid);
     await queryClient.invalidateQueries({ queryKey: ['entities', activeProjectUuid] });
     onChanged?.();
+  };
+
+  const removeLink = async (linkId: string) => {
+    await apiClient.deleteEntityLink(linkId, activeProjectUuid);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['entity-links', activeProjectUuid] }),
+      queryClient.invalidateQueries({ queryKey: ['entity-links-graph', activeProjectUuid] }),
+    ]);
   };
 
   const hasThumb = Boolean(entity.resolved_thumbnail_file_id) && !thumbBroken;
@@ -135,30 +145,32 @@ export function EntityInspectorTab({
           setDraftRows((prev) => prev.map((p) => (p.key === row.key ? { ...orig } : p)));
         },
         render: () => (
-          <Inline gap="1" className="org-enttab__kvrow">
-            <TextField
-              aria-label={`Value for ${row.key}`}
-              value={row.value_text}
-              onChange={(e) => {
-                const v = e.target.value;
-                setDraftRows((prev) =>
-                  prev.map((p) => (p.key === row.key ? { ...p, value_text: v } : p)),
-                );
-              }}
-            />
-            <Button
-              variant="icon"
-              size="sm"
-              aria-label={`Delete ${row.key}`}
-              onClick={async () => {
-                const next = draftRows.filter((p) => p.key !== row.key);
-                setDraftRows(next);
-                await handleSaveData(next);
-              }}
-            >
-              <Icon name="trash" size="sm" />
-            </Button>
-          </Inline>
+          <ContextMenu
+            items={[
+              {
+                id: 'delete',
+                label: `Delete '${row.key}'`,
+                onSelect: () => {
+                  const next = draftRows.filter((p) => p.key !== row.key);
+                  setDraftRows(next);
+                  void handleSaveData(next);
+                },
+              },
+            ]}
+          >
+            <div className="org-enttab__kvrow" title="Right-click for options">
+              <TextField
+                aria-label={`Value for ${row.key}`}
+                value={row.value_text}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setDraftRows((prev) =>
+                    prev.map((p) => (p.key === row.key ? { ...p, value_text: v } : p)),
+                  );
+                }}
+              />
+            </div>
+          </ContextMenu>
         ),
       })),
     },
@@ -202,7 +214,9 @@ export function EntityInspectorTab({
                     { source: 'auto', file_id: null },
                     activeProjectUuid,
                   );
-                  await queryClient.invalidateQueries({ queryKey: ['entities', activeProjectUuid] });
+                  await queryClient.invalidateQueries({
+                    queryKey: ['entities', activeProjectUuid],
+                  });
                 }}
               >
                 Reset to auto
@@ -224,17 +238,20 @@ export function EntityInspectorTab({
         </Text>
         <Inline gap="1" wrap>
           {(entity.tags ?? []).map((t) => (
-            <Badge key={t} tone="neutral">
-              {t}{' '}
-              <button
-                type="button"
-                className="org-enttab__tag-x"
-                aria-label={`Remove ${t}`}
-                onClick={() => handleRemoveTag(t)}
-              >
-                ×
-              </button>
-            </Badge>
+            <ContextMenu
+              key={t}
+              items={[
+                {
+                  id: 'remove',
+                  label: `Remove tag '${t}'`,
+                  onSelect: () => void handleRemoveTag(t),
+                },
+              ]}
+            >
+              <span className="org-enttab__tag" title="Right-click to remove">
+                <Badge tone="neutral">{t}</Badge>
+              </span>
+            </ContextMenu>
           ))}
         </Inline>
         <Inline gap="1">
@@ -259,9 +276,12 @@ export function EntityInspectorTab({
         </Text>
         <Inline gap="1" wrap>
           {(entity.departments ?? []).map((d) => (
-            <Badge key={d.id} tone="neutral">
-              {d.name} ({d.tasks?.length ?? 0})
-            </Badge>
+            <DepartmentTag
+              key={d.id}
+              id={d.department_id}
+              name={d.name}
+              label={`${d.name} (${d.tasks?.length ?? 0})`}
+            />
           ))}
         </Inline>
       </Stack>
@@ -303,37 +323,31 @@ export function EntityInspectorTab({
                 </Text>
               ) : (
                 (linksData?.uses ?? []).map((lk) => (
-                  <div
+                  <ContextMenu
                     key={lk.id}
-                    className={`org-enttab__link-row${lk.source_archived ? ' org-enttab__link-row--arch' : ''}`}
+                    items={
+                      canLinkEntities
+                        ? [
+                            {
+                              id: 'remove-link',
+                              label: `Remove link from ${lk.source_name}`,
+                              onSelect: () => void removeLink(lk.id),
+                            },
+                          ]
+                        : []
+                    }
                   >
-                    <span className="org-enttab__link-name">
-                      <Icon name="box3d" size="sm" />
-                      <span>{lk.source_name}</span>
-                      {lk.source_type && <Badge tone="accent">{lk.source_type}</Badge>}
-                      {lk.link_type && <Badge tone="neutral">{lk.link_type}</Badge>}
-                    </span>
-                    {canLinkEntities && (
-                      <Button
-                        size="sm"
-                        variant="icon"
-                        aria-label={`Remove link from ${lk.source_name}`}
-                        onClick={async () => {
-                          await apiClient.deleteEntityLink(lk.id, activeProjectUuid);
-                          await Promise.all([
-                            queryClient.invalidateQueries({
-                              queryKey: ['entity-links', activeProjectUuid],
-                            }),
-                            queryClient.invalidateQueries({
-                              queryKey: ['entity-links-graph', activeProjectUuid],
-                            }),
-                          ]);
-                        }}
-                      >
-                        <Icon name="close" size="sm" />
-                      </Button>
-                    )}
-                  </div>
+                    <div
+                      className={`org-enttab__link-row${lk.source_archived ? ' org-enttab__link-row--arch' : ''}`}
+                    >
+                      <span className="org-enttab__link-name">
+                        <Icon name="box3d" size="sm" />
+                        <span>{lk.source_name}</span>
+                        {lk.source_type && <Badge tone="accent">{lk.source_type}</Badge>}
+                        {lk.link_type && <Badge tone="neutral">{lk.link_type}</Badge>}
+                      </span>
+                    </div>
+                  </ContextMenu>
                 ))
               )}
               {(linksData?.uses_indirect ?? []).map((ind) => (
@@ -356,37 +370,31 @@ export function EntityInspectorTab({
                 </Text>
               ) : (
                 (linksData?.used_in ?? []).map((lk) => (
-                  <div
+                  <ContextMenu
                     key={lk.id}
-                    className={`org-enttab__link-row${lk.target_archived ? ' org-enttab__link-row--arch' : ''}`}
+                    items={
+                      canLinkEntities
+                        ? [
+                            {
+                              id: 'remove-link',
+                              label: `Remove link to ${lk.target_name}`,
+                              onSelect: () => void removeLink(lk.id),
+                            },
+                          ]
+                        : []
+                    }
                   >
-                    <span className="org-enttab__link-name">
-                      <Icon name="box3d" size="sm" />
-                      <span>{lk.target_name}</span>
-                      {lk.target_type && <Badge tone="accent">{lk.target_type}</Badge>}
-                      {lk.link_type && <Badge tone="neutral">{lk.link_type}</Badge>}
-                    </span>
-                    {canLinkEntities && (
-                      <Button
-                        size="sm"
-                        variant="icon"
-                        aria-label={`Remove link to ${lk.target_name}`}
-                        onClick={async () => {
-                          await apiClient.deleteEntityLink(lk.id, activeProjectUuid);
-                          await Promise.all([
-                            queryClient.invalidateQueries({
-                              queryKey: ['entity-links', activeProjectUuid],
-                            }),
-                            queryClient.invalidateQueries({
-                              queryKey: ['entity-links-graph', activeProjectUuid],
-                            }),
-                          ]);
-                        }}
-                      >
-                        <Icon name="close" size="sm" />
-                      </Button>
-                    )}
-                  </div>
+                    <div
+                      className={`org-enttab__link-row${lk.target_archived ? ' org-enttab__link-row--arch' : ''}`}
+                    >
+                      <span className="org-enttab__link-name">
+                        <Icon name="box3d" size="sm" />
+                        <span>{lk.target_name}</span>
+                        {lk.target_type && <Badge tone="accent">{lk.target_type}</Badge>}
+                        {lk.link_type && <Badge tone="neutral">{lk.link_type}</Badge>}
+                      </span>
+                    </div>
+                  </ContextMenu>
                 ))
               )}
               {(linksData?.used_in_indirect ?? []).map((ind) => (
@@ -447,11 +455,7 @@ export function EntityInspectorTab({
       </div>
 
       <Inline gap="1">
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={() => void handleSaveData(draftRows)}
-        >
+        <Button variant="primary" size="sm" onClick={() => void handleSaveData(draftRows)}>
           Save Entity Data
         </Button>
       </Inline>
@@ -476,4 +480,3 @@ export function EntityInspectorTab({
     </Stack>
   );
 }
-

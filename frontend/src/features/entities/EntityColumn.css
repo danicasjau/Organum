@@ -10,19 +10,38 @@
   .org-ecol__toolbar {
     display: flex;
     flex-direction: column;
-    gap: var(--space-1);
-    padding: var(--space-1);
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
     border-bottom: 1px solid var(--border-dark);
     background: var(--surface-window);
   }
 
-  .org-ecol__actions {
-    flex-wrap: wrap;
+  .org-ecol__searchrow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
+  .org-ecol__search {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .org-ecol__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    height: 100%;
+    min-height: var(--grid-min-h);
+    text-align: center;
   }
 
   .org-ecol__filter-pop {
     min-width: var(--popover-min-w);
-    padding: var(--space-1);
+    padding: var(--space-2);
   }
 
   .org-ecol__crumbs {
@@ -59,7 +78,7 @@
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    padding: var(--space-1);
+    padding: var(--space-3);
     background: var(--surface-field);
     outline: none;
   }
@@ -76,15 +95,15 @@
     left: 0;
     right: 0;
     transform: translateY(var(--ec-offset, 0));
-    padding-bottom: var(--space-1);
+    padding-bottom: var(--space-2);
   }
 
   .org-ecol__card {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: var(--space-4);
     height: var(--entity-card-h);
-    padding: var(--space-1) var(--space-2);
+    padding: var(--space-2) var(--space-4);
     border: 1px solid var(--border-dark);
     border-left: var(--dirty-bar-w) solid transparent;
     background: var(--surface-panel);
@@ -140,7 +159,7 @@
 
   .org-ecol__title {
     font-weight: 700;
-    font-size: var(--font-size);
+    font-size: var(--font-size-lg);
     color: var(--text);
     overflow: hidden;
     text-overflow: ellipsis;

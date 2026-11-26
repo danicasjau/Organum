@@ -5,7 +5,6 @@ import {
   Button,
   ContextMenu,
   Icon,
-  Stack,
   Text,
   useToast,
   type IconName,
@@ -84,8 +83,7 @@ export function ProductsColumn({
 
   const product = task?.product ?? null;
   const versionsAsc = useMemo(
-    () =>
-      [...(product?.versions ?? [])].sort((a, b) => a.version_number - b.version_number),
+    () => [...(product?.versions ?? [])].sort((a, b) => a.version_number - b.version_number),
     [product?.versions],
   );
   const masterVersion = useMemo(
@@ -270,9 +268,7 @@ export function ProductsColumn({
         >
           <div
             className="org-prodcol__verrow"
-            onClick={() =>
-              setExpandedVersions((prev) => ({ ...prev, [toggleKey]: !expanded }))
-            }
+            onClick={() => setExpandedVersions((prev) => ({ ...prev, [toggleKey]: !expanded }))}
           >
             <Icon name={expanded ? 'chevron-down' : 'chevron-right'} size="sm" />
             <Button
@@ -320,30 +316,37 @@ export function ProductsColumn({
       onDrop={handleDrop}
     >
       <div className="org-prodcol__header">
-        <Text size="sm">
-          Products{task ? ` — ${task.name}` : ''}
-        </Text>
         <Text size="sm" variant="muted">
-          Drop files/scenefiles to publish
+          Products
         </Text>
+        {task && (
+          <span className="org-prodcol__task-name" title={task.name}>
+            {task.name}
+          </span>
+        )}
       </div>
 
       <div className="org-prodcol__list" role="tree" aria-label="Task product versions">
         {!task ? (
-          <Stack padding="2">
+          <div className="org-prodcol__empty">
             <Text size="sm" variant="muted">
               Select a task in Column 2.
             </Text>
-          </Stack>
+          </div>
         ) : versionsAsc.length === 0 ? (
-          <Stack padding="2">
+          <div className="org-prodcol__empty">
             <Text size="sm" variant="muted">
-              No published versions yet. Drag files here or publish from Scenefiles below.
+              No published versions yet.
             </Text>
-          </Stack>
+          </div>
         ) : (
           <>
             {masterVersion && renderVersion(masterVersion, true)}
+            <div className="org-prodcol__group-label">
+              <Text size="sm" variant="muted">
+                All versions ({versionsAsc.length})
+              </Text>
+            </div>
             {versionsAsc.map((v) => renderVersion(v, false))}
           </>
         )}
@@ -392,11 +395,7 @@ export function ProductsColumn({
           if (!open) setDeletingVersion(null);
         }}
         title="Delete Product Version"
-        message={
-          deletingVersion
-            ? `Move ${deletingVersion.label} to 00_Pipeline/trash/?`
-            : ''
-        }
+        message={deletingVersion ? `Move ${deletingVersion.label} to 00_Pipeline/trash/?` : ''}
         onConfirm={async () => {
           if (!deletingVersion) return;
           await apiClient.deleteVersion(deletingVersion.id, activeProjectUuid);
@@ -425,4 +424,3 @@ export function ProductsColumn({
     </div>
   );
 }
-

@@ -107,3 +107,9 @@ All packages below were verified against PyPI and the npm registry for current a
 3. **USD → GLB Conversion & Deforming Animation (Phase 3):**
    - `usd-core` (`LicenseRef-TOST-1.0`, Modified Apache 2.0) provides full USD stage parsing, prims, variants, materials, and transforms, but has no built-in glTF exporter. Converting USD to canonical GLB requires a custom Python exporter (`usd-core` → `pygltflib`).
    - Transform animations export cleanly via glTF channels; deforming vertex animation requires baking a capped per-frame point/morph cache (recommended cap to confirm before Phase 3).
+
+## CR04
+
+- Phase A adds **no** new packages (drag-and-drop, inline edit and confirm dialogs are in-house; see `docs/CR04.md`).
+- Planned for phase E exports: `XlsxWriter` (BSD-2-Clause). It will be verified and recorded here when installed.
+- Phase C adds `tzdata` 2026.6 (Apache-2.0, PyPI, maintained by the CPython core team): the IANA timezone database for `zoneinfo` on Windows, where the OS has none. Pure data wheel, no native code.

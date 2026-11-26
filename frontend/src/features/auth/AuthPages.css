@@ -42,6 +42,18 @@
     flex: 1;
   }
 
+  .org-auth-stale {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding-bottom: var(--space-1);
+  }
+
+  .org-auth-stale code {
+    word-break: break-all;
+  }
+
   .org-auth-actions {
     display: flex;
     justify-content: flex-end;
